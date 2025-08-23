@@ -1,5 +1,6 @@
 package com.e2_ma_tim09_2025.questify.activities;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 
@@ -12,8 +13,6 @@ import androidx.core.view.WindowInsetsCompat;
 import com.e2_ma_tim09_2025.questify.R;
 
 public class MainActivity extends AppCompatActivity {
-
-    private static final String TAG = "MainActivity";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -28,6 +27,9 @@ public class MainActivity extends AppCompatActivity {
 
         Button tasksButton = findViewById(R.id.tasks_button);
 
-
+        tasksButton.setOnClickListener(v -> {
+            Intent intent = new Intent(this, TasksMainActivity.class);
+            startActivity(intent);
+        });
     }
 }

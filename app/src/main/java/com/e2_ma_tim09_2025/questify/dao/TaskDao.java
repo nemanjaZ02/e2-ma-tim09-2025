@@ -1,5 +1,6 @@
 package com.e2_ma_tim09_2025.questify.dao;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -20,7 +21,7 @@ public interface TaskDao {
     void deleteTask(Task task);
 
     @Query("SELECT * FROM tasks")
-    List<Task> getAllTasks();
+    LiveData<List<Task>> getAllTasks();
 
     @Query("SELECT * FROM tasks WHERE id = :taskId")
     Task getTaskById(int taskId);

@@ -2,6 +2,8 @@ package com.e2_ma_tim09_2025.questify.repositories;
 
 import android.util.Log;
 
+import androidx.lifecycle.LiveData;
+
 import com.e2_ma_tim09_2025.questify.dao.TaskCategoryDao;
 import com.e2_ma_tim09_2025.questify.dao.TaskDao;
 import com.e2_ma_tim09_2025.questify.models.Task;
@@ -60,11 +62,11 @@ public class TaskRepository {
         });
     }
 
-    public List<Task> getAllTasks() {
+    public LiveData<List<Task>> getAllTasks() {
         return taskDao.getAllTasks();
     }
 
-    public List<TaskCategory> getAllCategories() {
+    public LiveData<List<TaskCategory>> getAllCategories() {
         return categoryDao.getAllCategories();
     }
 }

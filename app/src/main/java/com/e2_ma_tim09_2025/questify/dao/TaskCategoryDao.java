@@ -1,5 +1,6 @@
 package com.e2_ma_tim09_2025.questify.dao;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.Query;
@@ -12,7 +13,7 @@ public interface TaskCategoryDao {
     void insertCategory(TaskCategory category);
 
     @Query("SELECT * FROM taskCategories")
-    List<TaskCategory> getAllCategories();
+    LiveData<List<TaskCategory>> getAllCategories();
 
     @Query("SELECT * FROM taskCategories WHERE id = :categoryId")
     TaskCategory getCategoryById(int categoryId);
