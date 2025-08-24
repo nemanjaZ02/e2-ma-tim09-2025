@@ -7,11 +7,14 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import javax.inject.Inject;
+
 public class TaskCategoryRepository {
 
     private final TaskCategoryDao categoryDao;
     private final Executor executor = Executors.newSingleThreadExecutor();
 
+    @Inject
     public TaskCategoryRepository(TaskCategoryDao categoryDao) {
         this.categoryDao = categoryDao;
     }

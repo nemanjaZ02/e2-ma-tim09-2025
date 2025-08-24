@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import javax.inject.Inject;
+
 public class TaskService {
 
     private static final String TAG = "TaskService";
@@ -20,6 +22,7 @@ public class TaskService {
     private final TaskCategoryRepository categoryRepository;
     private final Executor executor = Executors.newSingleThreadExecutor();
 
+    @Inject
     public TaskService(TaskRepository taskRepository, TaskCategoryRepository categoryRepository) {
         this.taskRepository = taskRepository;
         this.categoryRepository = categoryRepository;
@@ -35,7 +38,6 @@ public class TaskService {
 
     public void insertTask(Task task) {
         executor.execute(() -> {
-            // Logika provere poslovnih pravila:
             if (task == null) {
                 Log.e(TAG, "Error: Task object is null.");
                 return;

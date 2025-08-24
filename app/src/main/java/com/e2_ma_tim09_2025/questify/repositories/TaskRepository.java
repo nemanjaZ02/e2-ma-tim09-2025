@@ -7,11 +7,14 @@ import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
+import javax.inject.Inject;
+
 public class TaskRepository {
 
     private final TaskDao taskDao;
     private final Executor executor = Executors.newSingleThreadExecutor();
 
+    @Inject
     public TaskRepository(TaskDao taskDao) {
         this.taskDao = taskDao;
     }
