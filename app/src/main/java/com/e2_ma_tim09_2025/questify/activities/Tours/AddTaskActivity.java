@@ -1,4 +1,4 @@
-package com.e2_ma_tim09_2025.questify.activities;
+package com.e2_ma_tim09_2025.questify.activities.Tours;
 
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
@@ -13,7 +13,9 @@ import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.db.AppDatabase;
 import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
+import com.e2_ma_tim09_2025.questify.repositories.TaskCategoryRepository;
 import com.e2_ma_tim09_2025.questify.repositories.TaskRepository;
+import com.e2_ma_tim09_2025.questify.services.TaskService; // UVEZI TaskService
 import com.e2_ma_tim09_2025.questify.viewmodels.TaskViewModel;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -40,12 +42,14 @@ public class AddTaskActivity extends AppCompatActivity {
         saveTaskButton = findViewById(R.id.saveTaskButton);
 
         AppDatabase db = AppDatabase.getDatabase(this);
-        TaskRepository repository = new TaskRepository(db.taskDao(), db.taskCategoryDao());
+        TaskRepository taskRepository = new TaskRepository(db.taskDao());
+        TaskCategoryRepository categoryRepository = new TaskCategoryRepository(db.taskCategoryDao());
+        TaskService taskService = new TaskService(taskRepository, categoryRepository);
 
         taskViewModel = new ViewModelProvider(this, new ViewModelProvider.Factory() {
             @Override
             public <T extends androidx.lifecycle.ViewModel> T create(Class<T> modelClass) {
-                return (T) new TaskViewModel(repository);
+                return (T) new TaskViewModel(taskService);
             }
         }).get(TaskViewModel.class);
 
@@ -72,7 +76,7 @@ public class AddTaskActivity extends AppCompatActivity {
 
             int categoryId = taskCategories.get(selectedCategoryPosition).getId();
 
-            Task newTask = new Task(taskName, categoryId, taskDescription, null, null, null, 0);
+            Task newTask = new Task(taskName, categoryId, taskDescription, null, null, null, 0, false);
 
             taskViewModel.insertTask(newTask);
 

@@ -16,8 +16,7 @@ import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
             parentColumns = "id",
             childColumns = "category_id",
             onDelete = ForeignKey.CASCADE
-    ),
-        indices = {@Index(value = {"category_id"})})
+    ), indices = {@Index(value = {"category_id"})})
 public class Task {
     @PrimaryKey(autoGenerate = true)
     private int id;
@@ -29,9 +28,12 @@ public class Task {
     private TaskPriority priority;
     private TaskRecurrence recurrence;
     private long remainingTime;
+    @Ignore
+    private int userId;
+    private boolean isDone;
 
     public Task(String name, int categoryId, String description, TaskDifficulty difficulty,
-                TaskPriority priority, TaskRecurrence recurrence, long remainingTime) {
+                TaskPriority priority, TaskRecurrence recurrence, long remainingTime, boolean isDone) {
         this.name = name;
         this.categoryId = categoryId;
         this.description = description;
@@ -39,6 +41,7 @@ public class Task {
         this.priority = priority;
         this.recurrence = recurrence;
         this.remainingTime = remainingTime;
+        this.isDone = isDone;
     }
 
     public TaskDifficulty getDifficulty() {
@@ -103,5 +106,21 @@ public class Task {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public int getUserId() {
+        return userId;
+    }
+
+    public void setUserId(int userId) {
+        this.userId = userId;
+    }
+
+    public boolean isDone() {
+        return isDone;
+    }
+
+    public void setDone(boolean done) {
+        isDone = done;
     }
 }

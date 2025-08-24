@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#D2B48C"
-    tools:context=".activities.TasksMainActivity">
+    tools:context=".activities.Tours.TasksMainActivity">
 
     <TextView
         android:id="@+id/tasksTitle"

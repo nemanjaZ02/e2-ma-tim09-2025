@@ -10,11 +10,9 @@ import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 @Dao
 public interface TaskCategoryDao {
     @Insert
-    void insertCategory(TaskCategory category);
-
+    void insert(TaskCategory category);
     @Query("SELECT * FROM taskCategories")
-    LiveData<List<TaskCategory>> getAllCategories();
-
+    LiveData<List<TaskCategory>> getAll();
     @Query("SELECT * FROM taskCategories WHERE id = :categoryId")
-    TaskCategory getCategoryById(int categoryId);
+    TaskCategory getById(int categoryId);
 }

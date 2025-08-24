@@ -12,17 +12,17 @@ import com.e2_ma_tim09_2025.questify.models.Task;
 @Dao
 public interface TaskDao {
     @Insert
-    void insertTask(Task task);
+    void insert(Task task);
 
     @Update
-    void updateTask(Task task);
+    void update(Task task);
 
     @Delete
-    void deleteTask(Task task);
+    void delete(Task task);
 
     @Query("SELECT * FROM tasks")
-    LiveData<List<Task>> getAllTasks();
+    LiveData<List<Task>> getAll();
 
     @Query("SELECT * FROM tasks WHERE id = :taskId")
-    Task getTaskById(int taskId);
+    Task getById(int taskId);
 }
