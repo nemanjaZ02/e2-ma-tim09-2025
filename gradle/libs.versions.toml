@@ -27,4 +27,5 @@ room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRunti
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+hilt-android-gradle-plugin = { id = "com.google.dagger.hilt.android", version.ref = "hiltAndroid" }
 

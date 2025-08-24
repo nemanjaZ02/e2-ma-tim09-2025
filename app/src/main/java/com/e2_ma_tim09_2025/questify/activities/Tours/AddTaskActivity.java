@@ -22,6 +22,9 @@ import com.google.android.material.textfield.TextInputEditText;
 import java.util.ArrayList;
 import java.util.List;
 
+import dagger.hilt.android.AndroidEntryPoint;
+
+@AndroidEntryPoint
 public class AddTaskActivity extends AppCompatActivity {
 
     private TaskViewModel taskViewModel;
@@ -41,17 +44,7 @@ public class AddTaskActivity extends AppCompatActivity {
         categorySpinner = findViewById(R.id.categorySpinner);
         saveTaskButton = findViewById(R.id.saveTaskButton);
 
-        AppDatabase db = AppDatabase.getDatabase(this);
-        TaskRepository taskRepository = new TaskRepository(db.taskDao());
-        TaskCategoryRepository categoryRepository = new TaskCategoryRepository(db.taskCategoryDao());
-        TaskService taskService = new TaskService(taskRepository, categoryRepository);
-
-        taskViewModel = new ViewModelProvider(this, new ViewModelProvider.Factory() {
-            @Override
-            public <T extends androidx.lifecycle.ViewModel> T create(Class<T> modelClass) {
-                return (T) new TaskViewModel(taskService);
-            }
-        }).get(TaskViewModel.class);
+        taskViewModel = new ViewModelProvider(this).get(TaskViewModel.class);
 
         taskViewModel.getCategories().observe(this, categories -> {
             taskCategories = categories;
