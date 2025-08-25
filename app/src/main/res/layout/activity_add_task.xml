@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#D2B48C"
-    tools:context=".activities.Tours.AddTaskActivity">
+    tools:context=".activities.tasks.AddTaskActivity">
 
     <TextView
         android:id="@+id/addTaskTitle"
@@ -39,6 +39,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Name -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/taskNameLayout"
                 android:layout_width="match_parent"
@@ -58,6 +59,7 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Description -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/taskDescriptionLayout"
                 android:layout_width="match_parent"
@@ -78,6 +80,7 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Category -->
             <TextView
                 android:id="@+id/categoryLabel"
                 android:layout_width="wrap_content"
@@ -97,6 +100,161 @@
                 android:spinnerMode="dropdown"
                 android:popupBackground="#D2B48C"
                 android:backgroundTint="#8B4513" />
+
+            <!-- Difficulty -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Quest Difficulty"
+                android:textColor="#5C4033"
+                android:textSize="16sp"
+                android:fontFamily="serif"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/difficultySpinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:spinnerMode="dropdown"
+                android:popupBackground="#D2B48C"
+                android:backgroundTint="#8B4513" />
+
+            <!-- Priority -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Quest Priority"
+                android:textColor="#5C4033"
+                android:textSize="16sp"
+                android:fontFamily="serif"
+                android:textStyle="bold" />
+
+            <Spinner
+                android:id="@+id/prioritySpinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:spinnerMode="dropdown"
+                android:popupBackground="#D2B48C"
+                android:backgroundTint="#8B4513" />
+
+            <!-- Finish Date -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/finishDateButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Complete until [Select Date]"
+                android:textColor="#d0c3c3"
+                android:fontFamily="serif"
+                android:textSize="16sp"
+                android:gravity="center_vertical|start"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp"
+                android:visibility="visible"
+                app:cornerRadius="8dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="#5C4033"
+                app:backgroundTint="#D2B48C"
+                app:icon="@drawable/ic_calendar"
+                app:iconTint="#d0c3c3"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp" />
+
+            <!-- Recurrence -->
+            <CheckBox
+                android:id="@+id/recurrenceCheckBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Recurring Quest?"
+                android:textColor="#5C4033"
+                android:fontFamily="serif"
+                android:buttonTint="#8B4513" />
+
+            <LinearLayout
+                android:id="@+id/recurrenceFields"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone"
+                android:layout_marginTop="8dp">
+
+                <!-- Interval + Unit u istom redu -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="8dp">
+
+                    <!-- Every label -->
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Every"
+                        android:textColor="#5C4033"
+                        android:textSize="16sp"
+                        android:fontFamily="serif"
+                        android:textStyle="bold"/>
+
+                    <!-- Interval input -->
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        app:boxStrokeColor="#5C4033"
+                        app:hintTextColor="#8B4513"
+                        android:hint="Interval">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/recurrenceIntervalEditText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="#3E2723"
+                            android:inputType="number"
+                            android:fontFamily="serif"/>
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <!-- Unit spinner -->
+                    <Spinner
+                        android:id="@+id/recurrenceUnitSpinner"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:spinnerMode="dropdown"
+                        android:popupBackground="#D2B48C"
+                        android:backgroundTint="#8B4513"/>
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/recurrenceEndDateButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Recur until [select date]"
+                    android:textColor="#d0c3c3"
+                    android:fontFamily="serif"
+                    android:textSize="16sp"
+                    android:gravity="center_vertical|start"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="16dp"
+                    android:visibility="visible"
+                    app:cornerRadius="8dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="#5C4033"
+                    app:backgroundTint="#D2B48C"
+                    app:icon="@drawable/ic_calendar"
+                    app:iconTint="#d0c3c3"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp" />
+            </LinearLayout>
 
         </LinearLayout>
 

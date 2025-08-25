@@ -14,10 +14,10 @@
         android:theme="@style/Theme.Questify"
         tools:targetApi="31">
         <activity
-            android:name=".activities.Tours.AddTaskActivity"
+            android:name=".activities.tasks.AddTaskActivity"
             android:exported="false" />
         <activity
-            android:name=".activities.Tours.TasksMainActivity"
+            android:name=".activities.tasks.TasksMainActivity"
             android:exported="false" />
         <activity
             android:name=".activities.MainActivity"
