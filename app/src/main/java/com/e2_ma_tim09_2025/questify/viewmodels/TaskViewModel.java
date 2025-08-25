@@ -29,6 +29,10 @@ public class TaskViewModel extends ViewModel {
         return allTasks;
     }
 
+    public void insertCategory(TaskCategory category) {
+        taskService.insertCategory(category);
+    }
+
     public LiveData<List<TaskCategory>> getCategories() {
         return allCategories;
     }

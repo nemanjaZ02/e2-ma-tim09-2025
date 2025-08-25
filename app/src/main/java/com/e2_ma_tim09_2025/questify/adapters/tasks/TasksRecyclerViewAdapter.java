@@ -1,4 +1,4 @@
-package com.e2_ma_tim09_2025.questify.adapters;
+package com.e2_ma_tim09_2025.questify.adapters.tasks;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -10,7 +10,7 @@ import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.models.Task;
 import java.util.List;
 
-public class TasksAdapter extends RecyclerView.Adapter<TasksAdapter.TaskViewHolder> {
+public class TasksRecyclerViewAdapter extends RecyclerView.Adapter<TasksRecyclerViewAdapter.TaskViewHolder> {
 
     private List<Task> taskList;
 

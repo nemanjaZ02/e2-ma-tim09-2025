@@ -21,7 +21,9 @@ public class DatabaseModule {
     @Provides
     @Singleton
     public AppDatabase provideDatabase(Application app) {
-        return Room.databaseBuilder(app, AppDatabase.class, "questify-db").build();
+        return Room.databaseBuilder(app, AppDatabase.class, "questify-db")
+                .fallbackToDestructiveMigration()
+                .build();
     }
 
     @Provides

@@ -9,6 +9,7 @@ import androidx.room.Ignore;
 
 import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskStatus;
 
 @Entity(tableName = "tasks",
     foreignKeys = @ForeignKey(
@@ -27,21 +28,23 @@ public class Task {
     private TaskDifficulty difficulty;
     private TaskPriority priority;
     private TaskRecurrence recurrence;
-    private long remainingTime;
+    private long createdAt;
+    private long finishDate;
     @Ignore
     private int userId;
-    private boolean isDone;
+    private TaskStatus status;
 
     public Task(String name, int categoryId, String description, TaskDifficulty difficulty,
-                TaskPriority priority, TaskRecurrence recurrence, long remainingTime, boolean isDone) {
+                TaskPriority priority, TaskRecurrence recurrence, long createdAt, long finishDate, TaskStatus status) {
         this.name = name;
         this.categoryId = categoryId;
         this.description = description;
         this.difficulty = difficulty;
         this.priority = priority;
         this.recurrence = recurrence;
-        this.remainingTime = remainingTime;
-        this.isDone = isDone;
+        this.createdAt = createdAt;
+        this.finishDate = finishDate;
+        this.status = status;
     }
 
     public TaskDifficulty getDifficulty() {
@@ -50,14 +53,6 @@ public class Task {
 
     public void setDifficulty(TaskDifficulty difficulty) {
         this.difficulty = difficulty;
-    }
-
-    public long getRemainingTime() {
-        return remainingTime;
-    }
-
-    public void setRemainingTime(long remainingTime) {
-        this.remainingTime = remainingTime;
     }
 
     public TaskRecurrence getRecurrence() {
@@ -116,11 +111,27 @@ public class Task {
         this.userId = userId;
     }
 
-    public boolean isDone() {
-        return isDone;
+    public TaskStatus getStatus() {
+        return status;
     }
 
-    public void setDone(boolean done) {
-        isDone = done;
+    public void setStatus(TaskStatus status) {
+        this.status = status;
+    }
+
+    public long getFinishDate() {
+        return finishDate;
+    }
+
+    public void setFinishDate(long finishDate) {
+        this.finishDate = finishDate;
+    }
+
+    public long getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(long createdAt) {
+        this.createdAt = createdAt;
     }
 }

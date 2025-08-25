@@ -59,4 +59,24 @@ public class TaskService {
             }
         });
     }
+
+    public void insertCategory(TaskCategory category) {
+        executor.execute(() -> {
+            if (category == null) {
+                Log.e(TAG, "Error: Category object is null.");
+                return;
+            }
+            if (category.getName() == null || category.getName().trim().isEmpty()) {
+                Log.e(TAG, "Error: Category name cannot be empty.");
+                return;
+            }
+
+            try {
+                categoryRepository.insert(category);
+                Log.d(TAG, "Category '" + category.getName() + "' inserted successfully.");
+            } catch (Exception e) {
+                Log.e(TAG, "Error inserting category: " + e.getMessage());
+            }
+        });
+    }
 }
