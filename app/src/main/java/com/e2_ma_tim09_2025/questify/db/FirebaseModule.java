@@ -14,7 +14,7 @@ import dagger.hilt.components.SingletonComponent;
 @Module
 @InstallIn(SingletonComponent.class)
 public class FirebaseModule {
-    
+
     @Provides
     @Singleton
     public FirebaseAuth provideFirebaseAuth() {
