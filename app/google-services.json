@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "293871284463",
-    "project_id": "questify-b21ad",
-    "storage_bucket": "questify-b21ad.firebasestorage.app"
+    "project_number": "948854542920",
+    "project_id": "questify-7fb3e",
+    "storage_bucket": "questify-7fb3e.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:293871284463:android:abe8eadacb1f25fa39ab1a",
+        "mobilesdk_app_id": "1:948854542920:android:a827df25fb476eede9fe7d",
         "android_client_info": {
           "package_name": "com.e2_ma_tim09_2025.questify"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyCT94pde3m5WpKjxEE2d1t73Auxk-RiyiU"
+          "current_key": "AIzaSyChXfkm5OK2YVoErv3mBxrDcsh43VpWEr8"
         }
       ],
       "services": {

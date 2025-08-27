@@ -11,8 +11,8 @@ activity = "1.8.0"
 constraintlayout = "2.1.4"
 roomRuntime = "2.7.2"
 googleGmsGoogleServices = "4.4.3"
-firebaseFirestore = "26.0.0"
-firebase-bom = "33.4.0"
+#firebaseFirestore = "26.0.0"
+firebase-bom = "33.7.0"
 
 
 
