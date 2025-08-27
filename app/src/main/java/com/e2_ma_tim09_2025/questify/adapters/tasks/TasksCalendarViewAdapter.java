@@ -1,6 +1,6 @@
 package com.e2_ma_tim09_2025.questify.adapters.tasks;
 
-import android.view.LayoutInflater;
+import android.graphics.Color;
 import android.view.View;
 import android.widget.TextView;
 
@@ -9,11 +9,13 @@ import androidx.annotation.NonNull;
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.models.Task;
 import com.kizitonwose.calendar.core.CalendarDay;
+import com.kizitonwose.calendar.core.DayPosition;
 import com.kizitonwose.calendar.view.MonthDayBinder;
 import com.kizitonwose.calendar.view.ViewContainer;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.ZoneId;
 import java.util.List;
 
@@ -36,14 +38,26 @@ public class TasksCalendarViewAdapter implements MonthDayBinder<TasksCalendarVie
         LocalDate date = calendarDay.getDate();
         container.dayText.setText(String.valueOf(date.getDayOfMonth()));
 
-        container.taskIndicator.setVisibility(View.GONE);
+        if (calendarDay.getPosition() == DayPosition.MonthDate) {
+            container.dayText.setTextColor(Color.parseColor("#5C4033"));
+            container.dayText.setAlpha(1.0f);
+            container.taskIndicator.setVisibility(View.GONE);
 
-        for (Task task : tasks) {
-            LocalDate taskDate = convertTimestampToLocalDate(task.getFinishDate());
-            if (taskDate.equals(date)) {
-                container.taskIndicator.setVisibility(View.VISIBLE);
-                break;
+            boolean hasTask = false;
+            for (Task task : tasks) {
+                LocalDate taskDate = convertTimestampToLocalDate(task.getFinishDate());
+                if (taskDate.equals(date)) {
+                    hasTask = true;
+                    break;
+                }
             }
+            if (hasTask) {
+                container.taskIndicator.setVisibility(View.VISIBLE);
+            }
+        } else {
+            container.dayText.setTextColor(Color.LTGRAY);
+            container.dayText.setAlpha(0.5f);
+            container.taskIndicator.setVisibility(View.GONE);
         }
     }
 

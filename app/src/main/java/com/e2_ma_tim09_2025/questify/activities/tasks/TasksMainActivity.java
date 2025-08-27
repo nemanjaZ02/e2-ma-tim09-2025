@@ -9,8 +9,8 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
-import com.e2_ma_tim09_2025.questify.activities.tasks.fragments.TasksCalendarFragment;
-import com.e2_ma_tim09_2025.questify.activities.tasks.fragments.TasksListFragment;
+import fragments.tasks.TasksCalendarFragment;
+import fragments.tasks.TasksListFragment;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 import com.e2_ma_tim09_2025.questify.viewmodels.TaskViewModel;
 import com.google.android.material.button.MaterialButton;
