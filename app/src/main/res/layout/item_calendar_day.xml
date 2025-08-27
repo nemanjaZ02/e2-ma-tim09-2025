@@ -13,12 +13,12 @@
         android:textColor="#5C4033"
         android:background="@drawable/calendar_day_selector" />
 
-    <ImageView
-        android:id="@+id/calendar_day_task_indicator"
-        android:layout_width="12dp"
-        android:layout_height="12dp"
+    <LinearLayout
+        android:id="@+id/calendar_day_task_indicators"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_gravity="bottom|center_horizontal"
-        android:src="@drawable/ic_task_indicator"
-        app:tint="#B00020"
+        android:orientation="horizontal"
+        android:gravity="center"
         android:visibility="gone"/>
 </FrameLayout>

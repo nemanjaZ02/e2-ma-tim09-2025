@@ -1,4 +1,4 @@
-package fragments.tasks;
+package com.e2_ma_tim09_2025.questify.fragments.tasks;
 
 import android.os.Bundle;
 import android.util.Log;

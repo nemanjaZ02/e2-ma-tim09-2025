@@ -1,4 +1,4 @@
-package fragments.tasks;
+package com.e2_ma_tim09_2025.questify.fragments.tasks;
 
 import android.os.Bundle;
 import android.util.Log;
@@ -20,7 +20,6 @@ import com.kizitonwose.calendar.view.CalendarView;
 
 import java.time.YearMonth;
 import java.util.ArrayList;
-import java.util.List;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -54,8 +53,12 @@ public class TasksCalendarFragment extends Fragment {
         taskViewModel = new ViewModelProvider(requireActivity()).get(TaskViewModel.class);
 
         calendarAdapter = new TasksCalendarViewAdapter(
+                getContext(),
                 taskViewModel.getTasks().getValue() != null
                         ? taskViewModel.getTasks().getValue()
+                        : new ArrayList<>(),
+                taskViewModel.getCategories().getValue() != null
+                        ? taskViewModel.getCategories().getValue()
                         : new ArrayList<>()
         );
 

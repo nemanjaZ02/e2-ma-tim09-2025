@@ -84,14 +84,12 @@ public class AddTaskActivity extends AppCompatActivity {
             }
         });
 
-        // Category Spinner
         taskViewModel.getCategories().observe(this, categories -> {
             taskCategories = categories;
             TaskCategoriesSpinnerAdapter categoryAdapter = new TaskCategoriesSpinnerAdapter(this, categories);
             categorySpinner.setAdapter(categoryAdapter);
         });
 
-        // Difficulty Spinner
         TaskDifficulty[] difficulties = TaskDifficulty.values();
         List<String> difficultyNames = new ArrayList<>();
         for (TaskDifficulty difficulty : difficulties) {
@@ -102,7 +100,6 @@ public class AddTaskActivity extends AppCompatActivity {
         difficultyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         difficultySpinner.setAdapter(difficultyAdapter);
 
-        // Priority Spinner
         TaskPriority[] priorities = TaskPriority.values();
         List<String> priorityNames = new ArrayList<>();
         for (TaskPriority priority : priorities) {
@@ -113,7 +110,6 @@ public class AddTaskActivity extends AppCompatActivity {
         priorityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         prioritySpinner.setAdapter(priorityAdapter);
 
-        // RecurrenceUnit
         RecurrenceUnit[] units = RecurrenceUnit.values();
         List<String> unitNames = new ArrayList<>();
         for (RecurrenceUnit unit : units) {
@@ -124,7 +120,6 @@ public class AddTaskActivity extends AppCompatActivity {
         unitAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         recurrenceUnitSpinner.setAdapter(unitAdapter);
 
-        // Recurrence End Date Button
         recurrenceEndDateButton.setOnClickListener(v -> {
             Calendar calendar = Calendar.getInstance();
             int year = calendar.get(Calendar.YEAR);
@@ -142,7 +137,6 @@ public class AddTaskActivity extends AppCompatActivity {
             datePickerDialog.show();
         });
 
-        // FinishDate
         finishDateButton.setOnClickListener(v -> {
             Calendar calendar = Calendar.getInstance();
             int year = calendar.get(Calendar.YEAR);
