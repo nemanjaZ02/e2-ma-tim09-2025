@@ -10,6 +10,7 @@ material = "1.12.0"
 activity = "1.8.0"
 constraintlayout = "2.1.4"
 roomRuntime = "2.7.2"
+kizitonwoseCalendar = "2.8.0"
 
 [libraries]
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
@@ -24,6 +25,7 @@ activity = { group = "androidx.activity", name = "activity", version.ref = "acti
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntime" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
+kizitonwose-calendar = { module = "com.kizitonwose.calendar:view", version.ref = "kizitonwoseCalendar" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

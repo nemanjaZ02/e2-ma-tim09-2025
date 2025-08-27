@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="4dp">
+
+    <TextView
+        android:id="@+id/calendar_day_text"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:gravity="center"
+        android:text="21"
+        android:fontFamily="serif"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:textColor="#5C4033"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:background="@drawable/calendar_day_selector"
+        tools:background="@drawable/calendar_day_selected" />
+
+    <ImageView
+        android:id="@+id/calendar_day_task_indicator"
+        android:layout_width="8dp"
+        android:layout_height="8dp"
+        android:layout_marginTop="2dp"
+        android:src="@drawable/ic_task_indicator"
+        app:tint="#B00020"
+        android:contentDescription="Task indicator"
+        app:layout_constraintTop_toBottomOf="@id/calendar_day_text"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:visibility="invisible"
+        tools:visibility="visible" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
