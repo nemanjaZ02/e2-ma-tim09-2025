@@ -26,7 +26,7 @@ public class FirebaseModule {
     public FirebaseFirestore provideFirestore() {
         FirebaseFirestore firestore = FirebaseFirestore.getInstance();
 
-        // Enable offline persistence (optional)
+        // Enable offline persistence
         firestore.setFirestoreSettings(
                 new FirebaseFirestoreSettings.Builder()
                         .setPersistenceEnabled(true)
