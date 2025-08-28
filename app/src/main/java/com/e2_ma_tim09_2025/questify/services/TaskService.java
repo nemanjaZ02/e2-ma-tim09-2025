@@ -1,11 +1,14 @@
 package com.e2_ma_tim09_2025.questify.services;
 
+import android.os.Looper;
+import android.os.Handler;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 
 import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskStatus;
 import com.e2_ma_tim09_2025.questify.repositories.TaskCategoryRepository;
 import com.e2_ma_tim09_2025.questify.repositories.TaskRepository;
 
@@ -21,11 +24,30 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final TaskCategoryRepository categoryRepository;
     private final Executor executor = Executors.newSingleThreadExecutor();
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable statusCheckRunnable;
 
     @Inject
     public TaskService(TaskRepository taskRepository, TaskCategoryRepository categoryRepository) {
         this.taskRepository = taskRepository;
         this.categoryRepository = categoryRepository;
+        statusCheckRunnable = new Runnable() {
+            @Override
+            public void run() {
+                executor.execute(() -> {
+                    List<Task> activeTasks = taskRepository.getActiveTasks();
+                    long currentTime = System.currentTimeMillis();
+                    for (Task task : activeTasks) {
+                        if (task.getFinishDate() < currentTime) {
+                            task.setStatus(TaskStatus.NOT_COMPLETED);
+                            taskRepository.update(task);
+                            Log.d("TaskService", "Task " + task.getName() + " expired. Status updated to NOT_COMPLETED.");
+                        }
+                    }
+                });
+                handler.postDelayed(this, 60_000);
+            }
+        };
     }
 
     public LiveData<List<Task>> getAllTasks() {
@@ -34,6 +56,14 @@ public class TaskService {
 
     public LiveData<List<TaskCategory>> getAllCategories() {
         return categoryRepository.getAll();
+    }
+
+    public void startStatusUpdater() {
+        handler.post(statusCheckRunnable);
+    }
+
+    public void stopStatusUpdater() {
+        handler.removeCallbacks(statusCheckRunnable);
     }
 
     public void insertTask(Task task) {

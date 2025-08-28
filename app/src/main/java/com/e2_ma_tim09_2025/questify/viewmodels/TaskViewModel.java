@@ -40,4 +40,12 @@ public class TaskViewModel extends ViewModel {
     public void insertTask(Task task) {
         taskService.insertTask(task);
     }
+
+    public void startStatusUpdater() {
+        taskService.startStatusUpdater();
+    }
+
+    public void stopStatusUpdater() {
+        taskService.stopStatusUpdater();
+    }
 }

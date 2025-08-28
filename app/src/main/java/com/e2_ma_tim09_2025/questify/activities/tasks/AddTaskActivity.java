@@ -208,7 +208,7 @@ public class AddTaskActivity extends AppCompatActivity {
                 return;
             }
 
-            Task newTask = new Task(taskName, categoryId, taskDescription, selectedDifficulty, selectedPriority, recurrence, System.currentTimeMillis(), finishDateMillis, TaskStatus.ACTIVE);
+            Task newTask = new Task(taskName, categoryId, taskDescription, selectedDifficulty, selectedPriority, recurrence, System.currentTimeMillis(), finishDateMillis, finishDateMillis - System.currentTimeMillis(), TaskStatus.ACTIVE);
 
             taskViewModel.insertTask(newTask);
 
