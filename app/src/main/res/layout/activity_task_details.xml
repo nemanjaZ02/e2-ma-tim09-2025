@@ -461,6 +461,24 @@
                     app:iconPadding="8dp"/>
             </LinearLayout>
 
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/delete_task_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
+                android:backgroundTint="#B00020"
+                app:cornerRadius="16dp"
+                app:icon="@drawable/ic_delete"
+                app:iconTint="@android:color/white"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                android:text="Delete"
+                android:textColor="@android:color/white"
+                android:fontFamily="serif"
+                android:paddingStart="32dp"
+                android:paddingEnd="32dp"/>
         </LinearLayout>
     </ScrollView>
 

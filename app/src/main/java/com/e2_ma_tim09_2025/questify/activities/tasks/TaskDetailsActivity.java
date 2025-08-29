@@ -1,7 +1,9 @@
 package com.e2_ma_tim09_2025.questify.activities.tasks;
 
+import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -41,7 +43,6 @@ public class TaskDetailsActivity extends AppCompatActivity {
 
     private TaskViewModel taskViewModel;
     private Task currentTask;
-
     private TextInputEditText taskNameEditText, taskDescriptionEditText, recurrenceIntervalEditText;
     private Spinner difficultySpinner, prioritySpinner, recurrenceUnitSpinner;;
     private TextView categoryTextView;
@@ -68,6 +69,7 @@ public class TaskDetailsActivity extends AppCompatActivity {
     private MaterialButton acceptPriorityEditButton, cancelPriorityEditButton;
     private LinearLayout taskActionButtonsLayout;
     private MaterialButton finishQuestButton, pauseQuestButton, cancelQuestButton;
+    private MaterialButton deleteButton;
 
 
     @Override
@@ -115,6 +117,7 @@ public class TaskDetailsActivity extends AppCompatActivity {
         finishQuestButton = findViewById(R.id.finishQuestButton);
         pauseQuestButton = findViewById(R.id.pauseQuestButton);
         cancelQuestButton = findViewById(R.id.cancelQuestButton);
+        deleteButton = findViewById(R.id.delete_task_button);
 
         int taskId = getIntent().getIntExtra("taskId", -1);
         taskViewModel.getTaskById(taskId).observe(this, task -> {
@@ -153,8 +156,38 @@ public class TaskDetailsActivity extends AppCompatActivity {
         finishQuestButton.setOnClickListener(v -> finishQuest());
         pauseQuestButton.setOnClickListener(v -> togglePauseQuest());
         cancelQuestButton.setOnClickListener(v -> cancelQuest());
+
+        deleteButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showDeleteConfirmationDialog();
+            }
+        });
     }
 
+    private void showDeleteConfirmationDialog() {
+        if (currentTask == null) {
+            Toast.makeText(this, "Task not loaded yet.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Quest")
+                .setMessage("Are you sure you want to delete this quest? This action cannot be undone.")
+                .setPositiveButton("Yes, Delete", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        taskViewModel.deleteTask(currentTask);
+                        Toast.makeText(TaskDetailsActivity.this, "Quest deleted.", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                })
+                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int whichButton) {
+                        dialog.dismiss();
+                    }
+                })
+                .show();
+    }
     private void populateUI(Task task) {
         taskNameEditText.setText(task.getName());
         taskDescriptionEditText.setText(task.getDescription());
