@@ -14,5 +14,5 @@ public interface TaskCategoryDao {
     @Query("SELECT * FROM taskCategories")
     LiveData<List<TaskCategory>> getAll();
     @Query("SELECT * FROM taskCategories WHERE id = :categoryId")
-    TaskCategory getById(int categoryId);
+    LiveData<TaskCategory> getById(int categoryId);
 }

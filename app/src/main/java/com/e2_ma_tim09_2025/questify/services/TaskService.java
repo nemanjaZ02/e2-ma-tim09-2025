@@ -50,22 +50,41 @@ public class TaskService {
         };
     }
 
+    public void updateTask(Task task) {
+        executor.execute(() -> {
+            if (task == null) {
+                Log.e(TAG, "Error: Task object is null.");
+                return;
+            }
+            if (task.getName() == null || task.getName().trim().isEmpty()) {
+                Log.e(TAG, "Error: Task name cannot be empty.");
+                return;
+            }
+            if (task.getCategoryId() <= 0) {
+                Log.e(TAG, "Error: Invalid category ID.");
+                return;
+            }
+
+            try {
+                taskRepository.update(task);
+                Log.d(TAG, "Task '" + task.getName() + "' updated successfully.");
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating task: " + e.getMessage());
+            }
+        });
+    }
     public LiveData<List<Task>> getAllTasks() {
         return taskRepository.getAll();
     }
-
     public LiveData<List<TaskCategory>> getAllCategories() {
         return categoryRepository.getAll();
     }
-
     public void startStatusUpdater() {
         handler.post(statusCheckRunnable);
     }
-
     public void stopStatusUpdater() {
         handler.removeCallbacks(statusCheckRunnable);
     }
-
     public void insertTask(Task task) {
         executor.execute(() -> {
             if (task == null) {
@@ -89,7 +108,6 @@ public class TaskService {
             }
         });
     }
-
     public void insertCategory(TaskCategory category) {
         executor.execute(() -> {
             if (category == null) {
@@ -108,5 +126,11 @@ public class TaskService {
                 Log.e(TAG, "Error inserting category: " + e.getMessage());
             }
         });
+    }
+    public LiveData<Task> getTaskById(int taskId) {
+        return taskRepository.getById(taskId);
+    }
+    public LiveData<TaskCategory> getTaskCategoryById(int categoryId) {
+        return categoryRepository.getById(categoryId);
     }
 }

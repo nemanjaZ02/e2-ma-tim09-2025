@@ -24,7 +24,7 @@ public interface TaskDao {
     LiveData<List<Task>> getAll();
 
     @Query("SELECT * FROM tasks WHERE id = :taskId")
-    Task getById(int taskId);
+    LiveData<Task> getById(int taskId);
 
     @Query("SELECT * FROM tasks WHERE status = 'ACTIVE'")
     List<Task> getActiveTasks();

@@ -1,5 +1,6 @@
 package com.e2_ma_tim09_2025.questify.fragments.tasks;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -18,6 +19,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.e2_ma_tim09_2025.questify.R;
+import com.e2_ma_tim09_2025.questify.activities.tasks.TaskDetailsActivity;
 import com.e2_ma_tim09_2025.questify.adapters.tasks.TasksCalendarViewAdapter;
 import com.e2_ma_tim09_2025.questify.adapters.tasks.TasksRecyclerViewAdapter;
 import com.e2_ma_tim09_2025.questify.models.Task;
@@ -80,6 +82,11 @@ public class TasksCalendarFragment extends Fragment {
         taskViewModel = new ViewModelProvider(requireActivity()).get(TaskViewModel.class);
         tasksMonthRecyclerView = view.findViewById(R.id.tasksMonthRecyclerView);
         tasksAdapter = new TasksRecyclerViewAdapter();
+        tasksAdapter.setOnTaskClickListener(task -> {
+            Intent intent = new Intent(getContext(), TaskDetailsActivity.class);
+            intent.putExtra("taskId", task.getId());
+            startActivity(intent);
+        });
 
         tasksMonthRecyclerView.setAdapter(tasksAdapter);
         tasksMonthRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));

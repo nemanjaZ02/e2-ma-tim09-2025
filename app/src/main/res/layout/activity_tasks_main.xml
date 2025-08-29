@@ -13,7 +13,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="serif"
-        android:text="TASKS"
+        android:text="QUESTS"
         android:textColor="#5C4033"
         android:textSize="32sp"
         android:textStyle="bold"

@@ -31,7 +31,9 @@ public class TaskRepository {
     public void update(Task task) {
         executor.execute(() -> taskDao.update(task));
     }
+    public LiveData<Task> getById(int taskId) { return taskDao.getById(taskId);}
     public List<Task> getActiveTasks() {
         return taskDao.getActiveTasks();
     }
+
 }

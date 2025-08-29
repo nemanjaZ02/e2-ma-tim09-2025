@@ -28,24 +28,28 @@ public class TaskViewModel extends ViewModel {
     public LiveData<List<Task>> getTasks() {
         return allTasks;
     }
-
     public void insertCategory(TaskCategory category) {
         taskService.insertCategory(category);
     }
-
     public LiveData<List<TaskCategory>> getCategories() {
         return allCategories;
     }
-
     public void insertTask(Task task) {
         taskService.insertTask(task);
     }
-
     public void startStatusUpdater() {
         taskService.startStatusUpdater();
     }
-
     public void stopStatusUpdater() {
         taskService.stopStatusUpdater();
+    }
+    public void updateTask(Task task) {
+        taskService.updateTask(task);
+    }
+    public LiveData<Task> getTaskById(int taskId) {
+        return taskService.getTaskById(taskId);
+    }
+    public LiveData<TaskCategory> getTaskCategoryById(int categoryId) {
+        return taskService.getTaskCategoryById(categoryId);
     }
 }
