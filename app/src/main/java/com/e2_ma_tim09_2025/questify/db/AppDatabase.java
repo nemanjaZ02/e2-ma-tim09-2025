@@ -16,7 +16,7 @@ import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 
 import java.util.concurrent.Executors;
 
-@Database(entities = {Task.class, TaskCategory.class}, version = 5, exportSchema = false)
+@Database(entities = {Task.class, TaskCategory.class}, version = 6, exportSchema = false)
 @TypeConverters({Converters.class})
 public abstract class AppDatabase extends RoomDatabase {
     public abstract TaskDao taskDao();

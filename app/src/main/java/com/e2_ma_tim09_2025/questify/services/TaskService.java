@@ -1,11 +1,14 @@
 package com.e2_ma_tim09_2025.questify.services;
 
+import android.os.Looper;
+import android.os.Handler;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
 
 import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskStatus;
 import com.e2_ma_tim09_2025.questify.repositories.TaskCategoryRepository;
 import com.e2_ma_tim09_2025.questify.repositories.TaskRepository;
 
@@ -21,21 +24,128 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final TaskCategoryRepository categoryRepository;
     private final Executor executor = Executors.newSingleThreadExecutor();
+    private final Handler handler = new Handler(Looper.getMainLooper());
+    private final Runnable statusCheckRunnable;
 
     @Inject
     public TaskService(TaskRepository taskRepository, TaskCategoryRepository categoryRepository) {
         this.taskRepository = taskRepository;
         this.categoryRepository = categoryRepository;
+        statusCheckRunnable = new Runnable() {
+            @Override
+            public void run() {
+                executor.execute(() -> {
+                    List<Task> activeTasks = taskRepository.getActiveTasks();
+                    long currentTime = System.currentTimeMillis();
+                    for (Task task : activeTasks) {
+                        if (task.getFinishDate() < currentTime) {
+                            task.setStatus(TaskStatus.NOT_COMPLETED);
+                            taskRepository.update(task);
+                            Log.d("TaskService", "Task " + task.getName() + " expired. Status updated to NOT_COMPLETED.");
+                        }
+                    }
+                });
+                handler.postDelayed(this, 60_000);
+            }
+        };
     }
 
+    public void updateTask(Task task) {
+        executor.execute(() -> {
+            if (task == null) {
+                Log.e(TAG, "Error: Task object is null.");
+                return;
+            }
+            if (task.getName() == null || task.getName().trim().isEmpty()) {
+                Log.e(TAG, "Error: Task name cannot be empty.");
+                return;
+            }
+            if (task.getCategoryId() <= 0) {
+                Log.e(TAG, "Error: Invalid category ID.");
+                return;
+            }
+            if (task.getStatus() == TaskStatus.PAUSED) {
+                Log.e(TAG, "Error: Use pause function to pause task");
+                return;
+            }
+
+            try {
+                taskRepository.update(task);
+                Log.d(TAG, "Task '" + task.getName() + "' updated successfully.");
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating task: " + e.getMessage());
+            }
+        });
+    }
+
+    public void pauseTask(Task task) {
+        executor.execute(() -> {
+            if (task == null) {
+                Log.e(TAG, "Error: Task object is null.");
+                return;
+            }
+            if (task.getName() == null || task.getName().trim().isEmpty()) {
+                Log.e(TAG, "Error: Task name cannot be empty.");
+                return;
+            }
+            if (task.getCategoryId() <= 0) {
+                Log.e(TAG, "Error: Invalid category ID.");
+                return;
+            }
+            if (task.getStatus() != TaskStatus.ACTIVE) {
+                Log.e(TAG, "Error: Can't pause inactive task");
+                return;
+            }
+
+            try {
+                long remainingTime = task.getFinishDate() - System.currentTimeMillis();
+                taskRepository.pause(task, (int)remainingTime);
+                Log.d(TAG, "Task '" + task.getName() + "' paused successfully.");
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating task: " + e.getMessage());
+            }
+        });
+    }
+    public void unpauseTask(Task task) {
+        executor.execute(() -> {
+            if (task == null) {
+                Log.e(TAG, "Error: Task object is null.");
+                return;
+            }
+            if (task.getName() == null || task.getName().trim().isEmpty()) {
+                Log.e(TAG, "Error: Task name cannot be empty.");
+                return;
+            }
+            if (task.getCategoryId() <= 0) {
+                Log.e(TAG, "Error: Invalid category ID.");
+                return;
+            }
+            if (task.getStatus() != TaskStatus.PAUSED) {
+                Log.e(TAG, "Error: You can only unpause paused task");
+                return;
+            }
+
+            try {
+                long newFinishDate = System.currentTimeMillis() + task.getRemainingTime();
+                taskRepository.unpause(task, newFinishDate);
+                Log.d(TAG, "Task '" + task.getName() + "' paused successfully.");
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating task: " + e.getMessage());
+            }
+        });
+    }
     public LiveData<List<Task>> getAllTasks() {
         return taskRepository.getAll();
     }
-
     public LiveData<List<TaskCategory>> getAllCategories() {
         return categoryRepository.getAll();
     }
-
+    public void startStatusUpdater() {
+        handler.post(statusCheckRunnable);
+    }
+    public void stopStatusUpdater() {
+        handler.removeCallbacks(statusCheckRunnable);
+    }
     public void insertTask(Task task) {
         executor.execute(() -> {
             if (task == null) {
@@ -59,7 +169,6 @@ public class TaskService {
             }
         });
     }
-
     public void insertCategory(TaskCategory category) {
         executor.execute(() -> {
             if (category == null) {
@@ -78,5 +187,11 @@ public class TaskService {
                 Log.e(TAG, "Error inserting category: " + e.getMessage());
             }
         });
+    }
+    public LiveData<Task> getTaskById(int taskId) {
+        return taskRepository.getById(taskId);
+    }
+    public LiveData<TaskCategory> getTaskCategoryById(int categoryId) {
+        return categoryRepository.getById(categoryId);
     }
 }

@@ -3,15 +3,14 @@ package com.e2_ma_tim09_2025.questify.activities.tasks;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.util.Log;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.e2_ma_tim09_2025.questify.R;
-import com.e2_ma_tim09_2025.questify.adapters.tasks.TasksRecyclerViewAdapter;
+import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksCalendarFragment;
+import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksListFragment;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 import com.e2_ma_tim09_2025.questify.viewmodels.TaskViewModel;
 import com.google.android.material.button.MaterialButton;
@@ -21,31 +20,42 @@ import dagger.hilt.android.AndroidEntryPoint;
 @AndroidEntryPoint
 public class TasksMainActivity extends AppCompatActivity {
 
-    private static final String TAG = "TasksMain";
     private TaskViewModel taskViewModel;
-    private RecyclerView recyclerViewTasks;
-    private TasksRecyclerViewAdapter taskAdapter;
     private MaterialButton addTaskButton;
+    private MaterialButton viewChangeButton;
+    private boolean showingCalendar = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tasks_main);
 
-        recyclerViewTasks = findViewById(R.id.recyclerViewTasks);
-        recyclerViewTasks.setLayoutManager(new LinearLayoutManager(this));
-        taskAdapter = new TasksRecyclerViewAdapter();
-        recyclerViewTasks.setAdapter(taskAdapter);
+        taskViewModel = new ViewModelProvider(this).get(TaskViewModel.class);
 
         addTaskButton = findViewById(R.id.add_task_button);
+        viewChangeButton = findViewById(R.id.toggle_view_button);
+
+        replaceFragment(new TasksListFragment());
+
+        viewChangeButton.setOnClickListener(v -> {
+            Fragment fragment;
+            if (showingCalendar) {
+                fragment = new TasksListFragment();
+                viewChangeButton.setIconResource(R.drawable.ic_calendar);
+            } else {
+                fragment = new TasksCalendarFragment();
+                viewChangeButton.setIconResource(R.drawable.ic_list);
+            }
+            showingCalendar = !showingCalendar;
+            replaceFragment(fragment);
+        });
+
         addTaskButton.setOnClickListener(v -> {
             Intent intent = new Intent(TasksMainActivity.this, AddTaskActivity.class);
             startActivity(intent);
         });
 
-        taskViewModel = new ViewModelProvider(this).get(TaskViewModel.class);
-
-        // For testing purposes add categories
+        // Za test kategorije
         taskViewModel.getCategories().observe(this, categories -> {
             if (categories.isEmpty()) {
                 taskViewModel.insertCategory(new TaskCategory("Adventure", "AdventureDesc", Color.parseColor("#FF6B6B")));
@@ -53,10 +63,12 @@ public class TasksMainActivity extends AppCompatActivity {
                 taskViewModel.insertCategory(new TaskCategory("Health", "HealthDesc", Color.parseColor("#4D96FF")));
             }
         });
+    }
 
-        taskViewModel.getTasks().observe(this, tasks -> {
-            Log.d(TAG, "Task list updated! Total tasks: " + tasks.size());
-            taskAdapter.setTasks(tasks);
-        });
+    private void replaceFragment(Fragment fragment) {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.fragment_container, fragment)
+                .commit();
     }
 }

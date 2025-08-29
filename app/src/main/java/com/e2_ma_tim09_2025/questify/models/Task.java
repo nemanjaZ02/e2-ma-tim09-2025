@@ -30,12 +30,13 @@ public class Task {
     private TaskRecurrence recurrence;
     private long createdAt;
     private long finishDate;
+    private long remainingTime;
     @Ignore
     private int userId;
     private TaskStatus status;
 
     public Task(String name, int categoryId, String description, TaskDifficulty difficulty,
-                TaskPriority priority, TaskRecurrence recurrence, long createdAt, long finishDate, TaskStatus status) {
+                TaskPriority priority, TaskRecurrence recurrence, long createdAt, long finishDate, long remainingTime, TaskStatus status) {
         this.name = name;
         this.categoryId = categoryId;
         this.description = description;
@@ -45,6 +46,7 @@ public class Task {
         this.createdAt = createdAt;
         this.finishDate = finishDate;
         this.status = status;
+        this.remainingTime = remainingTime;
     }
 
     public TaskDifficulty getDifficulty() {
@@ -133,5 +135,13 @@ public class Task {
 
     public void setCreatedAt(long createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public long getRemainingTime() {
+        return remainingTime;
+    }
+
+    public void setRemainingTime(long remainingTime) {
+        this.remainingTime = remainingTime;
     }
 }

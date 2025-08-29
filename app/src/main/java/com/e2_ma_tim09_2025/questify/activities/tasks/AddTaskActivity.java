@@ -4,6 +4,7 @@ import static android.view.View.GONE;
 import static android.view.View.VISIBLE;
 
 import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.ArrayAdapter;
@@ -84,36 +85,32 @@ public class AddTaskActivity extends AppCompatActivity {
             }
         });
 
-        // Category Spinner
         taskViewModel.getCategories().observe(this, categories -> {
             taskCategories = categories;
             TaskCategoriesSpinnerAdapter categoryAdapter = new TaskCategoriesSpinnerAdapter(this, categories);
             categorySpinner.setAdapter(categoryAdapter);
         });
 
-        // Difficulty Spinner
         TaskDifficulty[] difficulties = TaskDifficulty.values();
         List<String> difficultyNames = new ArrayList<>();
         for (TaskDifficulty difficulty : difficulties) {
             difficultyNames.add(difficulty.name().replace("_", " "));
         }
 
-        ArrayAdapter<String> difficultyAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, difficultyNames);
+        ArrayAdapter<String> difficultyAdapter = new ArrayAdapter<>(this, R.layout.item_spinner, difficultyNames);
         difficultyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         difficultySpinner.setAdapter(difficultyAdapter);
 
-        // Priority Spinner
         TaskPriority[] priorities = TaskPriority.values();
         List<String> priorityNames = new ArrayList<>();
         for (TaskPriority priority : priorities) {
             priorityNames.add(priority.name().replace("_", " "));
         }
 
-        ArrayAdapter<String> priorityAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, priorityNames);
+        ArrayAdapter<String> priorityAdapter = new ArrayAdapter<>(this, R.layout.item_spinner, priorityNames);
         priorityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         prioritySpinner.setAdapter(priorityAdapter);
 
-        // RecurrenceUnit
         RecurrenceUnit[] units = RecurrenceUnit.values();
         List<String> unitNames = new ArrayList<>();
         for (RecurrenceUnit unit : units) {
@@ -124,43 +121,8 @@ public class AddTaskActivity extends AppCompatActivity {
         unitAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         recurrenceUnitSpinner.setAdapter(unitAdapter);
 
-        // Recurrence End Date Button
-        recurrenceEndDateButton.setOnClickListener(v -> {
-            Calendar calendar = Calendar.getInstance();
-            int year = calendar.get(Calendar.YEAR);
-            int month = calendar.get(Calendar.MONTH);
-            int day = calendar.get(Calendar.DAY_OF_MONTH);
-
-            DatePickerDialog datePickerDialog = new DatePickerDialog(AddTaskActivity.this,
-                    (view, selectedYear, selectedMonth, selectedDay) -> {
-                        calendar.set(selectedYear, selectedMonth, selectedDay);
-                        recurrenceEndDate = calendar.getTimeInMillis();
-                        recurrenceEndDateButton.setTextColor(Color.parseColor("#5C4033"));
-                        recurrenceEndDateButton.setText("Recur until " + (selectedMonth + 1) + "/" + selectedDay + "/" + selectedYear);
-                    }, year, month, day);
-            datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis());
-            datePickerDialog.show();
-        });
-
-        // FinishDate
-        finishDateButton.setOnClickListener(v -> {
-            Calendar calendar = Calendar.getInstance();
-            int year = calendar.get(Calendar.YEAR);
-            int month = calendar.get(Calendar.MONTH);
-            int day = calendar.get(Calendar.DAY_OF_MONTH);
-
-            DatePickerDialog datePickerDialog = new DatePickerDialog(AddTaskActivity.this,
-                    (view, selectedYear, selectedMonth, selectedDay) -> {
-                        Calendar selectedCalendar = Calendar.getInstance();
-                        selectedCalendar.set(selectedYear, selectedMonth, selectedDay, 0, 0, 0);
-                        finishDateMillis = selectedCalendar.getTimeInMillis();
-                        finishDateButton.setTextColor(Color.parseColor("#5C4033"));
-                        finishDateButton.setText("Complete until " + selectedDay + "/" + (selectedMonth + 1) + "/" + selectedYear);
-                    }, year, month, day);
-
-            datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis());
-            datePickerDialog.show();
-        });
+        recurrenceEndDateButton.setOnClickListener(v -> showDateTimeDialog(recurrenceEndDateButton, false));
+        finishDateButton.setOnClickListener(v -> showDateTimeDialog(finishDateButton, true));
 
         saveTaskButton.setOnClickListener(v -> {
             String taskName = taskNameEditText.getText().toString().trim();
@@ -214,12 +176,46 @@ public class AddTaskActivity extends AppCompatActivity {
                 return;
             }
 
-            Task newTask = new Task(taskName, categoryId, taskDescription, selectedDifficulty, selectedPriority, recurrence, System.currentTimeMillis(), finishDateMillis, TaskStatus.ACTIVE);
+            Task newTask = new Task(taskName, categoryId, taskDescription, selectedDifficulty, selectedPriority, recurrence, System.currentTimeMillis(), finishDateMillis, finishDateMillis - System.currentTimeMillis(), TaskStatus.ACTIVE);
 
             taskViewModel.insertTask(newTask);
 
             Toast.makeText(AddTaskActivity.this, "New quest accepted!", Toast.LENGTH_SHORT).show();
             finish();
         });
+    }
+
+    private void showDateTimeDialog(Button button, boolean isFinishDate) {
+        Calendar calendar = Calendar.getInstance();
+        int year = calendar.get(Calendar.YEAR);
+        int month = calendar.get(Calendar.MONTH);
+        int day = calendar.get(Calendar.DAY_OF_MONTH);
+
+        DatePickerDialog datePickerDialog = new DatePickerDialog(this,
+                (view, selectedYear, selectedMonth, selectedDay) -> {
+                    calendar.set(selectedYear, selectedMonth, selectedDay);
+
+                    int hour = calendar.get(Calendar.HOUR_OF_DAY);
+                    int minute = calendar.get(Calendar.MINUTE);
+
+                    new TimePickerDialog(this, (timeView, selectedHour, selectedMinute) -> {
+                        calendar.set(Calendar.HOUR_OF_DAY, selectedHour);
+                        calendar.set(Calendar.MINUTE, selectedMinute);
+
+                        if (isFinishDate) {
+                            finishDateMillis = calendar.getTimeInMillis();
+                            button.setTextColor(Color.parseColor("#5C4033"));
+                            button.setText("Complete until " + (selectedMonth + 1) + "/" + selectedDay + "/" + selectedYear + " " + selectedHour + ":" + selectedMinute);
+                        } else {
+                            recurrenceEndDate = calendar.getTimeInMillis();
+                            button.setTextColor(Color.parseColor("#5C4033"));
+                            button.setText("Recur until " + (selectedMonth + 1) + "/" + selectedDay + "/" + selectedYear + " " + selectedHour + ":" + selectedMinute);
+                        }
+
+                    }, hour, minute, true).show(); // `true` za 24-časovni format
+                }, year, month, day);
+
+        datePickerDialog.getDatePicker().setMinDate(System.currentTimeMillis());
+        datePickerDialog.show();
     }
 }
