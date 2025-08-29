@@ -224,6 +224,20 @@ public class TaskService {
             }
         });
     }
+    public void deleteTask(Task task) {
+        executor.execute(() -> {
+            if (task == null) {
+                Log.e(TAG, "Error: Task object is null, cannot delete.");
+                return;
+            }
+            try {
+                taskRepository.delete(task);
+                Log.d(TAG, "Task '" + task.getName() + "' deleted successfully.");
+            } catch (Exception e) {
+                Log.e(TAG, "Error deleting task: " + e.getMessage());
+            }
+        });
+    }
     public void insertCategory(TaskCategory category) {
         executor.execute(() -> {
             if (category == null) {

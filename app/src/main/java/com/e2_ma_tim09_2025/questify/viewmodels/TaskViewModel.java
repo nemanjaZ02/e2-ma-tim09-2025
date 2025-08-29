@@ -71,70 +71,57 @@ public class TaskViewModel extends ViewModel {
 
         filteredTasks.setValue(filteredList);
     }
-
     public void addCategoryFilter(String categoryId) {
         Set<String> current = new HashSet<>(selectedCategoryIds.getValue());
         current.add(categoryId);
         selectedCategoryIds.setValue(current);
     }
-
     public void addDifficultyFilter(TaskDifficulty difficulty) {
         Set<TaskDifficulty> current = new HashSet<>(selectedDifficulties.getValue());
         current.add(difficulty);
         selectedDifficulties.setValue(current);
     }
-
     public void removeDifficultyFilter(TaskDifficulty difficulty) {
         Set<TaskDifficulty> current = new HashSet<>(selectedDifficulties.getValue());
         current.remove(difficulty);
         selectedDifficulties.setValue(current);
     }
-
     public void addPriorityFilter(TaskPriority priority) {
         Set<TaskPriority> current = new HashSet<>(selectedPriorities.getValue());
         current.add(priority);
         selectedPriorities.setValue(current);
     }
-
     public void removePriorityFilter(TaskPriority priority) {
         Set<TaskPriority> current = new HashSet<>(selectedPriorities.getValue());
         current.remove(priority);
         selectedPriorities.setValue(current);
     }
-
     public void setRecurringFilter(Boolean isRecurring) {
         isRecurringFilter.setValue(isRecurring);
     }
-
     public void removeCategoryFilter(String categoryId) {
         Set<String> current = new HashSet<>(selectedCategoryIds.getValue());
         current.remove(categoryId);
         selectedCategoryIds.setValue(current);
     }
-
     public void clearAllFilters() {
         selectedCategoryIds.setValue(new HashSet<>());
         selectedDifficulties.setValue(new HashSet<>());
         selectedPriorities.setValue(new HashSet<>());
         isRecurringFilter.setValue(null);
     }
-
     public LiveData<Set<String>> getSelectedCategoryIds() {
         return selectedCategoryIds;
     }
-
     public LiveData<Set<TaskDifficulty>> getSelectedDifficulties() {
         return selectedDifficulties;
     }
-
     public LiveData<Set<TaskPriority>> getSelectedPriorities() {
         return selectedPriorities;
     }
-
     public LiveData<Boolean> getIsRecurringFilter() {
         return isRecurringFilter;
     }
-
     public LiveData<List<Task>> getTasks() {
         return allTasks;
     }
@@ -155,6 +142,9 @@ public class TaskViewModel extends ViewModel {
     }
     public void updateTask(Task task) {
         taskService.updateTask(task);
+    }
+    public void deleteTask(Task task) {
+        taskService.deleteTask(task);
     }
     public void completeTask(Task task) { taskService.completeTask(task); }
     public void cancelTask(Task task) { taskService.cancelTask(task); }
