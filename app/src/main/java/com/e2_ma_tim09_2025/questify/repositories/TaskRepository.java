@@ -3,11 +3,14 @@ package com.e2_ma_tim09_2025.questify.repositories;
 import androidx.lifecycle.LiveData;
 import com.e2_ma_tim09_2025.questify.dao.TaskDao;
 import com.e2_ma_tim09_2025.questify.models.Task;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskStatus;
 
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -36,6 +39,18 @@ public class TaskRepository {
     public LiveData<Task> getById(int taskId) { return taskDao.getById(taskId);}
     public List<Task> getActiveTasks() {
         return taskDao.getActiveTasks();
+    }
+    public void complete(Task task) {
+        executor.execute(() -> {
+            task.setStatus(TaskStatus.COMPLETED);
+            taskDao.update(task);
+        });
+    }
+    public void cancel(Task task) {
+        executor.execute(() -> {
+            task.setStatus(TaskStatus.CANCELLED);
+            taskDao.update(task);
+        });
     }
     public void pause(Task task, long remainingTime) {
         executor.execute(() -> {
