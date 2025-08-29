@@ -92,7 +92,7 @@ public class TasksCalendarFragment extends Fragment {
         tasksMonthRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         calendarAdapter = new TasksCalendarViewAdapter(
                 getContext(),
-                taskViewModel.getTasks().getValue() != null
+                taskViewModel.getFilteredTasks() != null
                         ? taskViewModel.getTasks().getValue()
                         : new ArrayList<>(),
                 taskViewModel.getCategories().getValue() != null
@@ -134,10 +134,9 @@ public class TasksCalendarFragment extends Fragment {
             tasksAdapter.setTaskCategories(categories);
         });
 
-        taskViewModel.getTasks().observe(getViewLifecycleOwner(), tasks -> {
+        taskViewModel.getFilteredTasks().observe(getViewLifecycleOwner(), tasks -> {
             calendarAdapter.setTasks(tasks);
             updateTasksForMonth(currentMonth);
-
             calendarView.notifyCalendarChanged();
             tasksAdapter.notifyDataSetChanged();
             Log.d(TAG, "Calendar updated! Tasks: " + tasks.size());
@@ -145,7 +144,7 @@ public class TasksCalendarFragment extends Fragment {
     }
 
     private void updateTasksForMonth(YearMonth month) {
-        List<Task> allTasks = taskViewModel.getTasks().getValue();
+        List<Task> allTasks = taskViewModel.getFilteredTasks().getValue();
         if (allTasks != null) {
             List<Task> monthTasks = filterTasksForMonth(allTasks, month);
             tasksAdapter.setTasks(monthTasks);

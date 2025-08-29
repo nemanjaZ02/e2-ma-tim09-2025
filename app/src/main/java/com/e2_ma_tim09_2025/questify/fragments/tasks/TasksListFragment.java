@@ -65,7 +65,7 @@ public class TasksListFragment extends Fragment {
         });
 
         taskViewModel.getCategories().observe(getViewLifecycleOwner(), categories -> taskAdapter.setTaskCategories(categories));
-        taskViewModel.getTasks().observe(getViewLifecycleOwner(), tasks -> taskAdapter.setTasks(tasks));
+        taskViewModel.getFilteredTasks().observe(getViewLifecycleOwner(), tasks -> taskAdapter.setTasks(tasks));
     }
 
     @Override

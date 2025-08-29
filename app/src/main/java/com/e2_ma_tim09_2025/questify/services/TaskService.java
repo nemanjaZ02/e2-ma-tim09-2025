@@ -8,6 +8,8 @@ import androidx.lifecycle.LiveData;
 
 import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskStatus;
 import com.e2_ma_tim09_2025.questify.repositories.TaskCategoryRepository;
 import com.e2_ma_tim09_2025.questify.repositories.TaskRepository;
@@ -50,6 +52,60 @@ public class TaskService {
         };
     }
 
+    public void completeTask(Task task) {
+        executor.execute(() -> {
+            if (task == null) {
+                Log.e(TAG, "Error: Task object is null.");
+                return;
+            }
+            if (task.getName() == null || task.getName().trim().isEmpty()) {
+                Log.e(TAG, "Error: Task name cannot be empty.");
+                return;
+            }
+            if (task.getCategoryId() <= 0) {
+                Log.e(TAG, "Error: Invalid category ID.");
+                return;
+            }
+            if (task.getStatus() != TaskStatus.ACTIVE) {
+                Log.e(TAG, "Error: You can complete only active tasks.");
+                return;
+            }
+
+            try {
+                taskRepository.complete(task);
+                Log.d(TAG, "Task '" + task.getName() + "' updated successfully.");
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating task: " + e.getMessage());
+            }
+        });
+    }
+    public void cancelTask(Task task) {
+        executor.execute(() -> {
+            if (task == null) {
+                Log.e(TAG, "Error: Task object is null.");
+                return;
+            }
+            if (task.getName() == null || task.getName().trim().isEmpty()) {
+                Log.e(TAG, "Error: Task name cannot be empty.");
+                return;
+            }
+            if (task.getCategoryId() <= 0) {
+                Log.e(TAG, "Error: Invalid category ID.");
+                return;
+            }
+            if (task.getStatus() == TaskStatus.COMPLETED) {
+                Log.e(TAG, "Error: You can't cancel completed task.'");
+                return;
+            }
+
+            try {
+                taskRepository.cancel(task);
+                Log.d(TAG, "Task '" + task.getName() + "' completed successfully.");
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating task: " + e.getMessage());
+            }
+        });
+    }
     public void updateTask(Task task) {
         executor.execute(() -> {
             if (task == null) {
@@ -64,8 +120,8 @@ public class TaskService {
                 Log.e(TAG, "Error: Invalid category ID.");
                 return;
             }
-            if (task.getStatus() == TaskStatus.PAUSED) {
-                Log.e(TAG, "Error: Use pause function to pause task");
+            if (task.getStatus() != TaskStatus.ACTIVE) {
+                Log.e(TAG, "Error: You can only edit active quests.");
                 return;
             }
 
@@ -77,7 +133,6 @@ public class TaskService {
             }
         });
     }
-
     public void pauseTask(Task task) {
         executor.execute(() -> {
             if (task == null) {

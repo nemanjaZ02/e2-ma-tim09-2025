@@ -18,9 +18,31 @@
         android:textSize="32sp"
         android:textStyle="bold"
         android:layout_marginTop="24dp"
+        android:layout_marginStart="16dp"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        app:layout_constraintEnd_toStartOf="@+id/filter_button"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintHorizontal_bias="0" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/filter_button"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="16dp"
+        android:insetTop="0dp"
+        android:insetBottom="0dp"
+        android:insetLeft="0dp"
+        android:insetRight="0dp"
+        android:backgroundTint="#5C4033"
+        app:cornerRadius="24dp"
+        app:icon="@drawable/ic_filter_off"
+        app:iconTint="#D2B48C"
+        app:layout_constraintTop_toTopOf="@+id/tasksTitle"
+        app:layout_constraintBottom_toBottomOf="@+id/tasksTitle"
+        app:layout_constraintEnd_toStartOf="@+id/toggle_view_button"
+        style="@style/Widget.MaterialComponents.Button.Icon" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/toggle_view_button"
@@ -35,8 +57,9 @@
         android:backgroundTint="#5C4033"
         app:cornerRadius="24dp"
         app:icon="@drawable/ic_calendar"
-        app:iconTint="@android:color/black"
-        app:layout_constraintTop_toTopOf="parent"
+        app:iconTint="#D2B48C"
+        app:layout_constraintTop_toTopOf="@+id/tasksTitle"
+        app:layout_constraintBottom_toBottomOf="@+id/tasksTitle"
         app:layout_constraintEnd_toEndOf="parent"
         style="@style/Widget.MaterialComponents.Button.Icon" />
 
@@ -44,6 +67,7 @@
         android:id="@+id/fragment_container"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_marginTop="16dp"
         app:layout_constraintTop_toBottomOf="@id/tasksTitle"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -64,4 +88,7 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         style="@style/Widget.MaterialComponents.Button" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
+
+

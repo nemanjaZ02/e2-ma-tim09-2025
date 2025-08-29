@@ -398,7 +398,7 @@ public class TaskDetailsActivity extends AppCompatActivity {
                 taskViewModel.updateTask(currentTask);
                 Toast.makeText(this, "Deadline updated", Toast.LENGTH_SHORT).show();
             }
-        }, hour, minute, true); // true za 24-časovni format, false za AM/PM
+        }, hour, minute, true);
 
         timePicker.show();
     }
@@ -418,8 +418,7 @@ public class TaskDetailsActivity extends AppCompatActivity {
 
     private void cancelQuest() {
         if (currentTask != null && currentTask.getStatus() == TaskStatus.ACTIVE) {
-            currentTask.setStatus(TaskStatus.CANCELLED);
-            taskViewModel.updateTask(currentTask);
+            taskViewModel.cancelTask(currentTask);
             Toast.makeText(this, "Quest cancelled", Toast.LENGTH_SHORT).show();
             finish();
         }
@@ -427,8 +426,7 @@ public class TaskDetailsActivity extends AppCompatActivity {
 
     private void finishQuest() {
         if (currentTask != null && currentTask.getStatus() == TaskStatus.ACTIVE) {
-            currentTask.setStatus(TaskStatus.COMPLETED);
-            taskViewModel.updateTask(currentTask);
+            taskViewModel.completeTask(currentTask);
             Toast.makeText(this, "Quest done!", Toast.LENGTH_SHORT).show();
             updateTaskActionButtons();
         }

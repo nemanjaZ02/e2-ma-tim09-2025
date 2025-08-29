@@ -1,11 +1,19 @@
 package com.e2_ma_tim09_2025.questify.viewmodels;
 
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
 import com.e2_ma_tim09_2025.questify.services.TaskService;
+
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -18,11 +26,113 @@ public class TaskViewModel extends ViewModel {
     private final LiveData<List<Task>> allTasks;
     private final LiveData<List<TaskCategory>> allCategories;
 
+    private final MutableLiveData<Set<String>> selectedCategoryIds = new MutableLiveData<>(new HashSet<>());
+    private final MutableLiveData<Set<TaskDifficulty>> selectedDifficulties = new MutableLiveData<>(new HashSet<>());
+    private final MutableLiveData<Set<TaskPriority>> selectedPriorities = new MutableLiveData<>(new HashSet<>());
+    private final MutableLiveData<Boolean> isRecurringFilter = new MutableLiveData<>();
+    private final MediatorLiveData<List<Task>> filteredTasks = new MediatorLiveData<>();
+
     @Inject
     public TaskViewModel(TaskService taskService) {
         this.taskService = taskService;
         this.allTasks = taskService.getAllTasks();
         this.allCategories = taskService.getAllCategories();
+
+        filteredTasks.addSource(allTasks, tasks -> applyFilters());
+        filteredTasks.addSource(selectedCategoryIds, newFilter -> applyFilters());
+        filteredTasks.addSource(selectedDifficulties, newFilter -> applyFilters());
+        filteredTasks.addSource(selectedPriorities, newFilter -> applyFilters());
+        filteredTasks.addSource(isRecurringFilter, newFilter -> applyFilters());
+
+        applyFilters();
+    }
+
+    private void applyFilters() {
+        List<Task> currentTasks = allTasks.getValue();
+        if (currentTasks == null) {
+            return;
+        }
+
+        Set<String> catIds = selectedCategoryIds.getValue();
+        Set<TaskDifficulty> difficulties = selectedDifficulties.getValue();
+        Set<TaskPriority> priorities = selectedPriorities.getValue();
+        Boolean isRecurring = isRecurringFilter.getValue();
+
+        List<Task> filteredList = currentTasks.stream()
+                .filter(task -> {
+                    boolean categoryMatches = catIds == null || catIds.isEmpty() || catIds.contains(String.valueOf(task.getCategoryId()));
+                    boolean difficultyMatches = difficulties == null || difficulties.isEmpty() || difficulties.contains(task.getDifficulty());
+                    boolean priorityMatches = priorities == null || priorities.isEmpty() || priorities.contains(task.getPriority());
+                    boolean recurringMatches = isRecurring == null || (isRecurring == true && task.getRecurrence() != null) || (isRecurring == false && task.getRecurrence() == null);
+
+                    return categoryMatches && difficultyMatches && priorityMatches && recurringMatches;
+                })
+                .collect(Collectors.toList());
+
+        filteredTasks.setValue(filteredList);
+    }
+
+    public void addCategoryFilter(String categoryId) {
+        Set<String> current = new HashSet<>(selectedCategoryIds.getValue());
+        current.add(categoryId);
+        selectedCategoryIds.setValue(current);
+    }
+
+    public void addDifficultyFilter(TaskDifficulty difficulty) {
+        Set<TaskDifficulty> current = new HashSet<>(selectedDifficulties.getValue());
+        current.add(difficulty);
+        selectedDifficulties.setValue(current);
+    }
+
+    public void removeDifficultyFilter(TaskDifficulty difficulty) {
+        Set<TaskDifficulty> current = new HashSet<>(selectedDifficulties.getValue());
+        current.remove(difficulty);
+        selectedDifficulties.setValue(current);
+    }
+
+    public void addPriorityFilter(TaskPriority priority) {
+        Set<TaskPriority> current = new HashSet<>(selectedPriorities.getValue());
+        current.add(priority);
+        selectedPriorities.setValue(current);
+    }
+
+    public void removePriorityFilter(TaskPriority priority) {
+        Set<TaskPriority> current = new HashSet<>(selectedPriorities.getValue());
+        current.remove(priority);
+        selectedPriorities.setValue(current);
+    }
+
+    public void setRecurringFilter(Boolean isRecurring) {
+        isRecurringFilter.setValue(isRecurring);
+    }
+
+    public void removeCategoryFilter(String categoryId) {
+        Set<String> current = new HashSet<>(selectedCategoryIds.getValue());
+        current.remove(categoryId);
+        selectedCategoryIds.setValue(current);
+    }
+
+    public void clearAllFilters() {
+        selectedCategoryIds.setValue(new HashSet<>());
+        selectedDifficulties.setValue(new HashSet<>());
+        selectedPriorities.setValue(new HashSet<>());
+        isRecurringFilter.setValue(null);
+    }
+
+    public LiveData<Set<String>> getSelectedCategoryIds() {
+        return selectedCategoryIds;
+    }
+
+    public LiveData<Set<TaskDifficulty>> getSelectedDifficulties() {
+        return selectedDifficulties;
+    }
+
+    public LiveData<Set<TaskPriority>> getSelectedPriorities() {
+        return selectedPriorities;
+    }
+
+    public LiveData<Boolean> getIsRecurringFilter() {
+        return isRecurringFilter;
     }
 
     public LiveData<List<Task>> getTasks() {
@@ -46,6 +156,8 @@ public class TaskViewModel extends ViewModel {
     public void updateTask(Task task) {
         taskService.updateTask(task);
     }
+    public void completeTask(Task task) { taskService.completeTask(task); }
+    public void cancelTask(Task task) { taskService.cancelTask(task); }
     public void pauseTask(Task task) {
         taskService.pauseTask(task);
     }
@@ -57,5 +169,8 @@ public class TaskViewModel extends ViewModel {
     }
     public LiveData<TaskCategory> getTaskCategoryById(int categoryId) {
         return taskService.getTaskCategoryById(categoryId);
+    }
+    public LiveData<List<Task>> getFilteredTasks() {
+        return filteredTasks;
     }
 }

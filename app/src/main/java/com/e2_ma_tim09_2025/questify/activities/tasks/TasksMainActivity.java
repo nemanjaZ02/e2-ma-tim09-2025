@@ -6,6 +6,7 @@ import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
@@ -14,6 +15,7 @@ import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksListFragment;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 import com.e2_ma_tim09_2025.questify.viewmodels.TaskViewModel;
 import com.google.android.material.button.MaterialButton;
+import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksFilterFragment;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -23,7 +25,9 @@ public class TasksMainActivity extends AppCompatActivity {
     private TaskViewModel taskViewModel;
     private MaterialButton addTaskButton;
     private MaterialButton viewChangeButton;
+    private MaterialButton filterButton;
     private boolean showingCalendar = false;
+    private final MediatorLiveData<Boolean> isFilterActive = new MediatorLiveData<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,8 +38,22 @@ public class TasksMainActivity extends AppCompatActivity {
 
         addTaskButton = findViewById(R.id.add_task_button);
         viewChangeButton = findViewById(R.id.toggle_view_button);
+        filterButton = findViewById(R.id.filter_button);
 
         replaceFragment(new TasksListFragment());
+
+        isFilterActive.addSource(taskViewModel.getSelectedCategoryIds(), ids -> updateFilterState());
+        isFilterActive.addSource(taskViewModel.getSelectedDifficulties(), difficulties -> updateFilterState());
+        isFilterActive.addSource(taskViewModel.getSelectedPriorities(), priorities -> updateFilterState());
+        isFilterActive.addSource(taskViewModel.getIsRecurringFilter(), isRecurring -> updateFilterState());
+
+        isFilterActive.observe(this, isActive -> {
+            if (isActive) {
+                filterButton.setIconResource(R.drawable.ic_filter_on);
+            } else {
+                filterButton.setIconResource(R.drawable.ic_filter_off);
+            }
+        });
 
         viewChangeButton.setOnClickListener(v -> {
             Fragment fragment;
@@ -55,6 +73,11 @@ public class TasksMainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        filterButton.setOnClickListener(v -> {
+            TasksFilterFragment filterFragment = new TasksFilterFragment();
+            filterFragment.show(getSupportFragmentManager(), TasksFilterFragment.TAG);
+        });
+
         // Za test kategorije
         taskViewModel.getCategories().observe(this, categories -> {
             if (categories.isEmpty()) {
@@ -63,6 +86,16 @@ public class TasksMainActivity extends AppCompatActivity {
                 taskViewModel.insertCategory(new TaskCategory("Health", "HealthDesc", Color.parseColor("#4D96FF")));
             }
         });
+    }
+
+    private void updateFilterState() {
+        boolean anyFilterSelected =
+                !taskViewModel.getSelectedCategoryIds().getValue().isEmpty() ||
+                        !taskViewModel.getSelectedDifficulties().getValue().isEmpty() ||
+                        !taskViewModel.getSelectedPriorities().getValue().isEmpty() ||
+                        taskViewModel.getIsRecurringFilter().getValue() != null;
+
+        isFilterActive.setValue(anyFilterSelected);
     }
 
     private void replaceFragment(Fragment fragment) {
