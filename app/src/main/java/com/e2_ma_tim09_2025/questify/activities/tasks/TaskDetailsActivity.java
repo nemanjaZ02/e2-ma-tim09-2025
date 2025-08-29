@@ -1,6 +1,7 @@
 package com.e2_ma_tim09_2025.questify.activities.tasks;
 
 import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;
@@ -22,6 +23,7 @@ import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.enums.RecurrenceUnit;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskStatus;
 import com.e2_ma_tim09_2025.questify.viewmodels.TaskViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -65,6 +67,7 @@ public class TaskDetailsActivity extends AppCompatActivity {
     private LinearLayout priorityEditButtonsLayout;
     private MaterialButton acceptPriorityEditButton, cancelPriorityEditButton;
     private LinearLayout taskActionButtonsLayout;
+    private MaterialButton finishQuestButton, pauseQuestButton, cancelQuestButton;
 
 
     @Override
@@ -109,12 +112,16 @@ public class TaskDetailsActivity extends AppCompatActivity {
         acceptPriorityEditButton = findViewById(R.id.acceptPriorityEditButton);
         cancelPriorityEditButton = findViewById(R.id.cancelPriorityEditButton);
         taskActionButtonsLayout = findViewById(R.id.taskActionButtonsLayout);
+        finishQuestButton = findViewById(R.id.finishQuestButton);
+        pauseQuestButton = findViewById(R.id.pauseQuestButton);
+        cancelQuestButton = findViewById(R.id.cancelQuestButton);
 
         int taskId = getIntent().getIntExtra("taskId", -1);
         taskViewModel.getTaskById(taskId).observe(this, task -> {
             if (task != null) {
                 currentTask = task;
                 populateUI(task);
+                updateTaskActionButtons();
             }
         });
 
@@ -142,6 +149,10 @@ public class TaskDetailsActivity extends AppCompatActivity {
         recurrenceCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
             recurrenceFields.setVisibility(isChecked ? View.VISIBLE : View.GONE);
         });
+
+        finishQuestButton.setOnClickListener(v -> finishQuest());
+        pauseQuestButton.setOnClickListener(v -> togglePauseQuest());
+        cancelQuestButton.setOnClickListener(v -> cancelQuest());
     }
 
     private void populateUI(Task task) {
@@ -163,7 +174,7 @@ public class TaskDetailsActivity extends AppCompatActivity {
             difficultyNames.add(difficulty.name().replace("_", " "));
         }
         ArrayAdapter<String> difficultyAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, difficultyNames);
+                R.layout.item_spinner, difficultyNames);
         difficultyAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         difficultySpinner.setAdapter(difficultyAdapter);
         difficultySpinner.setSelection(difficultyAdapter.getPosition(task.getDifficulty().name().replace("_", " ")));
@@ -175,7 +186,7 @@ public class TaskDetailsActivity extends AppCompatActivity {
             priorityNames.add(priority.name().replace("_", " "));
         }
         ArrayAdapter<String> priorityAdapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, priorityNames);
+                R.layout.item_spinner, priorityNames);
         priorityAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         prioritySpinner.setAdapter(priorityAdapter);
         prioritySpinner.setSelection(priorityAdapter.getPosition(task.getPriority().name().replace("_", " ")));
@@ -365,15 +376,84 @@ public class TaskDetailsActivity extends AppCompatActivity {
 
         DatePickerDialog datePicker = new DatePickerDialog(this, (view, y, m, d) -> {
             calendar.set(y, m, d);
-            button.setText(dateFormat.format(calendar.getTime()));
+            showTimePicker(button);
+
+        }, year, month, day);
+
+        datePicker.show();
+    }
+
+    private void showTimePicker(MaterialButton button) {
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+        int minute = calendar.get(Calendar.MINUTE);
+        TimePickerDialog timePicker = new TimePickerDialog(this, (view, h, m) -> {
+            calendar.set(Calendar.HOUR_OF_DAY, h);
+            calendar.set(Calendar.MINUTE, m);
+
+            SimpleDateFormat dateTimeFormat = new SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault());
+            button.setText(dateTimeFormat.format(calendar.getTime()));
 
             if (currentTask != null) {
                 currentTask.setFinishDate(calendar.getTimeInMillis());
                 taskViewModel.updateTask(currentTask);
                 Toast.makeText(this, "Deadline updated", Toast.LENGTH_SHORT).show();
             }
-        }, year, month, day);
+        }, hour, minute, true); // true za 24-časovni format, false za AM/PM
 
-        datePicker.show();
+        timePicker.show();
+    }
+
+    private void togglePauseQuest() {
+        if (currentTask != null) {
+            if (currentTask.getStatus() == TaskStatus.ACTIVE) {
+                taskViewModel.pauseTask(currentTask);
+                Toast.makeText(this, "Quest paused.", Toast.LENGTH_SHORT).show();
+            } else if (currentTask.getStatus() == TaskStatus.PAUSED) {
+                taskViewModel.unpauseTask(currentTask);
+                Toast.makeText(this, "Quest unpaused.", Toast.LENGTH_SHORT).show();
+            }
+            updateTaskActionButtons();
+        }
+    }
+
+    private void cancelQuest() {
+        if (currentTask != null && currentTask.getStatus() == TaskStatus.ACTIVE) {
+            currentTask.setStatus(TaskStatus.CANCELLED);
+            taskViewModel.updateTask(currentTask);
+            Toast.makeText(this, "Quest cancelled", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+    }
+
+    private void finishQuest() {
+        if (currentTask != null && currentTask.getStatus() == TaskStatus.ACTIVE) {
+            currentTask.setStatus(TaskStatus.COMPLETED);
+            taskViewModel.updateTask(currentTask);
+            Toast.makeText(this, "Quest done!", Toast.LENGTH_SHORT).show();
+            updateTaskActionButtons();
+        }
+    }
+
+    private void updateTaskActionButtons() {
+        if (currentTask != null) {
+            TaskStatus status = currentTask.getStatus();
+
+            boolean isFinishEnabled = (status == TaskStatus.ACTIVE);
+            finishQuestButton.setEnabled(isFinishEnabled);
+            finishQuestButton.setAlpha(isFinishEnabled ? 1.0f : 0.5f);
+
+            boolean isPauseEnabled = (status == TaskStatus.ACTIVE || status == TaskStatus.PAUSED);
+            pauseQuestButton.setEnabled(isPauseEnabled);
+            pauseQuestButton.setAlpha(isPauseEnabled ? 1.0f : 0.5f);
+            if (status == TaskStatus.PAUSED) {
+                pauseQuestButton.setText("Unpause Quest");
+            } else {
+                pauseQuestButton.setText("Pause Quest");
+            }
+
+            boolean isCancelEnabled = (status == TaskStatus.ACTIVE);
+            cancelQuestButton.setEnabled(isCancelEnabled);
+            cancelQuestButton.setAlpha(isCancelEnabled ? 1.0f : 0.5f);
+        }
     }
 }

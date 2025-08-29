@@ -64,10 +64,71 @@ public class TaskService {
                 Log.e(TAG, "Error: Invalid category ID.");
                 return;
             }
+            if (task.getStatus() == TaskStatus.PAUSED) {
+                Log.e(TAG, "Error: Use pause function to pause task");
+                return;
+            }
 
             try {
                 taskRepository.update(task);
                 Log.d(TAG, "Task '" + task.getName() + "' updated successfully.");
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating task: " + e.getMessage());
+            }
+        });
+    }
+
+    public void pauseTask(Task task) {
+        executor.execute(() -> {
+            if (task == null) {
+                Log.e(TAG, "Error: Task object is null.");
+                return;
+            }
+            if (task.getName() == null || task.getName().trim().isEmpty()) {
+                Log.e(TAG, "Error: Task name cannot be empty.");
+                return;
+            }
+            if (task.getCategoryId() <= 0) {
+                Log.e(TAG, "Error: Invalid category ID.");
+                return;
+            }
+            if (task.getStatus() != TaskStatus.ACTIVE) {
+                Log.e(TAG, "Error: Can't pause inactive task");
+                return;
+            }
+
+            try {
+                long remainingTime = task.getFinishDate() - System.currentTimeMillis();
+                taskRepository.pause(task, (int)remainingTime);
+                Log.d(TAG, "Task '" + task.getName() + "' paused successfully.");
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating task: " + e.getMessage());
+            }
+        });
+    }
+    public void unpauseTask(Task task) {
+        executor.execute(() -> {
+            if (task == null) {
+                Log.e(TAG, "Error: Task object is null.");
+                return;
+            }
+            if (task.getName() == null || task.getName().trim().isEmpty()) {
+                Log.e(TAG, "Error: Task name cannot be empty.");
+                return;
+            }
+            if (task.getCategoryId() <= 0) {
+                Log.e(TAG, "Error: Invalid category ID.");
+                return;
+            }
+            if (task.getStatus() != TaskStatus.PAUSED) {
+                Log.e(TAG, "Error: You can only unpause paused task");
+                return;
+            }
+
+            try {
+                long newFinishDate = System.currentTimeMillis() + task.getRemainingTime();
+                taskRepository.unpause(task, newFinishDate);
+                Log.d(TAG, "Task '" + task.getName() + "' paused successfully.");
             } catch (Exception e) {
                 Log.e(TAG, "Error updating task: " + e.getMessage());
             }

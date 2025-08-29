@@ -226,7 +226,7 @@
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
                     android:enabled="false"
-                    android:popupBackground="#D2B48C"
+                    android:popupBackground="#5C4033"
                     android:background="@drawable/spinner_background"
                     style="@style/CustomSpinner" />
 
@@ -286,7 +286,7 @@
                     android:layout_weight="1"
                     android:layout_height="wrap_content"
                     android:enabled="false"
-                    android:popupBackground="#D2B48C"
+                    android:popupBackground="#5C4033"
                     android:background="@drawable/spinner_background"
                     style="@style/CustomSpinner" />
 
@@ -347,7 +347,7 @@
                     android:layout_height="wrap_content"
                     android:enabled="false"
                     android:text="Complete until [Select Date]"
-                    android:textColor="#d0c3c3"
+                    android:textColor="#5C4033"
                     android:fontFamily="serif"
                     android:textSize="16sp"
                     android:gravity="center_vertical|start"
@@ -359,7 +359,7 @@
                     app:strokeColor="#5C4033"
                     app:backgroundTint="#D2B48C"
                     app:icon="@drawable/ic_calendar"
-                    app:iconTint="#d0c3c3"
+                    app:iconTint="#5C4033"
                     app:iconGravity="textStart"
                     app:iconPadding="8dp" />
 
@@ -432,7 +432,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:spinnerMode="dropdown"
-                        android:popupBackground="#D2B48C"
+                        android:popupBackground="#5C4033"
                         android:backgroundTint="#8B4513"
                         android:enabled="false"/>
                 </LinearLayout>
@@ -443,7 +443,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:text="Recur until [select date]"
-                    android:textColor="#d0c3c3"
+                    android:textColor="#5C4033"
                     android:fontFamily="serif"
                     android:textSize="16sp"
                     android:gravity="center_vertical|start"
@@ -456,7 +456,7 @@
                     app:strokeColor="#5C4033"
                     app:backgroundTint="#D2B48C"
                     app:icon="@drawable/ic_calendar"
-                    app:iconTint="#d0c3c3"
+                    app:iconTint="#5C4033"
                     app:iconGravity="textStart"
                     app:iconPadding="8dp"/>
             </LinearLayout>
