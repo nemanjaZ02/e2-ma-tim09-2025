@@ -13,6 +13,7 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.activities.tasks.TasksMainActivity;
+import com.e2_ma_tim09_2025.questify.activities.users.LoginActivity;
 import com.e2_ma_tim09_2025.questify.activities.users.RegisterActivity;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -43,6 +44,11 @@ public class MainActivity extends AppCompatActivity {
 
         registerButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, RegisterActivity.class);
+            startActivity(intent);
+        });
+
+        loginButton.setOnClickListener(v -> {
+            Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
         });
     }

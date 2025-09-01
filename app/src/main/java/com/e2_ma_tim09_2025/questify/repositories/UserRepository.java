@@ -9,6 +9,7 @@ import com.e2_ma_tim09_2025.questify.models.User;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseUser;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -77,6 +78,8 @@ public class UserRepository {
 
                     if (task.isSuccessful()) {
                         String uid = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
+                        FirebaseUser firebaseUser = auth.getCurrentUser();
+
                         if (uid == null) {
                             if (userSaveListener != null) {
                                 userSaveListener.onComplete(
@@ -86,6 +89,16 @@ public class UserRepository {
                             }
                             return;
                         }
+
+                        firebaseUser.sendEmailVerification()
+                                .addOnCompleteListener(emailTask -> {
+                                    if (emailTask.isSuccessful()) {
+                                        Log.d("REGISTER", "Verification email sent to " + firebaseUser.getEmail());
+                                    } else {
+                                        Log.e("REGISTER", "Failed to send verification email", emailTask.getException());
+                                    }
+                                });
+
                         user.setId(uid);
                         userDAO.createUser(user, userSaveListener);
                     } else {
