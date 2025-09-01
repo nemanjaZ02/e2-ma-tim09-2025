@@ -97,22 +97,4 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:cornerRadius="24dp"/>
 
-    <!-- Register redirect -->
-    <Button
-        android:id="@+id/goToRegisterButton"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:text="Register"
-        android:textColor="#F0F0F0"
-        android:textSize="16sp"
-        android:backgroundTint="#5C4033"
-        android:fontFamily="serif"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
-        android:layout_marginBottom="80dp"
-        app:layout_constraintBottom_toTopOf="@id/loginButton"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:cornerRadius="16dp"/>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

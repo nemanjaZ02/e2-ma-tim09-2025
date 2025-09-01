@@ -10,7 +10,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
-import com.e2_ma_tim09_2025.questify.activities.MainActivity;
 import com.e2_ma_tim09_2025.questify.activities.tasks.TasksMainActivity;
 import com.e2_ma_tim09_2025.questify.viewmodels.UserViewModel;
 import com.google.firebase.auth.FirebaseAuth;
@@ -22,7 +21,7 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class LoginActivity extends AppCompatActivity {
 
     private EditText emailEditText, passwordEditText;
-    private Button loginButton, goToRegisterButton;
+    private Button loginButton;
     private UserViewModel userViewModel;
     private FirebaseAuth auth;
 
@@ -38,18 +37,11 @@ public class LoginActivity extends AppCompatActivity {
         emailEditText = findViewById(R.id.emailEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
         loginButton = findViewById(R.id.loginButton);
-        goToRegisterButton = findViewById(R.id.goToRegisterButton);
-
         // Hilt ViewModel
         userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
 
         // Login button listener
         loginButton.setOnClickListener(v -> loginUser());
-
-        // Go to Register screen
-        goToRegisterButton.setOnClickListener(v ->
-                startActivity(new Intent(this, RegisterActivity.class))
-        );
 
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser != null && currentUser.isEmailVerified()) {
