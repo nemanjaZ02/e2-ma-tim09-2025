@@ -39,13 +39,22 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Name -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Quest Title"
+                android:textColor="#5C4033"
+                android:textSize="16sp"
+                android:fontFamily="serif"
+                android:textStyle="bold" />
+
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/taskNameLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:hint="Quest Title"
+                android:layout_marginTop="8dp"
+                android:hint="Quest Ttitle here"
                 app:boxStrokeColor="#5C4033"
                 app:hintTextColor="#8B4513">
 
@@ -59,13 +68,22 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Description -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Quest Descritption"
+                android:textColor="#5C4033"
+                android:textSize="16sp"
+                android:fontFamily="serif"
+                android:textStyle="bold" />
+
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/taskDescriptionLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:hint="Quest Description"
+                android:layout_marginTop="8dp"
+                android:hint="Quest Description here"
                 app:boxStrokeColor="#5C4033"
                 app:hintTextColor="#8B4513">
 
@@ -80,7 +98,6 @@
 
             </com.google.android.material.textfield.TextInputLayout>
 
-            <!-- Category -->
             <TextView
                 android:id="@+id/categoryLabel"
                 android:layout_width="wrap_content"
@@ -99,9 +116,9 @@
                 android:layout_marginTop="8dp"
                 android:spinnerMode="dropdown"
                 android:popupBackground="#D2B48C"
-                android:backgroundTint="#8B4513" />
+                android:background="@drawable/spinner_background"
+                style="@style/CustomSpinner" />
 
-            <!-- Difficulty -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -116,11 +133,12 @@
                 android:id="@+id/difficultySpinner"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:spinnerMode="dropdown"
                 android:popupBackground="#D2B48C"
-                android:backgroundTint="#8B4513" />
+                android:background="@drawable/spinner_background"
+                style="@style/CustomSpinner" />
 
-            <!-- Priority -->
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -135,16 +153,27 @@
                 android:id="@+id/prioritySpinner"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 android:spinnerMode="dropdown"
                 android:popupBackground="#D2B48C"
-                android:backgroundTint="#8B4513" />
+                android:background="@drawable/spinner_background"
+                style="@style/CustomSpinner" />
 
-            <!-- Finish Date -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Quest Deadline"
+                android:textColor="#5C4033"
+                android:textSize="16sp"
+                android:fontFamily="serif"
+                android:textStyle="bold" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/finishDateButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="8dp"
                 android:text="Complete until [Select Date]"
                 android:textColor="#d0c3c3"
                 android:fontFamily="serif"
@@ -164,7 +193,6 @@
                 app:iconGravity="textStart"
                 app:iconPadding="8dp" />
 
-            <!-- Recurrence -->
             <CheckBox
                 android:id="@+id/recurrenceCheckBox"
                 android:layout_width="wrap_content"
@@ -183,7 +211,6 @@
                 android:visibility="gone"
                 android:layout_marginTop="8dp">
 
-                <!-- Interval + Unit u istom redu -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -191,7 +218,6 @@
                     android:gravity="center_vertical"
                     android:layout_marginTop="8dp">
 
-                    <!-- Every label -->
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
@@ -201,7 +227,6 @@
                         android:fontFamily="serif"
                         android:textStyle="bold"/>
 
-                    <!-- Interval input -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="0dp"
                         android:layout_weight="1"
@@ -220,7 +245,6 @@
                             android:fontFamily="serif"/>
                     </com.google.android.material.textfield.TextInputLayout>
 
-                    <!-- Unit spinner -->
                     <Spinner
                         android:id="@+id/recurrenceUnitSpinner"
                         android:layout_width="wrap_content"

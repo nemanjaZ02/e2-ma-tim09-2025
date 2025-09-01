@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.e2_ma_tim09_2025.questify"
-        minSdk = 24
+        minSdk = 34
         targetSdk = 35
         versionCode = 1
         versionName = "1.0"
@@ -50,4 +50,5 @@ dependencies {
     androidTestImplementation(libs.espresso.core)
     implementation(libs.hilt.android)
     annotationProcessor(libs.hilt.compiler)
+    api(libs.kizitonwose.calendar)
 }

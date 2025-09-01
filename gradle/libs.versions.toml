@@ -16,6 +16,7 @@ firebase-bom = "33.7.0"
 
 
 
+kizitonwoseCalendar = "2.8.0"
 
 [libraries]
 gson = { module = "com.google.code.gson:gson", version.ref = "gson" }
@@ -35,6 +36,7 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-auth = { module = "com.google.firebase:firebase-auth" }
 firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
 
+kizitonwose-calendar = { module = "com.kizitonwose.calendar:view", version.ref = "kizitonwoseCalendar" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
