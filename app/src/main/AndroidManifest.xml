@@ -2,6 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+
     <application
         android:name=".App"
         android:allowBackup="true"
@@ -21,6 +24,9 @@
             android:exported="false" />
         <activity
             android:name=".activities.tasks.TasksMainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.users.RegisterActivity"
             android:exported="false" />
         <activity
             android:name=".activities.MainActivity"

@@ -2,6 +2,7 @@ package com.e2_ma_tim09_2025.questify.activities;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
@@ -12,6 +13,11 @@ import androidx.core.view.WindowInsetsCompat;
 
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.activities.tasks.TasksMainActivity;
+import com.e2_ma_tim09_2025.questify.activities.users.RegisterActivity;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -27,9 +33,16 @@ public class MainActivity extends AppCompatActivity {
         });
 
         Button tasksButton = findViewById(R.id.tasks_button);
+        Button registerButton = findViewById(R.id.btnRegister);
+        Button loginButton = findViewById(R.id.btnLogin);
 
         tasksButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, TasksMainActivity.class);
+            startActivity(intent);
+        });
+
+        registerButton.setOnClickListener(v -> {
+            Intent intent = new Intent(this, RegisterActivity.class);
             startActivity(intent);
         });
     }

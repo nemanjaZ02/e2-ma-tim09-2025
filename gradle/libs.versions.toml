@@ -10,6 +10,12 @@ material = "1.12.0"
 activity = "1.8.0"
 constraintlayout = "2.1.4"
 roomRuntime = "2.7.2"
+googleGmsGoogleServices = "4.4.3"
+#firebaseFirestore = "26.0.0"
+firebase-bom = "33.7.0"
+
+
+
 kizitonwoseCalendar = "2.8.0"
 
 [libraries]
@@ -25,9 +31,15 @@ activity = { group = "androidx.activity", name = "activity", version.ref = "acti
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomRuntime" }
 room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
+#firebase-firestore = { group = "com.google.firebase", name = "firebase-firestore", version.ref = "firebaseFirestore" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase-bom" }
+firebase-auth = { module = "com.google.firebase:firebase-auth" }
+firebase-firestore = { module = "com.google.firebase:firebase-firestore" }
+
 kizitonwose-calendar = { module = "com.kizitonwose.calendar:view", version.ref = "kizitonwoseCalendar" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 hilt-android-gradle-plugin = { id = "com.google.dagger.hilt.android", version.ref = "hiltAndroid" }
+google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
 
