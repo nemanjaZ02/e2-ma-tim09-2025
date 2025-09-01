@@ -26,13 +26,18 @@ public class FirebaseModule {
     public FirebaseFirestore provideFirestore() {
         FirebaseFirestore firestore = FirebaseFirestore.getInstance();
 
-        // Enable offline persistence
-        firestore.setFirestoreSettings(
-                new FirebaseFirestoreSettings.Builder()
-                        .setPersistenceEnabled(true)
-                        .build()
-        );
-
+//        // Enable offline persistence
+//        firestore.setFirestoreSettings(
+//                new FirebaseFirestoreSettings.Builder()
+//                        .setPersistenceEnabled(true)
+//                        .build()
+//        );
+//
+//        return firestore;
+        FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
+                // persistence is on by default on Android; you can leave it implicit
+                .build();
+        firestore.setFirestoreSettings(settings);
         return firestore;
     }
 }

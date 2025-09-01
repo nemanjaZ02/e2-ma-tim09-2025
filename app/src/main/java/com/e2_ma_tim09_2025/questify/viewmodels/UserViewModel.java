@@ -24,6 +24,7 @@ public class UserViewModel extends ViewModel {
     // LiveData to observe user data
     private final MutableLiveData<User> userLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> registrationStatus = new MutableLiveData<>();
+    private final MutableLiveData<String> registrationError = new MutableLiveData<>();
     private final MutableLiveData<Boolean> loginStatus = new MutableLiveData<>();
 
     @Inject
@@ -39,6 +40,10 @@ public class UserViewModel extends ViewModel {
         return registrationStatus;
     }
 
+    public LiveData<String> getRegistrationError() {
+        return registrationError;
+    }
+
     public LiveData<Boolean> getLoginStatus() {
         return loginStatus;
     }
@@ -52,6 +57,16 @@ public class UserViewModel extends ViewModel {
                     boolean ok = authResultTask.isSuccessful();
                     Log.d("VM_REGISTER", "Auth result: " + ok, authResultTask.getException());
                     registrationStatus.postValue(ok);
+                    if (!ok && authResultTask.getException() != null) {
+                        Throwable ex = authResultTask.getException();
+                        String message = ex.getMessage();
+                        // Provide friendly message for weak password
+                        if (message != null && message.contains("Password should be at least 6 characters")) {
+                            registrationError.postValue("Password should be at least 6 characters");
+                        } else {
+                            registrationError.postValue(message);
+                        }
+                    }
                 },
                 userSaveTask -> {
                     if (userSaveTask.isSuccessful()) {
@@ -59,6 +74,14 @@ public class UserViewModel extends ViewModel {
                         if (uid != null) fetchUser(uid);
                     } else {
                         Log.e("VM_REGISTER", "Saving user failed", userSaveTask.getException());
+                        if (userSaveTask.getException() != null) {
+                            String message = userSaveTask.getException().getMessage();
+                            if (message != null && message.contains("Password should be at least 6 characters")) {
+                                registrationError.postValue("Password should be at least 6 characters");
+                            } else {
+                                registrationError.postValue(message);
+                            }
+                        }
                     }
                 }
         );

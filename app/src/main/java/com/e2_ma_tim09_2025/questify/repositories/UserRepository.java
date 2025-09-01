@@ -26,41 +26,73 @@ public class UserRepository {
     }
 
     // Register user with email and password
+//    public void registerUser(String email, String password, User user,
+//                             OnCompleteListener<AuthResult> authListener,
+//                             OnCompleteListener<Void> userSaveListener) {
+//        auth.createUserWithEmailAndPassword(email, password)
+//                .addOnCompleteListener(authListener)
+//                .addOnCompleteListener(task -> {
+//                    // Always notify the caller about auth result
+//                    authListener.onComplete(task);
+//
+//                    if (task.isSuccessful()) {
+//                        String uid = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
+//                        if (uid == null) {
+//                            // Extremely rare, but handle it
+//                            Log.e("USER_REPO", "Auth success but currentUser is null");
+//                            if (userSaveListener != null) {
+//                                // propagate a failure
+//                                userSaveListener.onComplete(
+//                                        com.google.android.gms.tasks.Tasks.forException(
+//                                                new IllegalStateException("currentUser is null after auth")
+//                                        )
+//                                );
+//                            }
+//                            return;
+//                        }
+//
+//                        user.setId(uid);
+//                        userDAO.createUser(user, userSaveListener);
+//
+//                    } else {
+//                        Log.e("USER_REPO", "Auth failed", task.getException());
+//                        if (userSaveListener != null) {
+//                            userSaveListener.onComplete(
+//                                    com.google.android.gms.tasks.Tasks.forException(
+//                                            task.getException() != null ? task.getException()
+//                                                    : new Exception("Auth failed")
+//                                    )
+//                            );
+//                        }
+//                    }
+//                });
+//    }
+
     public void registerUser(String email, String password, User user,
                              OnCompleteListener<AuthResult> authListener,
                              OnCompleteListener<Void> userSaveListener) {
         auth.createUserWithEmailAndPassword(email, password)
-                .addOnCompleteListener(authListener)
                 .addOnCompleteListener(task -> {
-                    // Always notify the caller about auth result
-                    authListener.onComplete(task);
+                    if (authListener != null) authListener.onComplete(task);
 
                     if (task.isSuccessful()) {
                         String uid = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
                         if (uid == null) {
-                            // Extremely rare, but handle it
-                            Log.e("USER_REPO", "Auth success but currentUser is null");
                             if (userSaveListener != null) {
-                                // propagate a failure
                                 userSaveListener.onComplete(
                                         com.google.android.gms.tasks.Tasks.forException(
-                                                new IllegalStateException("currentUser is null after auth")
-                                        )
+                                                new IllegalStateException("currentUser is null after auth"))
                                 );
                             }
                             return;
                         }
-
                         user.setId(uid);
                         userDAO.createUser(user, userSaveListener);
-
                     } else {
-                        Log.e("USER_REPO", "Auth failed", task.getException());
                         if (userSaveListener != null) {
                             userSaveListener.onComplete(
                                     com.google.android.gms.tasks.Tasks.forException(
-                                            task.getException() != null ? task.getException()
-                                                    : new Exception("Auth failed")
+                                            task.getException() != null ? task.getException() : new Exception("Auth failed")
                                     )
                             );
                         }

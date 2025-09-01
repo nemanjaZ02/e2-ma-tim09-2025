@@ -57,6 +57,13 @@ public class RegisterActivity extends AppCompatActivity {
                 Toast.makeText(this, "Registration failed. Try again.", Toast.LENGTH_LONG).show();
             }
         });
+
+        // Observe registration error details for user-friendly feedback
+        userViewModel.getRegistrationError().observe(this, errorMsg -> {
+            if (errorMsg != null && !errorMsg.isEmpty()) {
+                Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
+            }
+        });
     }
 
     private void highlightSelectedAvatar(int selectedId, int[] avatarIds) {
@@ -79,6 +86,11 @@ public class RegisterActivity extends AppCompatActivity {
 
         if (!password.equals(confirmPassword)) {
             Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (password.length() < 6) {
+            Toast.makeText(this, "Password should be at least 6 characters", Toast.LENGTH_SHORT).show();
             return;
         }
 
