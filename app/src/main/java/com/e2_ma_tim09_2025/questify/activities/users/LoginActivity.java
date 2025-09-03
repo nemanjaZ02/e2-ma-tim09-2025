@@ -16,6 +16,9 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.auth.FirebaseAuthInvalidUserException;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -118,8 +121,7 @@ private void loginUser() {
                     }
                 } else {
                     // Login failed (e.g., wrong password, user not found)
-                    String errorMessage = (task.getException() != null) ?
-                            task.getException().getMessage() : "Login failed";
+                    String errorMessage = "Login failed. Please check your email and password.";
                     Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
                 }
             });
