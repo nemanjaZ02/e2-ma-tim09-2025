@@ -2,6 +2,7 @@ package com.e2_ma_tim09_2025.questify.activities.users;
 
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Patterns;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -81,6 +82,11 @@ public class RegisterActivity extends AppCompatActivity {
 
         if (email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty() || username.isEmpty() || selectedAvatar == null) {
             Toast.makeText(this, "All fields are required", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            Toast.makeText(this, "Please enter a valid email address", Toast.LENGTH_SHORT).show();
             return;
         }
 

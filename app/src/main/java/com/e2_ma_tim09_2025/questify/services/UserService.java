@@ -61,5 +61,7 @@ public class UserService {
         return userRepository.getCurrentUserId();
     }
 
-
+    public void deleteUser(String user, OnCompleteListener<Void> listener) {
+        userRepository.deleteUser(user, listener);
+    }
 }
