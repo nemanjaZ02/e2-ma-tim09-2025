@@ -10,6 +10,9 @@ import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.services.UserService;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
+import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.firestore.DocumentSnapshot;
 
 import javax.inject.Inject;
@@ -54,15 +57,22 @@ public class UserViewModel extends ViewModel {
                     boolean ok = authResultTask.isSuccessful();
                     Log.d("VM_REGISTER", "Auth result: " + ok, authResultTask.getException());
                     registrationStatus.postValue(ok);
-                    if (!ok && authResultTask.getException() != null) {
-                        Throwable ex = authResultTask.getException();
-                        String message = ex.getMessage();
-                        // Provide friendly message for weak password
-                        if (message != null && message.contains("Password should be at least 6 characters")) {
-                            registrationError.postValue("Password should be at least 6 characters");
-                        } else {
-                            registrationError.postValue(message);
-                        }
+
+                    if (!ok) {
+                        Exception ex = authResultTask.getException();
+                        String message;
+
+                    if (ex instanceof FirebaseAuthWeakPasswordException) {
+                        message = "Password is too weak. It should be at least 6 characters.";
+                    } else if (ex instanceof FirebaseAuthInvalidCredentialsException) {
+                        message = "Invalid email format.";
+                    } else if (ex instanceof FirebaseAuthUserCollisionException) {
+                        message = "This email is already registered. Please log in instead.";
+                    } else {
+                        message = "Registration failed: " + ex.getMessage();
+                    }
+
+                    registrationError.postValue(message);
                     }
                 },
                 userSaveTask -> {
@@ -71,16 +81,14 @@ public class UserViewModel extends ViewModel {
                         if (uid != null) fetchUser(uid);
                     } else {
                         Log.e("VM_REGISTER", "Saving user failed", userSaveTask.getException());
-                        if (userSaveTask.getException() != null) {
-                            String message = userSaveTask.getException().getMessage();
-                            if (message != null && message.contains("Password should be at least 6 characters")) {
-                                registrationError.postValue("Password should be at least 6 characters");
-                            } else {
-                                registrationError.postValue(message);
-                            }
+                        String message = "Could not save user profile. Please try again.";
+
+                        if (userSaveTask.getException() != null && userSaveTask.getException().getMessage() != null) {
+                            message = userSaveTask.getException().getMessage();
                         }
+                        registrationError.postValue(message);
                     }
-                }
+                        }
         );
     }
 
@@ -109,4 +117,12 @@ public class UserViewModel extends ViewModel {
         userService.logout();
         userLiveData.postValue(null);
     }
+
+//    public void deleteUser(String user) {
+//        userService.deleteUser(user, task -> {
+//            if (task.isSuccessful()) {
+//                userLiveData.postValue(user);
+//            }
+//        });
+//    }
 }
