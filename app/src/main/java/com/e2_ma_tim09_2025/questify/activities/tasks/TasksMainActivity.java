@@ -10,10 +10,12 @@ import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
+import com.e2_ma_tim09_2025.questify.activities.MainActivity;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksCalendarFragment;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksListFragment;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 import com.e2_ma_tim09_2025.questify.viewmodels.TaskViewModel;
+import com.e2_ma_tim09_2025.questify.viewmodels.UserViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksFilterFragment;
 
@@ -23,9 +25,11 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class TasksMainActivity extends AppCompatActivity {
 
     private TaskViewModel taskViewModel;
+    private UserViewModel userViewModel;
     private MaterialButton addTaskButton;
     private MaterialButton viewChangeButton;
     private MaterialButton filterButton;
+    private MaterialButton logoutButton;
     private boolean showingCalendar = false;
     private final MediatorLiveData<Boolean> isFilterActive = new MediatorLiveData<>();
 
@@ -35,10 +39,12 @@ public class TasksMainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_tasks_main);
 
         taskViewModel = new ViewModelProvider(this).get(TaskViewModel.class);
+        userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
 
         addTaskButton = findViewById(R.id.add_task_button);
         viewChangeButton = findViewById(R.id.toggle_view_button);
         filterButton = findViewById(R.id.filter_button);
+        logoutButton = findViewById(R.id.logout_button);
 
         replaceFragment(new TasksListFragment());
 
@@ -76,6 +82,15 @@ public class TasksMainActivity extends AppCompatActivity {
         filterButton.setOnClickListener(v -> {
             TasksFilterFragment filterFragment = new TasksFilterFragment();
             filterFragment.show(getSupportFragmentManager(), TasksFilterFragment.TAG);
+        });
+
+        logoutButton.setOnClickListener(v -> {
+            userViewModel.logout();
+
+            Intent intent = new Intent(TasksMainActivity.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // prevent back navigation
+            startActivity(intent);
+            finish();
         });
 
         // Za test kategorije

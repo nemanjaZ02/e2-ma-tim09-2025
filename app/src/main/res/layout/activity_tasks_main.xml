@@ -89,6 +89,21 @@
         app:layout_constraintEnd_toEndOf="parent"
         style="@style/Widget.MaterialComponents.Button" />
 
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/logout_button"
+        android:layout_width="48dp"
+        android:layout_height="60dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="#5C4033"
+        app:cornerRadius="30dp"
+        app:elevation="8dp"
+        app:icon="@drawable/ic_logout"
+        app:iconTint="#D2B48C"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        style="@style/Widget.MaterialComponents.Button.Icon" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
 
 
