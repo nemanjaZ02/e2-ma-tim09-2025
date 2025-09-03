@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.activities.MainActivity;
+import com.e2_ma_tim09_2025.questify.activities.users.ProfileActivity;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksCalendarFragment;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksListFragment;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
@@ -30,6 +31,7 @@ public class TasksMainActivity extends AppCompatActivity {
     private MaterialButton viewChangeButton;
     private MaterialButton filterButton;
     private MaterialButton logoutButton;
+    private MaterialButton profileButton;
     private boolean showingCalendar = false;
     private final MediatorLiveData<Boolean> isFilterActive = new MediatorLiveData<>();
 
@@ -45,6 +47,7 @@ public class TasksMainActivity extends AppCompatActivity {
         viewChangeButton = findViewById(R.id.toggle_view_button);
         filterButton = findViewById(R.id.filter_button);
         logoutButton = findViewById(R.id.logout_button);
+        profileButton = findViewById(R.id.profile_button);
 
         replaceFragment(new TasksListFragment());
 
@@ -91,6 +94,11 @@ public class TasksMainActivity extends AppCompatActivity {
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // prevent back navigation
             startActivity(intent);
             finish();
+        });
+
+        profileButton.setOnClickListener(v -> {
+            Intent intent = new Intent(TasksMainActivity.this, ProfileActivity.class);
+            startActivity(intent);
         });
 
         // Za test kategorije
