@@ -31,6 +31,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    buildFeatures {
+        viewBinding = true
+    }
 }
 
 dependencies {
@@ -39,6 +42,8 @@ dependencies {
     implementation(libs.work.runtime.ktx)
     implementation(libs.google.guava)
     implementation(libs.hilt.work)
+    implementation(libs.navigation.fragment)
+    implementation(libs.navigation.ui)
     annotationProcessor(libs.hilt.compiler.work)
     implementation(libs.firebase.firestore)
     implementation(platform(libs.firebase.bom))
