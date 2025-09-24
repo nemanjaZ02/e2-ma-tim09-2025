@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#D2B48C"
+    tools:context=".activities.taskCategories.TaskCategoryDetailsActivity">
+
+    <TextView
+        android:id="@+id/categoryDetailTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Category Details"
+        android:textColor="#5C4033"
+        android:textSize="32sp"
+        android:textStyle="bold"
+        android:fontFamily="serif"
+        android:layout_marginTop="24dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginEnd="24dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintTop_toBottomOf="@id/categoryDetailTitle"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Category Name"
+                android:textColor="#5C4033"
+                android:textSize="16sp"
+                android:fontFamily="serif"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="8dp">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    app:boxStrokeColor="#5C4033"
+                    app:hintTextColor="#8B4513">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/categoryNameEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:enabled="false"
+                        android:fontFamily="serif"
+                        android:textColor="#3E2723"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <ImageButton
+                    android:id="@+id/editCategoryNameButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_edit"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Edit Category Name"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/categoryNameEditButtonsLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end"
+                android:layout_marginTop="8dp"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/cancelCategoryNameEditButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cancel"
+                    style="@style/Widget.Material3.Button.TextButton"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/acceptCategoryNameEditButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Accept"
+                    android:layout_marginStart="8dp"/>
+            </LinearLayout>
+
+            ---
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Category Description"
+                android:textColor="#5C4033"
+                android:textSize="16sp"
+                android:fontFamily="serif"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="8dp">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    app:boxStrokeColor="#5C4033"
+                    app:hintTextColor="#8B4513">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/categoryDescriptionEditText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:enabled="false"
+                        android:fontFamily="serif"
+                        android:textColor="#3E2723"
+                        android:inputType="textMultiLine"
+                        android:lines="4"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <ImageButton
+                    android:id="@+id/editCategoryDescriptionButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_edit"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Edit Category Description"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/categoryDescriptionEditButtonsLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end"
+                android:layout_marginTop="8dp"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/cancelCategoryDescriptionEditButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cancel"
+                    style="@style/Widget.Material3.Button.TextButton"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/acceptCategoryDescriptionEditButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Accept"
+                    android:layout_marginStart="8dp"/>
+            </LinearLayout>
+
+            ---
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:text="Category Color"
+                android:textColor="#5C4033"
+                android:textSize="16sp"
+                android:fontFamily="serif"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginTop="8dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/selectColorButton"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:layout_height="wrap_content"
+                    android:text="Color"
+                    android:clickable="false"
+                    android:focusable="false"/>
+
+                <ImageButton
+                    android:id="@+id/editCategoryColorButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/ic_edit"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:contentDescription="Edit Category Color"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/categoryColorEditButtonsLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="end"
+                android:layout_marginTop="8dp"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/cancelCategoryColorEditButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Cancel"
+                    style="@style/Widget.Material3.Button.TextButton"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/acceptCategoryColorEditButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Accept"
+                    android:layout_marginStart="8dp"/>
+            </LinearLayout>
+
+            ---
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/delete_category_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="32dp"
+                android:layout_marginBottom="16dp"
+                android:backgroundTint="#B00020"
+                app:cornerRadius="16dp"
+                app:icon="@drawable/ic_delete"
+                app:iconTint="@android:color/white"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp"
+                android:text="Delete"
+                android:textColor="@android:color/white"
+                android:fontFamily="serif"
+                android:paddingStart="32dp"
+                android:paddingEnd="32dp"/>
+
+        </LinearLayout>
+    </ScrollView>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

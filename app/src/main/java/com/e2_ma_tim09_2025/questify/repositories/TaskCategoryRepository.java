@@ -27,6 +27,14 @@ public class TaskCategoryRepository {
         executor.execute(() -> categoryDao.insert(category));
     }
 
+    public void update(TaskCategory category) {
+        executor.execute(() -> categoryDao.update(category));
+    }
+
+    public void delete(TaskCategory category) {
+        executor.execute(() -> categoryDao.delete(category));
+    }
+
     public LiveData<TaskCategory> getById(int categoryId) {
         return categoryDao.getById(categoryId);
     }

@@ -3,6 +3,7 @@ package com.e2_ma_tim09_2025.questify.services;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 import com.e2_ma_tim09_2025.questify.repositories.TaskCategoryRepository;
@@ -48,6 +49,36 @@ public class TaskCategoryService {
                 Log.d(TAG, "Category '" + category.getName() + "' inserted successfully.");
             } catch (Exception e) {
                 Log.e(TAG, "Error inserting category: " + e.getMessage());
+            }
+        });
+    }
+
+    public void updateCategory(TaskCategory category) {
+        executor.execute(() -> {
+            if (category == null) {
+                Log.e(TAG, "Error: Category object is null.");
+                return;
+            }
+            try {
+                categoryRepository.update(category);
+                Log.d(TAG, "Category '" + category.getName() + "' updated successfully.");
+            } catch (Exception e) {
+                Log.e(TAG, "Error updating category: " + e.getMessage());
+            }
+        });
+    }
+
+    public void deleteCategory(TaskCategory category) {
+        executor.execute(() -> {
+            if (category == null) {
+                Log.e(TAG, "Error: Category object is null.");
+                return;
+            }
+            try {
+                categoryRepository.delete(category);
+                Log.d(TAG, "Category '" + category.getName() + "' deleted successfully.");
+            } catch (Exception e) {
+                Log.e(TAG, "Error deleting category: " + e.getMessage());
             }
         });
     }

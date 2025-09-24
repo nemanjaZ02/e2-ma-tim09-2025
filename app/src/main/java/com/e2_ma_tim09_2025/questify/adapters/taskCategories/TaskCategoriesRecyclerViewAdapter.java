@@ -20,6 +20,15 @@ import java.util.List;
 public class TaskCategoriesRecyclerViewAdapter extends RecyclerView.Adapter<TaskCategoriesRecyclerViewAdapter.TaskCategoryViewHolder> {
 
     private List<TaskCategory> categories;
+    private OnItemClickListener listener;
+
+    public interface OnItemClickListener {
+        void onItemClick(TaskCategory category);
+    }
+
+    public void setOnItemClickListener(OnItemClickListener listener) {
+        this.listener = listener;
+    }
 
     public void setCategories(List<TaskCategory> categories) {
         this.categories = categories;
@@ -44,6 +53,10 @@ public class TaskCategoriesRecyclerViewAdapter extends RecyclerView.Adapter<Task
             indicatorDrawable.setColorFilter(category.getColor(), PorterDuff.Mode.SRC_IN);
             holder.categoryColorIndicator.setImageDrawable(indicatorDrawable);
         }
+
+        holder.itemView.setOnClickListener(v -> {
+            if (listener != null) listener.onItemClick(categories.get(position));
+        });
     }
 
     @Override

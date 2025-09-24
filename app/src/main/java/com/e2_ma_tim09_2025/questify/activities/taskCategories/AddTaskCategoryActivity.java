@@ -90,10 +90,15 @@ public class AddTaskCategoryActivity extends AppCompatActivity {
             return;
         }
 
-        TaskCategory category = new TaskCategory(name, description, selectedColor);
-        categoryViewModel.insertCategory(category);
-
-        Toast.makeText(this, "Category saved!", Toast.LENGTH_SHORT).show();
-        finish();
+        categoryViewModel.isColorUsed(selectedColor).observe(this, isUsed -> {
+            if (isUsed) {
+                Toast.makeText(AddTaskCategoryActivity.this, "This Color is Already Used!", Toast.LENGTH_SHORT).show();
+            } else {
+                TaskCategory category = new TaskCategory(name, description, selectedColor);
+                categoryViewModel.insertCategory(category);
+                Toast.makeText(AddTaskCategoryActivity.this, "Category saved!", Toast.LENGTH_SHORT).show();
+                finish();
+            }
+        });
     }
 }
