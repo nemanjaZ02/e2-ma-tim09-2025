@@ -1,24 +1,32 @@
 package com.e2_ma_tim09_2025.questify.services;
 
+import android.content.Context;
 import android.os.Looper;
 import android.os.Handler;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
+import androidx.work.Data;
+import androidx.work.OneTimeWorkRequest;
+import androidx.work.WorkManager;
+import androidx.work.ExistingWorkPolicy;
 
 import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
-import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
-import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
+import com.e2_ma_tim09_2025.questify.models.TaskRecurrence;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskStatus;
 import com.e2_ma_tim09_2025.questify.repositories.TaskCategoryRepository;
 import com.e2_ma_tim09_2025.questify.repositories.TaskRepository;
+import com.e2_ma_tim09_2025.questify.utils.RecurringTaskWorker;
 
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
+
+import dagger.hilt.android.qualifiers.ApplicationContext;
 
 public class TaskService {
 
@@ -28,11 +36,13 @@ public class TaskService {
     private final Executor executor = Executors.newSingleThreadExecutor();
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable statusCheckRunnable;
+    private final WorkManager workManager; // DODANO
 
     @Inject
-    public TaskService(TaskRepository taskRepository, TaskCategoryRepository categoryRepository) {
+    public TaskService(@ApplicationContext Context context, TaskRepository taskRepository, TaskCategoryRepository categoryRepository) {
         this.taskRepository = taskRepository;
         this.categoryRepository = categoryRepository;
+        this.workManager = WorkManager.getInstance(context);
         statusCheckRunnable = new Runnable() {
             @Override
             public void run() {
@@ -79,6 +89,7 @@ public class TaskService {
             }
         });
     }
+
     public void cancelTask(Task task) {
         executor.execute(() -> {
             if (task == null) {
@@ -106,6 +117,7 @@ public class TaskService {
             }
         });
     }
+
     public void updateTask(Task task) {
         executor.execute(() -> {
             if (task == null) {
@@ -128,11 +140,15 @@ public class TaskService {
             try {
                 taskRepository.update(task);
                 Log.d(TAG, "Task '" + task.getName() + "' updated successfully.");
+                if (task.getRecurrence() != null) {
+                    scheduleNextRecurringTask(task);
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Error updating task: " + e.getMessage());
             }
         });
     }
+
     public void pauseTask(Task task) {
         executor.execute(() -> {
             if (task == null) {
@@ -161,6 +177,7 @@ public class TaskService {
             }
         });
     }
+
     public void unpauseTask(Task task) {
         executor.execute(() -> {
             if (task == null) {
@@ -189,18 +206,23 @@ public class TaskService {
             }
         });
     }
+
     public LiveData<List<Task>> getAllTasks() {
         return taskRepository.getAll();
     }
+
     public LiveData<List<TaskCategory>> getAllCategories() {
         return categoryRepository.getAll();
     }
+
     public void startStatusUpdater() {
         handler.post(statusCheckRunnable);
     }
+
     public void stopStatusUpdater() {
         handler.removeCallbacks(statusCheckRunnable);
     }
+
     public void insertTask(Task task) {
         executor.execute(() -> {
             if (task == null) {
@@ -217,13 +239,19 @@ public class TaskService {
             }
 
             try {
-                taskRepository.insert(task);
-                Log.d(TAG, "Task '" + task.getName() + "' inserted successfully.");
+                long taskId = taskRepository.insertAndReturnId(task);
+
+                Log.d(TAG, "Task '" + task.getName() + "' inserted successfully with ID: " + taskId);
+
+                if (task.getRecurrence() != null) {
+                    scheduleNextRecurringTask(taskRepository.getTaskByIdSync((int)taskId));
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Error inserting task: " + e.getMessage());
             }
         });
     }
+
     public void deleteTask(Task task) {
         executor.execute(() -> {
             if (task == null) {
@@ -233,11 +261,15 @@ public class TaskService {
             try {
                 taskRepository.delete(task);
                 Log.d(TAG, "Task '" + task.getName() + "' deleted successfully.");
+                if (task.getRecurrence() != null) {
+                    workManager.cancelUniqueWork(getRecurringTaskWorkName(task.getId()));
+                }
             } catch (Exception e) {
                 Log.e(TAG, "Error deleting task: " + e.getMessage());
             }
         });
     }
+
     public void insertCategory(TaskCategory category) {
         executor.execute(() -> {
             if (category == null) {
@@ -257,10 +289,63 @@ public class TaskService {
             }
         });
     }
+
     public LiveData<Task> getTaskById(int taskId) {
         return taskRepository.getById(taskId);
     }
+
     public LiveData<TaskCategory> getTaskCategoryById(int categoryId) {
         return categoryRepository.getById(categoryId);
+    }
+
+    private void scheduleNextRecurringTask(Task task) {
+        TaskRecurrence recurrence = task.getRecurrence();
+        if (recurrence == null) return;
+
+        long currentTime = System.currentTimeMillis();
+        long nextOccurrenceTime = calculateNextOccurrenceTime(task);
+
+        if (nextOccurrenceTime > currentTime) {
+            long delay = nextOccurrenceTime - currentTime;
+
+            Data inputData = new Data.Builder()
+                    .putInt(RecurringTaskWorker.KEY_TASK_ID, task.getId())
+                    .build();
+
+            OneTimeWorkRequest workRequest = new OneTimeWorkRequest.Builder(RecurringTaskWorker.class)
+                    .setInputData(inputData)
+                    .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+                    .build();
+
+            String workName = getRecurringTaskWorkName(task.getId());
+            workManager.enqueueUniqueWork(workName, ExistingWorkPolicy.REPLACE, workRequest);
+            Log.d(TAG, "Scheduled recurring task with ID: " + task.getId() + " to run in " + TimeUnit.MILLISECONDS.toSeconds(delay) + " seconds.");
+        }
+    }
+
+    private String getRecurringTaskWorkName(int taskId) {
+        return "recurring_task_" + taskId;
+    }
+
+    private long calculateNextOccurrenceTime(Task task) {
+        long lastCompletionTime = task.getCreatedAt();
+        TaskRecurrence recurrence = task.getRecurrence();
+        if (recurrence == null) return 0;
+
+        long intervalMillis = 0;
+        switch (recurrence.getUnit()) {
+            case MINUTE:
+                intervalMillis = TimeUnit.MINUTES.toMillis(recurrence.getInterval());
+                break;
+            case DAY:
+                intervalMillis = TimeUnit.DAYS.toMillis(recurrence.getInterval());
+                break;
+            case WEEK:
+                intervalMillis = TimeUnit.DAYS.toMillis(recurrence.getInterval() * 7);
+                break;
+        }
+
+        long nextTime = lastCompletionTime + intervalMillis;
+        return nextTime;
     }
 }

@@ -3,14 +3,17 @@ package com.e2_ma_tim09_2025.questify.activities.tasks;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.PopupMenu;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.activities.MainActivity;
+import com.e2_ma_tim09_2025.questify.activities.taskCategories.TaskCategoriesMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.users.ProfileActivity;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksCalendarFragment;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksListFragment;
@@ -32,6 +35,7 @@ public class TasksMainActivity extends AppCompatActivity {
     private MaterialButton filterButton;
     private MaterialButton logoutButton;
     private MaterialButton profileButton;
+    private TextView tasksTitle;
     private boolean showingCalendar = false;
     private final MediatorLiveData<Boolean> isFilterActive = new MediatorLiveData<>();
 
@@ -43,6 +47,7 @@ public class TasksMainActivity extends AppCompatActivity {
         taskViewModel = new ViewModelProvider(this).get(TaskViewModel.class);
         userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
 
+        tasksTitle = findViewById(R.id.tasksTitle);
         addTaskButton = findViewById(R.id.add_task_button);
         viewChangeButton = findViewById(R.id.toggle_view_button);
         filterButton = findViewById(R.id.filter_button);
@@ -55,6 +60,21 @@ public class TasksMainActivity extends AppCompatActivity {
         isFilterActive.addSource(taskViewModel.getSelectedDifficulties(), difficulties -> updateFilterState());
         isFilterActive.addSource(taskViewModel.getSelectedPriorities(), priorities -> updateFilterState());
         isFilterActive.addSource(taskViewModel.getIsRecurringFilter(), isRecurring -> updateFilterState());
+
+        tasksTitle.setOnClickListener(v -> {
+            PopupMenu popup = new PopupMenu(TasksMainActivity.this, v);
+
+            popup.getMenu().clear();
+            popup.getMenu().add("Categories");
+
+            popup.setOnMenuItemClickListener(item -> {
+                Intent intent = new Intent(TasksMainActivity.this, TaskCategoriesMainActivity.class);
+                startActivity(intent);
+                return true;
+            });
+
+            popup.show();
+        });
 
         isFilterActive.observe(this, isActive -> {
             if (isActive) {

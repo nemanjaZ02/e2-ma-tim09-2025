@@ -12,7 +12,7 @@ import com.e2_ma_tim09_2025.questify.models.Task;
 @Dao
 public interface TaskDao {
     @Insert
-    void insert(Task task);
+    long insert(Task task);
 
     @Update
     void update(Task task);
@@ -28,4 +28,15 @@ public interface TaskDao {
 
     @Query("SELECT * FROM tasks WHERE status = 'ACTIVE'")
     List<Task> getActiveTasks();
+
+    // Ove 3 su za recurring taskove ispod
+    @Query("SELECT * FROM tasks WHERE recurrence IS NOT NULL")
+    List<Task> getRecurringTasks();
+
+    @Query("SELECT * FROM tasks WHERE originalTaskId = :originalTaskId")
+    LiveData<List<Task>> getTaskInstances(int originalTaskId);
+
+    // WorkManager ne radi sa LiveData
+    @Query("SELECT * FROM tasks WHERE id = :taskId")
+    Task getTaskByIdSync(int taskId);
 }

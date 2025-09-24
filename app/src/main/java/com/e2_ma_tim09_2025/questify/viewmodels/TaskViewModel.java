@@ -25,7 +25,6 @@ public class TaskViewModel extends ViewModel {
     private final TaskService taskService;
     private final LiveData<List<Task>> allTasks;
     private final LiveData<List<TaskCategory>> allCategories;
-
     private final MutableLiveData<Set<String>> selectedCategoryIds = new MutableLiveData<>(new HashSet<>());
     private final MutableLiveData<Set<TaskDifficulty>> selectedDifficulties = new MutableLiveData<>(new HashSet<>());
     private final MutableLiveData<Set<TaskPriority>> selectedPriorities = new MutableLiveData<>(new HashSet<>());
