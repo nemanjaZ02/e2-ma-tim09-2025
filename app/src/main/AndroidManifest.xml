@@ -17,6 +17,9 @@
         android:theme="@style/Theme.Questify"
         tools:targetApi="31">
         <activity
+            android:name=".activities.taskCategories.TaskCategoryDetailsActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.taskCategories.AddTaskCategoryActivity"
             android:exported="false" />
         <activity

@@ -1,5 +1,6 @@
 package com.e2_ma_tim09_2025.questify.fragments.taskCategories;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +14,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.e2_ma_tim09_2025.questify.R;
+import com.e2_ma_tim09_2025.questify.activities.taskCategories.TaskCategoryDetailsActivity;
 import com.e2_ma_tim09_2025.questify.adapters.taskCategories.TaskCategoriesRecyclerViewAdapter;
 import com.e2_ma_tim09_2025.questify.viewmodels.TaskCategoryViewModel;
 
@@ -42,6 +44,12 @@ public class TaskCategoriesListFragment extends Fragment {
 
         adapter = new TaskCategoriesRecyclerViewAdapter();
         recyclerView.setAdapter(adapter);
+
+        adapter.setOnItemClickListener(category -> {
+            Intent intent = new Intent(getContext(), TaskCategoryDetailsActivity.class);
+            intent.putExtra("categoryId", category.getId());
+            startActivity(intent);
+        });
 
         categoryViewModel.getAllCategories().observe(getViewLifecycleOwner(), categories -> adapter.setCategories(categories));
     }

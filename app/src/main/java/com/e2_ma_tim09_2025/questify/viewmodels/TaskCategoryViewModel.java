@@ -1,6 +1,7 @@
 package com.e2_ma_tim09_2025.questify.viewmodels;
 
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
@@ -34,5 +35,26 @@ public class TaskCategoryViewModel extends ViewModel {
 
     public void insertCategory(TaskCategory category) {
         categoryService.insertCategory(category);
+    }
+
+    public void updateCategory(TaskCategory category) {
+        categoryService.updateCategory(category);
+    }
+
+    public void deleteCategory(TaskCategory category) {
+        categoryService.deleteCategory(category);
+    }
+
+    public LiveData<Boolean> isColorUsed(int color) {
+        return Transformations.map(allCategories, categories -> {
+            if (categories != null) {
+                for (TaskCategory category : categories) {
+                    if (category.getColor() == color) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        });
     }
 }
