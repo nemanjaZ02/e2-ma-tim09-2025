@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.hilt.android.gradle.plugin)
     alias(libs.plugins.google.gms.google.services)
-    //id("com.google.gms.google-services")
 }
 
 android {
@@ -37,6 +36,10 @@ android {
 dependencies {
     implementation(libs.gson)
     implementation(libs.room.runtime)
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.google.guava)
+    implementation(libs.hilt.work)
+    annotationProcessor(libs.hilt.compiler.work)
     implementation(libs.firebase.firestore)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)

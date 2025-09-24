@@ -12,12 +12,15 @@ import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskStatus;
 
 @Entity(tableName = "tasks",
-    foreignKeys = @ForeignKey(
-            entity = TaskCategory.class,
-            parentColumns = "id",
-            childColumns = "category_id",
-            onDelete = ForeignKey.CASCADE
-    ), indices = {@Index(value = {"category_id"})})
+        foreignKeys = @ForeignKey(
+                entity = TaskCategory.class,
+                parentColumns = "id",
+                childColumns = "category_id",
+                onDelete = ForeignKey.CASCADE
+        ), indices = {
+        @Index(value = {"category_id"}),
+        @Index(value = {"originalTaskId"})
+})
 public class Task {
     @PrimaryKey(autoGenerate = true)
     private int id;
@@ -34,6 +37,7 @@ public class Task {
     @Ignore
     private int userId;
     private TaskStatus status;
+    private Integer originalTaskId;
 
     public Task(String name, int categoryId, String description, TaskDifficulty difficulty,
                 TaskPriority priority, TaskRecurrence recurrence, long createdAt, long finishDate, long remainingTime, TaskStatus status) {
@@ -47,6 +51,25 @@ public class Task {
         this.finishDate = finishDate;
         this.status = status;
         this.remainingTime = remainingTime;
+        this.originalTaskId = null;
+    }
+
+    @Ignore
+    public Task(int id, String name, int categoryId, String description, TaskDifficulty difficulty, TaskPriority priority,
+                TaskRecurrence recurrence, long createdAt, long finishDate, long remainingTime, int userId, TaskStatus status, Integer originalTaskId) {
+        this.id = id;
+        this.name = name;
+        this.categoryId = categoryId;
+        this.description = description;
+        this.difficulty = difficulty;
+        this.priority = priority;
+        this.recurrence = recurrence;
+        this.createdAt = createdAt;
+        this.finishDate = finishDate;
+        this.remainingTime = remainingTime;
+        this.userId = userId;
+        this.status = status;
+        this.originalTaskId = originalTaskId;
     }
 
     public TaskDifficulty getDifficulty() {
@@ -143,5 +166,13 @@ public class Task {
 
     public void setRemainingTime(long remainingTime) {
         this.remainingTime = remainingTime;
+    }
+
+    public Integer getOriginalTaskId() {
+        return originalTaskId;
+    }
+
+    public void setOriginalTaskId(Integer originalTaskId) {
+        this.originalTaskId = originalTaskId;
     }
 }

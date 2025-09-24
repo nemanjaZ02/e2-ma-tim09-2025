@@ -29,6 +29,9 @@ public class TaskRepository {
     public void insert(Task task) {
         executor.execute(() -> taskDao.insert(task));
     }
+    public long insertAndReturnId(Task task) {
+        return taskDao.insert(task);
+    }
     public void delete(Task task) {
         executor.execute(() -> taskDao.delete(task));
     }
@@ -65,5 +68,17 @@ public class TaskRepository {
             task.setFinishDate(newFinishDate);
             taskDao.update(task);
         });
+    }
+
+    public List<Task> getRecurringTasks() {
+        return taskDao.getRecurringTasks();
+    }
+
+    public Task getTaskByIdSync(int taskId) {
+        return taskDao.getTaskByIdSync(taskId);
+    }
+
+    public LiveData<List<Task>> getTaskInstances(int originalTaskId) {
+        return taskDao.getTaskInstances(originalTaskId);
     }
 }

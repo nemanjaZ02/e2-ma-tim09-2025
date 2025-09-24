@@ -16,6 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Questify"
         tools:targetApi="31">
+
         <activity
             android:name=".activities.tasks.TaskDetailsActivity"
             android:exported="false" />
