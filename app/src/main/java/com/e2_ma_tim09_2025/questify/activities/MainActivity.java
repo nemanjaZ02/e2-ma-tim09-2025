@@ -15,6 +15,8 @@ import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.activities.tasks.TasksMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.users.LoginActivity;
 import com.e2_ma_tim09_2025.questify.activities.users.RegisterActivity;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
@@ -51,5 +53,19 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
         });
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (currentUser != null && currentUser.isEmailVerified()) {
+            // User is logged in → go directly to TasksMainActivity
+            Intent intent = new Intent(this, TasksMainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // prevent back navigation
+            startActivity(intent);
+            finish();
+        }
     }
 }

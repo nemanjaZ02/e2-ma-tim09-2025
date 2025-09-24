@@ -15,12 +15,13 @@ public class User {
     private List<String> badges;
     private List<String> equipment;
     private String qrCode;
+    private long createdAt;
 
     public User() {}
 
     public User(String id, String username, String avatar, int level, String title,
                 int powerPoints, int experiencePoints, int coins,
-                List<String> badges, List<String> equipment, String qrCode) {
+                List<String> badges, List<String> equipment, String qrCode, long createdAt) {
         this.id = id;
         this.username = username;
         this.avatar = avatar;
@@ -32,6 +33,7 @@ public class User {
         this.badges = badges;
         this.equipment = equipment;
         this.qrCode = qrCode;
+        this.createdAt = createdAt;
     }
 
     public String getId() { return id; }
@@ -66,4 +68,6 @@ public class User {
 
     public String getQrCode() { return qrCode; }
     public void setQrCode(String qrCode) { this.qrCode = qrCode; }
+    public long getCreatedAt () {return createdAt; }
+    public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
 }

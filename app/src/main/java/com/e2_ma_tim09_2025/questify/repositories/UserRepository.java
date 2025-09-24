@@ -26,49 +26,6 @@ public class UserRepository {
         this.auth = auth;
     }
 
-    // Register user with email and password
-//    public void registerUser(String email, String password, User user,
-//                             OnCompleteListener<AuthResult> authListener,
-//                             OnCompleteListener<Void> userSaveListener) {
-//        auth.createUserWithEmailAndPassword(email, password)
-//                .addOnCompleteListener(authListener)
-//                .addOnCompleteListener(task -> {
-//                    // Always notify the caller about auth result
-//                    authListener.onComplete(task);
-//
-//                    if (task.isSuccessful()) {
-//                        String uid = auth.getCurrentUser() != null ? auth.getCurrentUser().getUid() : null;
-//                        if (uid == null) {
-//                            // Extremely rare, but handle it
-//                            Log.e("USER_REPO", "Auth success but currentUser is null");
-//                            if (userSaveListener != null) {
-//                                // propagate a failure
-//                                userSaveListener.onComplete(
-//                                        com.google.android.gms.tasks.Tasks.forException(
-//                                                new IllegalStateException("currentUser is null after auth")
-//                                        )
-//                                );
-//                            }
-//                            return;
-//                        }
-//
-//                        user.setId(uid);
-//                        userDAO.createUser(user, userSaveListener);
-//
-//                    } else {
-//                        Log.e("USER_REPO", "Auth failed", task.getException());
-//                        if (userSaveListener != null) {
-//                            userSaveListener.onComplete(
-//                                    com.google.android.gms.tasks.Tasks.forException(
-//                                            task.getException() != null ? task.getException()
-//                                                    : new Exception("Auth failed")
-//                                    )
-//                            );
-//                        }
-//                    }
-//                });
-//    }
-
     public void registerUser(String email, String password, User user,
                              OnCompleteListener<AuthResult> authListener,
                              OnCompleteListener<Void> userSaveListener) {
@@ -90,6 +47,10 @@ public class UserRepository {
                             return;
                         }
 
+                        user.setId(uid);
+                        user.setCreatedAt(System.currentTimeMillis());
+                        userDAO.createUser(user, userSaveListener);
+
                         firebaseUser.sendEmailVerification()
                                 .addOnCompleteListener(emailTask -> {
                                     if (emailTask.isSuccessful()) {
@@ -99,8 +60,6 @@ public class UserRepository {
                                     }
                                 });
 
-                        user.setId(uid);
-                        userDAO.createUser(user, userSaveListener);
                     } else {
                         if (userSaveListener != null) {
                             userSaveListener.onComplete(
@@ -112,24 +71,19 @@ public class UserRepository {
                     }
                 });
     }
-
-    // Login user
     public void loginUser(String email, String password, OnCompleteListener<AuthResult> listener) {
         auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(listener);
     }
 
-    // Get user by UID
     public void getUser(String uid, OnCompleteListener<com.google.firebase.firestore.DocumentSnapshot> listener) {
         userDAO.getUser(uid, listener);
     }
 
-    // Update user
     public void updateUser(User user, OnCompleteListener<Void> listener) {
         userDAO.updateUser(user, listener);
     }
 
-    // Logout
     public void logout() {
         auth.signOut();
     }
@@ -139,6 +93,10 @@ public class UserRepository {
             return auth.getCurrentUser().getUid();
         }
         return null;
+    }
+
+    public void deleteUser(String user, OnCompleteListener<Void> listener) {
+        userDAO.deleteUser(user, listener);
     }
 
 }
