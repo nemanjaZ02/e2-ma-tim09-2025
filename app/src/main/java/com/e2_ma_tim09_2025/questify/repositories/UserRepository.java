@@ -10,6 +10,9 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -17,13 +20,15 @@ import javax.inject.Singleton;
 @Singleton
 public class UserRepository {
 
-    private final UserDao userDAO;
+    private final FirebaseFirestore firestore;
     private final FirebaseAuth auth;
+    private final CollectionReference usersRef;
 
     @Inject
-    public UserRepository(UserDao userDAO, FirebaseAuth auth) {
-        this.userDAO = userDAO;
+    public UserRepository(FirebaseFirestore firestore, FirebaseAuth auth) {
+        this.firestore = firestore;
         this.auth = auth;
+        this.usersRef = firestore.collection("users");
     }
 
     public void registerUser(String email, String password, User user,
@@ -49,7 +54,10 @@ public class UserRepository {
 
                         user.setId(uid);
                         user.setCreatedAt(System.currentTimeMillis());
-                        userDAO.createUser(user, userSaveListener);
+
+                        usersRef.document(uid)
+                                .set(user)
+                                .addOnCompleteListener(userSaveListener);
 
                         firebaseUser.sendEmailVerification()
                                 .addOnCompleteListener(emailTask -> {
@@ -76,27 +84,50 @@ public class UserRepository {
                 .addOnCompleteListener(listener);
     }
 
-    public void getUser(String uid, OnCompleteListener<com.google.firebase.firestore.DocumentSnapshot> listener) {
-        userDAO.getUser(uid, listener);
+    // Get user from Firestore
+    public void getUser(String uid, OnCompleteListener<DocumentSnapshot> listener) {
+        usersRef.document(uid)
+                .get()
+                .addOnCompleteListener(listener);
     }
 
+    // Update user in Firestore
     public void updateUser(User user, OnCompleteListener<Void> listener) {
-        userDAO.updateUser(user, listener);
+        usersRef.document(user.getId())
+                .set(user)
+                .addOnCompleteListener(listener);
     }
 
+    // Delete user from Firestore + Auth
+    public void deleteUser(String uid, OnCompleteListener<Void> listener) {
+        // Delete Firestore document
+        usersRef.document(uid)
+                .delete()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        // Then delete Auth user
+                        FirebaseUser currentUser = auth.getCurrentUser();
+                        if (currentUser != null && currentUser.getUid().equals(uid)) {
+                            currentUser.delete()
+                                    .addOnCompleteListener(listener);
+                        } else {
+                            if (listener != null) listener.onComplete(task);
+                        }
+                    } else {
+                        if (listener != null) listener.onComplete(task);
+                    }
+                });
+    }
+
+    // Logout
     public void logout() {
         auth.signOut();
     }
 
+    // Get current user ID
     public String getCurrentUserId() {
-        if (auth.getCurrentUser() != null) {
-            return auth.getCurrentUser().getUid();
-        }
-        return null;
-    }
-
-    public void deleteUser(String user, OnCompleteListener<Void> listener) {
-        userDAO.deleteUser(user, listener);
+        FirebaseUser currentUser = auth.getCurrentUser();
+        return currentUser != null ? currentUser.getUid() : null;
     }
 
 }
