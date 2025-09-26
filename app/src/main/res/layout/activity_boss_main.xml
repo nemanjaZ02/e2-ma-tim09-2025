@@ -8,35 +8,127 @@
     android:background="#D2B48C"
     tools:context=".activities.bosses.BossMainActivity">
 
+    <!-- Boss video preko skoro celog ekrana -->
+    <FrameLayout
+        android:id="@+id/videoContainer"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/ppBarContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_margin="16dp">
+
+        <VideoView
+            android:id="@+id/bossVideoView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="center"
+            android:adjustViewBounds="true"
+            android:scaleType="centerCrop" />
+
+        <!-- Health bar na vrhu videa -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:paddingStart="24dp"
+            android:paddingEnd="24dp">
+
+            <ProgressBar
+                android:id="@+id/bossHealthBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="20dp"
+                android:max="100"
+                android:progress="100"
+                android:progressDrawable="@drawable/boss_health_bar_style"
+                android:background="#66000000" />
+
+            <TextView
+                android:id="@+id/healthTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="100 / 100"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </RelativeLayout>
+    </FrameLayout>
+
+    <!-- PP bar + attacks left ispod videa -->
     <LinearLayout
-        android:id="@+id/bossContainer"
+        android:id="@+id/ppBarContainer"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintTop_toBottomOf="@id/videoContainer"
+        app:layout_constraintBottom_toTopOf="@id/btnAttack"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <!-- PP progress bar -->
+        <RelativeLayout
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content">
+
+            <ProgressBar
+                android:id="@+id/playerPPBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="18dp"
+                android:max="100"
+                android:progress="60"
+                android:progressDrawable="@drawable/player_pp_bar_style"
+                android:background="#66000000" />
+
+            <TextView
+                android:id="@+id/playerPPText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:text="50 / 50 PP"
+                android:textColor="@android:color/white"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </RelativeLayout>
+
+        <!-- Attacks left tekst -->
+        <TextView
+            android:id="@+id/attacksLeftText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="12dp"
+            android:text="Attacks left: 3"
+            android:textColor="@android:color/white"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Attack button na dnu -->
+    <Button
+        android:id="@+id/btnAttack"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:gravity="center"
-        app:layout_constraintTop_toTopOf="parent"
+        android:text="ATTACK"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:backgroundTint="#B00020"
+        android:textColor="#F0F0F0"
+        app:cornerRadius="24dp"
+        android:paddingStart="60dp"
+        android:paddingEnd="60dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="20dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:padding="16dp"
-        android:background="@android:color/transparent"> <VideoView
-        android:id="@+id/bossVideoView"
-        android:layout_width="350dp"  android:layout_height="500dp" android:layout_marginBottom="32dp"/>
-
-        <Button
-            android:id="@+id/btnAttack"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ATTACK"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:backgroundTint="#B00020" android:textColor="#F0F0F0"
-            app:cornerRadius="24dp"
-            android:paddingStart="60dp"
-            android:paddingEnd="60dp"
-            android:paddingTop="20dp"
-            android:paddingBottom="20dp"/>
-
-    </LinearLayout>
+        android:layout_marginBottom="32dp" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
