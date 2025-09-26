@@ -17,6 +17,12 @@
         android:theme="@style/Theme.Questify"
         tools:targetApi="31">
         <activity
+            android:name=".activities.bosses.BossMainActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.bosses.MainBossActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.taskCategories.TaskCategoryDetailsActivity"
             android:exported="false" />
         <activity

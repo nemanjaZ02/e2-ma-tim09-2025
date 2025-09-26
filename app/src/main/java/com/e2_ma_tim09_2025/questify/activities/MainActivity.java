@@ -12,6 +12,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.e2_ma_tim09_2025.questify.R;
+import com.e2_ma_tim09_2025.questify.activities.bosses.BossMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.tasks.TasksMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.users.LoginActivity;
 import com.e2_ma_tim09_2025.questify.activities.users.RegisterActivity;
@@ -38,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
         Button tasksButton = findViewById(R.id.tasks_button);
         Button registerButton = findViewById(R.id.btnRegister);
         Button loginButton = findViewById(R.id.btnLogin);
+        Button bossButton = findViewById(R.id.btnBossFight);
 
         tasksButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, TasksMainActivity.class);
@@ -51,6 +53,11 @@ public class MainActivity extends AppCompatActivity {
 
         loginButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+        });
+
+        bossButton.setOnClickListener(v -> {
+            Intent intent = new Intent(this, BossMainActivity.class);
             startActivity(intent);
         });
     }
