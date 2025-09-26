@@ -88,8 +88,20 @@ public class UserRepository {
     public void getUser(String uid, OnCompleteListener<DocumentSnapshot> listener) {
         usersRef.document(uid)
                 .get()
-                .addOnCompleteListener(listener);
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        if (task.getResult() != null && task.getResult().exists()) {
+                            Log.d("UserRepo", "User found: " + uid);
+                        } else {
+                            Log.e("UserRepo", "User not found: " + uid);
+                        }
+                    } else {
+                        Log.e("UserRepo", "Failed to get user: " + task.getException());
+                    }
+                    listener.onComplete(task);
+                });
     }
+
 
     // Update user in Firestore
     public void updateUser(User user, OnCompleteListener<Void> listener) {
