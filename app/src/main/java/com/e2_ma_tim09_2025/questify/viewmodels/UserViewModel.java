@@ -85,6 +85,7 @@ public class UserViewModel extends ViewModel {
                     if (userSaveTask.isSuccessful()) {
                         String uid = userService.getCurrentUserId();
                         if (uid != null) fetchUser(uid);
+
                     } else {
                         Log.e("VM_REGISTER", "Saving user failed", userSaveTask.getException());
                         String message = "Could not save user profile. Please try again.";
