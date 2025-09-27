@@ -141,5 +141,8 @@ public class UserRepository {
         FirebaseUser currentUser = auth.getCurrentUser();
         return currentUser != null ? currentUser.getUid() : null;
     }
+    public FirebaseUser getCurrentUser() {
+        return auth.getCurrentUser();
+    }
 
 }

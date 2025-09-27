@@ -8,7 +8,9 @@ import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
 import com.e2_ma_tim09_2025.questify.repositories.UserRepository;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 
@@ -216,7 +218,39 @@ public class UserService {
             }
         });
     }
+    public void changePassword(String oldPassword, String newPassword, String confirmPassword, OnCompleteListener<Void> listener) {
+        FirebaseUser currentUser = userRepository.getCurrentUser();
+        if (currentUser == null) {
+            if (listener != null) {
+                listener.onComplete(Tasks.forException(new Exception("No authenticated user found.")));
+            }
+            return;
+        }
 
+        if (newPassword == null || confirmPassword == null || !newPassword.equals(confirmPassword)) {
+            if (listener != null) {
+                listener.onComplete(Tasks.forException(new Exception("New passwords do not match.")));
+            }
+            return;
+        }
 
+        AuthCredential credential = EmailAuthProvider.getCredential(currentUser.getEmail(), oldPassword);
+
+        currentUser.reauthenticate(credential)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        currentUser.updatePassword(newPassword)
+                                .addOnCompleteListener(listener);
+                    } else {
+                        if (listener != null) {
+                            listener.onComplete(Tasks.forException(new Exception("Old password is incorrect.")));
+                        }
+                    }
+                });
+    }
+
+    public FirebaseUser getCurrentUser(){
+        return userRepository.getCurrentUser();
+    }
 }
 
