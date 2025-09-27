@@ -2,7 +2,12 @@ package com.e2_ma_tim09_2025.questify.activities.users;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
+
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -10,6 +15,7 @@ import android.widget.Toast;
 
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.models.User;
+import com.e2_ma_tim09_2025.questify.viewmodels.UserViewModel;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
@@ -25,9 +31,14 @@ public class ProfileActivity extends AppCompatActivity {
     private ImageView profileAvatar;
     private TextView profileUsername, profileTitleText, profileLevel, profilePowerPoints, profileXP, profileCoins;
     private LinearLayout badgesContainer, equipmentContainer;
+    private LinearLayout changePasswordContainer;
+    private EditText editOldPassword, editNewPassword, editConfirmPassword;
+    private Button btnChangePassword, btnSavePassword;
+
 
     private FirebaseAuth auth;
     private FirebaseFirestore db;
+    private UserViewModel viewModel;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -48,6 +59,44 @@ public class ProfileActivity extends AppCompatActivity {
         profileCoins = findViewById(R.id.profileCoins);
         badgesContainer = findViewById(R.id.badgesContainer);
         equipmentContainer = findViewById(R.id.equipmentContainer);
+        changePasswordContainer = findViewById(R.id.changePasswordContainer);
+        editOldPassword = findViewById(R.id.editOldPassword);
+        editNewPassword = findViewById(R.id.editNewPassword);
+        editConfirmPassword = findViewById(R.id.editConfirmPassword);
+        btnChangePassword = findViewById(R.id.btnChangePassword);
+        btnSavePassword = findViewById(R.id.btnSavePassword);
+
+        viewModel = new ViewModelProvider(this).get(UserViewModel.class);
+
+        btnChangePassword.setOnClickListener(v -> {
+            if (changePasswordContainer.getVisibility() == View.GONE) {
+                changePasswordContainer.setVisibility(View.VISIBLE);
+            } else {
+                changePasswordContainer.setVisibility(View.GONE);
+            }
+        });
+
+        // Save password button
+        btnSavePassword.setOnClickListener(v -> {
+            String oldPassword = editOldPassword.getText().toString().trim();
+            String newPassword = editNewPassword.getText().toString().trim();
+            String confirmPassword = editConfirmPassword.getText().toString().trim();
+
+            // Call ViewModel method
+            viewModel.changePassword(oldPassword, newPassword, confirmPassword);
+        });
+
+        // Observe result from ViewModel
+        viewModel.getChangePasswordResult().observe(this, status -> {
+            Toast.makeText(this, status, Toast.LENGTH_SHORT).show();
+            if ("Password updated successfully".equals(status)) {
+                // Hide password form after success
+                changePasswordContainer.setVisibility(View.GONE);
+                editOldPassword.setText("");
+                editNewPassword.setText("");
+                editConfirmPassword.setText("");
+            }
+        });
 
         loadUserData();
     }
