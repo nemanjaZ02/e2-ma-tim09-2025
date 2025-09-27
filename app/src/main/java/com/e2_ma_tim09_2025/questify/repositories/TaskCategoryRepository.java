@@ -22,6 +22,9 @@ public class TaskCategoryRepository {
     public LiveData<List<TaskCategory>> getAll() {
         return categoryDao.getAll();
     }
+    public List<TaskCategory> getAll2() {
+        return categoryDao.getAll2();
+    }
 
     public void insert(TaskCategory category) {
         executor.execute(() -> categoryDao.insert(category));

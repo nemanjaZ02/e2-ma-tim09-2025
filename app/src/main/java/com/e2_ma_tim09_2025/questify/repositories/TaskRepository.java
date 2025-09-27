@@ -46,12 +46,16 @@ public class TaskRepository {
     public void complete(Task task) {
         executor.execute(() -> {
             task.setStatus(TaskStatus.COMPLETED);
+            task.setLastInteractionAt(System.currentTimeMillis());
+            task.setCompletedAt(System.currentTimeMillis());
+            task.setXp(task.getXp());
             taskDao.update(task);
         });
     }
     public void cancel(Task task) {
         executor.execute(() -> {
             task.setStatus(TaskStatus.CANCELLED);
+            task.setLastInteractionAt(System.currentTimeMillis());
             taskDao.update(task);
         });
     }
@@ -59,6 +63,7 @@ public class TaskRepository {
         executor.execute(() -> {
             task.setStatus(TaskStatus.PAUSED);
             task.setRemainingTime(remainingTime);
+            task.setLastInteractionAt(System.currentTimeMillis());
             taskDao.update(task);
         });
     }
@@ -66,6 +71,7 @@ public class TaskRepository {
         executor.execute(() -> {
             task.setStatus(TaskStatus.ACTIVE);
             task.setFinishDate(newFinishDate);
+            task.setLastInteractionAt(System.currentTimeMillis());
             taskDao.update(task);
         });
     }
@@ -80,5 +86,9 @@ public class TaskRepository {
 
     public LiveData<List<Task>> getTaskInstances(int originalTaskId) {
         return taskDao.getTaskInstances(originalTaskId);
+    }
+
+    public List<Task> getTasksByUser(String userId){
+        return taskDao.getTasksByUser(userId);
     }
 }

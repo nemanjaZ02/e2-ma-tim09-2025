@@ -208,6 +208,7 @@ public class UserService {
                 user.setPowerPoints(pp);
                 user.setTitle(title);
 
+
                 // Save to Firestore
                 updateUser(user, listener);
 

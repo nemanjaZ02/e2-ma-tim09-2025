@@ -94,9 +94,7 @@ public class TaskService {
 
             try {
                 // 1. Mark task as completed
-                task.setStatus(TaskStatus.COMPLETED);
-                taskRepository.complete(task);
-                Log.d(TAG, "Task '" + task.getName() + "' completed successfully.");
+                //PREBACILA SAM KOD ISPOD OVOGA!!!!!!!!!!!
 
                 // 2. Fetch the user from UserRepository
                 userRepository.getUser(userId, taskSnapshot -> {
@@ -112,6 +110,12 @@ public class TaskService {
                         int xpFromImportance = userService.calculateXpForImportance(task.getPriority(), currentLevel);
                         int xpFromDifficulty = userService.calculateXpForDifficulty(task.getDifficulty(), currentLevel);
                         int totalXp = xpFromImportance + xpFromDifficulty;
+
+                        task.setStatus(TaskStatus.COMPLETED);
+                        task.setXp(totalXp);
+                        taskRepository.complete(task);
+                        Log.d(TAG, "Task '" + task.getName() + "' completed successfully.");
+
 
                         // 3. Award XP (UserService handles leveling, PP, title)
                         userService.addXP(userId, totalXp, addXpTask -> {
@@ -258,6 +262,9 @@ public class TaskService {
     public LiveData<List<TaskCategory>> getAllCategories() {
         return categoryRepository.getAll();
     }
+    public List<TaskCategory> getAllCategoriesSync() {
+        return categoryRepository.getAll2();
+    }
 
     public void startStatusUpdater() {
         handler.post(statusCheckRunnable);
@@ -340,6 +347,9 @@ public class TaskService {
 
     public LiveData<TaskCategory> getTaskCategoryById(int categoryId) {
         return categoryRepository.getById(categoryId);
+    }
+    public List<Task> getTasksByUser(String userId) {
+        return taskRepository.getTasksByUser(userId);
     }
 
     private void scheduleNextRecurringTask(Task task) {
