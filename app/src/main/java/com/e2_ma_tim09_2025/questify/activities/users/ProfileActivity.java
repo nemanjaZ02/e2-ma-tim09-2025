@@ -4,6 +4,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -20,6 +21,7 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.DocumentReference;
+import com.e2_ma_tim09_2025.questify.utils.QrCodeUtils;
 
 import java.util.List;
 
@@ -28,7 +30,7 @@ import dagger.hilt.android.AndroidEntryPoint;
 @AndroidEntryPoint
 public class ProfileActivity extends AppCompatActivity {
 
-    private ImageView profileAvatar;
+    private ImageView profileAvatar,qrCodeImage;
     private TextView profileUsername, profileTitleText, profileLevel, profilePowerPoints, profileXP, profileCoins;
     private LinearLayout badgesContainer, equipmentContainer;
     private LinearLayout changePasswordContainer;
@@ -65,6 +67,8 @@ public class ProfileActivity extends AppCompatActivity {
         editConfirmPassword = findViewById(R.id.editConfirmPassword);
         btnChangePassword = findViewById(R.id.btnChangePassword);
         btnSavePassword = findViewById(R.id.btnSavePassword);
+        qrCodeImage = findViewById(R.id.qrCodePlaceholder); // make this an ImageView in XML
+
 
         viewModel = new ViewModelProvider(this).get(UserViewModel.class);
 
@@ -161,7 +165,12 @@ public class ProfileActivity extends AppCompatActivity {
             }
         }
 
-        // QR code placeholder (you can later generate it using a library like ZXing)
+        if (user.getQrCode() != null) {
+            Bitmap qrBitmap = QrCodeUtils.generateQRCode(user.getQrCode(), 400); // 400x400 px
+            if (qrBitmap != null) {
+                qrCodeImage.setImageBitmap(qrBitmap);
+            }
+        }
     }
     private int getDrawableFromAvatarName(String avatarName) {
         int resId = getResources().getIdentifier(avatarName, "drawable", getPackageName());

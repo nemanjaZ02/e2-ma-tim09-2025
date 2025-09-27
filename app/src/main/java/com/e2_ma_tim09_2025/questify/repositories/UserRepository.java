@@ -54,6 +54,8 @@ public class UserRepository {
 
                         user.setId(uid);
                         user.setCreatedAt(System.currentTimeMillis());
+                        user.setQrCode(uid); // simple, unique QR code for this user
+
 
                         usersRef.document(uid)
                                 .set(user)
