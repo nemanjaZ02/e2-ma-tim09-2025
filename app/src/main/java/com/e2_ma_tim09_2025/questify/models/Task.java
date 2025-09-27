@@ -35,12 +35,16 @@ public class Task {
     private long finishDate;
     private long remainingTime;
     @Ignore
-    private int userId;
+    private String userId;
     private TaskStatus status;
     private Integer originalTaskId;
+    private long lastInteractionAt;
+    private long completedAt;
+    private int xp; //koliko ukupno xp je donio zadatak nakon rjesavanja, uzimajuci u obzir bitnost, tezinu i nivo korisnika
 
     public Task(String name, int categoryId, String description, TaskDifficulty difficulty,
-                TaskPriority priority, TaskRecurrence recurrence, long createdAt, long finishDate, long remainingTime, TaskStatus status) {
+                TaskPriority priority, TaskRecurrence recurrence, long createdAt, long finishDate, long remainingTime, TaskStatus status, long lastInteractionAt,
+                int xp, long completedAt) {
         this.name = name;
         this.categoryId = categoryId;
         this.description = description;
@@ -52,11 +56,15 @@ public class Task {
         this.status = status;
         this.remainingTime = remainingTime;
         this.originalTaskId = null;
+        this.lastInteractionAt = lastInteractionAt;//DODATI OVO I ISPOD U OVAJ STO JE IGNORE NISAM BILA SIGURNA
+        this.xp = xp;
+        this.completedAt = completedAt;
     }
 
     @Ignore
     public Task(int id, String name, int categoryId, String description, TaskDifficulty difficulty, TaskPriority priority,
-                TaskRecurrence recurrence, long createdAt, long finishDate, long remainingTime, int userId, TaskStatus status, Integer originalTaskId) {
+                TaskRecurrence recurrence, long createdAt, long finishDate, long remainingTime, String userId, TaskStatus status,
+                Integer originalTaskId, int xp, long completedAt) {
         this.id = id;
         this.name = name;
         this.categoryId = categoryId;
@@ -70,6 +78,8 @@ public class Task {
         this.userId = userId;
         this.status = status;
         this.originalTaskId = originalTaskId;
+        this.xp = xp;
+        this.completedAt = completedAt;
     }
 
     public TaskDifficulty getDifficulty() {
@@ -128,11 +138,11 @@ public class Task {
         this.description = description;
     }
 
-    public int getUserId() {
+    public String getUserId() {
         return userId;
     }
 
-    public void setUserId(int userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
@@ -174,5 +184,26 @@ public class Task {
 
     public void setOriginalTaskId(Integer originalTaskId) {
         this.originalTaskId = originalTaskId;
+    }
+
+    public long getLastInteractionAt() {
+        return lastInteractionAt;
+    }
+    public void setLastInteractionAt(long lastInteractionAt) {
+        this.lastInteractionAt = lastInteractionAt;
+    }
+    public int getXp() {
+        return xp;
+    }
+    public void setXp(int xp) {
+        this.xp = xp;
+    }
+
+    public long getCompletedAt() {
+        return completedAt;
+    }
+
+    public void setCompletedAt(long completedAt) {
+        this.completedAt = completedAt;
     }
 }

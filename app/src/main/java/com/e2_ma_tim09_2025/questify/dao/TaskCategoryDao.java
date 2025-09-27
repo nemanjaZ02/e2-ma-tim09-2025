@@ -20,6 +20,8 @@ public interface TaskCategoryDao {
     void delete(TaskCategory category);
     @Query("SELECT * FROM taskCategories")
     LiveData<List<TaskCategory>> getAll();
+    @Query("SELECT * FROM taskCategories")
+    List<TaskCategory> getAll2();
     @Query("SELECT * FROM taskCategories WHERE id = :categoryId")
     LiveData<TaskCategory> getById(int categoryId);
 }
