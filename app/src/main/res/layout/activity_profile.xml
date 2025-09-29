@@ -9,6 +9,7 @@
     android:background="#D2B48C"
     tools:context=".activities.users.ProfileActivity">
 
+
     <!-- Title -->
     <TextView
         android:id="@+id/profileTitle"
@@ -23,6 +24,15 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
+    <ImageView
+        android:id="@+id/profileMenuIcon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_edit"
+        android:contentDescription="Menu"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
 
     <ScrollView
         android:layout_width="0dp"

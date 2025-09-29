@@ -8,10 +8,13 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import javax.inject.Inject;
+
 public class AllianceInviteRepository {
     private final FirebaseFirestore db;
     private final CollectionReference invitesRef;
 
+    @Inject
     public AllianceInviteRepository() {
         db = FirebaseFirestore.getInstance();
         invitesRef = db.collection("allianceInvites");
