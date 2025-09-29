@@ -13,6 +13,7 @@ import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 
 import javax.inject.Inject;
@@ -28,12 +29,17 @@ public class UserViewModel extends ViewModel {
     private final MutableLiveData<Boolean> registrationStatus = new MutableLiveData<>();
     private final MutableLiveData<String> registrationError = new MutableLiveData<>();
     private final MutableLiveData<Boolean> loginStatus = new MutableLiveData<>();
+    private final MutableLiveData<String> changePasswordResult = new MutableLiveData<>();
+
 
     @Inject
     public UserViewModel(UserService userService) {
         this.userService = userService;
     }
 
+    public LiveData<String> getChangePasswordResult() {
+        return changePasswordResult;
+    }
     public LiveData<User> getUserLiveData() {
         return userLiveData;
     }
@@ -79,6 +85,7 @@ public class UserViewModel extends ViewModel {
                     if (userSaveTask.isSuccessful()) {
                         String uid = userService.getCurrentUserId();
                         if (uid != null) fetchUser(uid);
+
                     } else {
                         Log.e("VM_REGISTER", "Saving user failed", userSaveTask.getException());
                         String message = "Could not save user profile. Please try again.";
@@ -116,6 +123,34 @@ public class UserViewModel extends ViewModel {
     public void logout() {
         userService.logout();
         userLiveData.postValue(null);
+    }
+    public void changePassword(String oldPassword, String newPassword, String confirmPassword) {
+        // Validation
+        if (oldPassword == null || oldPassword.isEmpty() ||
+                newPassword == null || newPassword.isEmpty() ||
+                confirmPassword == null || confirmPassword.isEmpty()) {
+            changePasswordResult.setValue("All fields are required");
+            return;
+        }
+
+        if (!newPassword.equals(confirmPassword)) {
+            changePasswordResult.setValue("New passwords do not match");
+            return;
+        }
+
+        if (newPassword.length() < 6) {
+            changePasswordResult.setValue("Password must be at least 6 characters");
+            return;
+        }
+
+        // Delegate actual Firebase operation to service
+        userService.changePassword(oldPassword, newPassword, confirmPassword, task -> {
+            if (task.isSuccessful()) {
+                changePasswordResult.postValue("Password updated successfully");
+            } else {
+                changePasswordResult.postValue(task.getException().getMessage());
+            }
+        });
     }
 
 //    public void deleteUser(String user) {

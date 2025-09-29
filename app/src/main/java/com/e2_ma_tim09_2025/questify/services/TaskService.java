@@ -17,7 +17,9 @@ import com.e2_ma_tim09_2025.questify.models.TaskRecurrence;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskStatus;
 import com.e2_ma_tim09_2025.questify.repositories.TaskCategoryRepository;
 import com.e2_ma_tim09_2025.questify.repositories.TaskRepository;
+import com.e2_ma_tim09_2025.questify.repositories.UserRepository;
 import com.e2_ma_tim09_2025.questify.utils.RecurringTaskWorker;
+import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -37,11 +39,18 @@ public class TaskService {
     private final Handler handler = new Handler(Looper.getMainLooper());
     private final Runnable statusCheckRunnable;
     private final WorkManager workManager; // DODANO
+    private final UserService userService;
+    private final UserRepository userRepository;
+
+
 
     @Inject
-    public TaskService(@ApplicationContext Context context, TaskRepository taskRepository, TaskCategoryRepository categoryRepository) {
+    public TaskService(@ApplicationContext Context context, TaskRepository taskRepository, TaskCategoryRepository categoryRepository, UserService userService,
+                       UserRepository userRepository) {
         this.taskRepository = taskRepository;
         this.categoryRepository = categoryRepository;
+        this.userService = userService;
+        this.userRepository = userRepository;
         this.workManager = WorkManager.getInstance(context);
         statusCheckRunnable = new Runnable() {
             @Override
@@ -81,15 +90,54 @@ public class TaskService {
                 return;
             }
 
+            String userId = userRepository.getCurrentUserId();
+
             try {
-                taskRepository.complete(task);
-                Log.d(TAG, "Task '" + task.getName() + "' updated successfully.");
+                // 1. Mark task as completed
+                //PREBACILA SAM KOD ISPOD OVOGA!!!!!!!!!!!
+
+                // 2. Fetch the user from UserRepository
+                userRepository.getUser(userId, taskSnapshot -> {
+                    if (taskSnapshot.isSuccessful() && taskSnapshot.getResult() != null && taskSnapshot.getResult().exists()) {
+                        DocumentSnapshot document = taskSnapshot.getResult();
+
+                        // Extract user's current level
+                        int currentLevel = document.contains("level")
+                                ? document.getLong("level").intValue()
+                                : 0;
+
+                        // Calculate XP based on task and user's current level
+                        int xpFromImportance = userService.calculateXpForImportance(task.getPriority(), currentLevel);
+                        int xpFromDifficulty = userService.calculateXpForDifficulty(task.getDifficulty(), currentLevel);
+                        int totalXp = xpFromImportance + xpFromDifficulty;
+
+                        task.setStatus(TaskStatus.COMPLETED);
+                        task.setXp(totalXp);
+                        taskRepository.complete(task);
+                        Log.d(TAG, "Task '" + task.getName() + "' completed successfully.");
+
+
+                        // 3. Award XP (UserService handles leveling, PP, title)
+                        userService.addXP(userId, totalXp, addXpTask -> {
+                            if (addXpTask.isSuccessful()) {
+                                Log.d(TAG, "XP awarded successfully to user: " + userId);
+                            } else {
+                                Log.e(TAG, "Failed to add XP: " + addXpTask.getException());
+                            }
+                        });
+
+                        Log.d(TAG, "Total XP awarded for task: " + totalXp);
+
+                    } else {
+                        Log.e(TAG, "Failed to fetch user for XP calculation");
+                    }
+                });
+
             } catch (Exception e) {
-                Log.e(TAG, "Error updating task: " + e.getMessage());
+                Log.e(TAG, "Error completing task: " + e.getMessage());
             }
         });
     }
-
     public void cancelTask(Task task) {
         executor.execute(() -> {
             if (task == null) {
@@ -214,6 +262,9 @@ public class TaskService {
     public LiveData<List<TaskCategory>> getAllCategories() {
         return categoryRepository.getAll();
     }
+    public List<TaskCategory> getAllCategoriesSync() {
+        return categoryRepository.getAll2();
+    }
 
     public void startStatusUpdater() {
         handler.post(statusCheckRunnable);
@@ -296,6 +347,9 @@ public class TaskService {
 
     public LiveData<TaskCategory> getTaskCategoryById(int categoryId) {
         return categoryRepository.getById(categoryId);
+    }
+    public List<Task> getTasksByUser(String userId) {
+        return taskRepository.getTasksByUser(userId);
     }
 
     private void scheduleNextRecurringTask(Task task) {

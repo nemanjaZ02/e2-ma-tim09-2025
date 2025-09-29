@@ -39,4 +39,7 @@ public interface TaskDao {
     // WorkManager ne radi sa LiveData
     @Query("SELECT * FROM tasks WHERE id = :taskId")
     Task getTaskByIdSync(int taskId);
+
+    @Query("SELECT * FROM tasks WHERE name = :userId") //OBAVEZNO KAD SE DODA USER U MODEL STAVITI USERID, SAD JE NA IGNORE!!!!!
+    List<Task> getTasksByUser(String userId);
 }

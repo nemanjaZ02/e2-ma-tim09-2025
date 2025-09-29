@@ -54,6 +54,8 @@ public class UserRepository {
 
                         user.setId(uid);
                         user.setCreatedAt(System.currentTimeMillis());
+                        user.setQrCode(uid); // simple, unique QR code for this user
+
 
                         usersRef.document(uid)
                                 .set(user)
@@ -88,8 +90,20 @@ public class UserRepository {
     public void getUser(String uid, OnCompleteListener<DocumentSnapshot> listener) {
         usersRef.document(uid)
                 .get()
-                .addOnCompleteListener(listener);
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        if (task.getResult() != null && task.getResult().exists()) {
+                            Log.d("UserRepo", "User found: " + uid);
+                        } else {
+                            Log.e("UserRepo", "User not found: " + uid);
+                        }
+                    } else {
+                        Log.e("UserRepo", "Failed to get user: " + task.getException());
+                    }
+                    listener.onComplete(task);
+                });
     }
+
 
     // Update user in Firestore
     public void updateUser(User user, OnCompleteListener<Void> listener) {
@@ -118,16 +132,15 @@ public class UserRepository {
                     }
                 });
     }
-
-    // Logout
     public void logout() {
         auth.signOut();
     }
-
-    // Get current user ID
     public String getCurrentUserId() {
         FirebaseUser currentUser = auth.getCurrentUser();
         return currentUser != null ? currentUser.getUid() : null;
+    }
+    public FirebaseUser getCurrentUser() {
+        return auth.getCurrentUser();
     }
 
 }

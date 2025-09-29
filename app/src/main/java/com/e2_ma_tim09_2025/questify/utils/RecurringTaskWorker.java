@@ -106,7 +106,10 @@ public class RecurringTaskWorker extends Worker {
                 newCreatedAt,
                 newFinishDate,
                 originalTask.getRemainingTime(),
-                TaskStatus.ACTIVE
+                TaskStatus.ACTIVE,
+                originalTask.getLastInteractionAt(),
+                originalTask.getXp(),
+                originalTask.getCompletedAt()
         );
 
         newTaskInstance.setOriginalTaskId(originalTask.getId());

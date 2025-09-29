@@ -1,5 +1,6 @@
 package com.e2_ma_tim09_2025.questify.models;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class User {
@@ -16,12 +17,18 @@ public class User {
     private List<String> equipment;
     private String qrCode;
     private long createdAt;
+    private List<String> friends;
+    private String allianceId;
 
-    public User() {}
+    public User() {
+        friends = new ArrayList<>();
+
+    }
 
     public User(String id, String username, String avatar, int level, String title,
                 int powerPoints, int experiencePoints, int coins,
-                List<String> badges, List<String> equipment, String qrCode, long createdAt) {
+                List<String> badges, List<String> equipment, String qrCode, long createdAt,
+                ArrayList<String> friends, String allianceId) {
         this.id = id;
         this.username = username;
         this.avatar = avatar;
@@ -34,6 +41,8 @@ public class User {
         this.equipment = equipment;
         this.qrCode = qrCode;
         this.createdAt = createdAt;
+        this.friends = friends;
+        this.allianceId = allianceId;
     }
 
     public String getId() { return id; }
@@ -70,4 +79,20 @@ public class User {
     public void setQrCode(String qrCode) { this.qrCode = qrCode; }
     public long getCreatedAt () {return createdAt; }
     public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
+
+    public List<String> getFriends() {
+        return friends;
+    }
+
+    public void setFriends(List<String> friends) {
+        this.friends = friends;
+    }
+
+    public String getAllianceId() {
+        return allianceId;
+    }
+
+    public void setAllianceId(String allianceId) {
+        this.allianceId = allianceId;
+    }
 }
