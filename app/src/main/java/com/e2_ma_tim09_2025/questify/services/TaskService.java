@@ -15,6 +15,8 @@ import androidx.work.ExistingWorkPolicy;
 import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 import com.e2_ma_tim09_2025.questify.models.TaskRecurrence;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskStatus;
 import com.e2_ma_tim09_2025.questify.repositories.TaskCategoryRepository;
 import com.e2_ma_tim09_2025.questify.repositories.TaskRepository;
@@ -91,11 +93,27 @@ public class TaskService {
 
             String userId = userRepository.getCurrentUserId();
 
-            try {
-                // 1. Mark task as completed
-                //PREBACILA SAM KOD ISPOD OVOGA!!!!!!!!!!!
+            /*public enum TaskDifficulty {
+                VERY_EASY,
+                EASY,
+                HARD,
+                EXTREME
+            }*/
 
-                // 2. Fetch the user from UserRepository
+            /*public enum TaskPriority {
+                NORMAL,
+                IMPORTANT,
+                CRUCIAL,
+                SPECIAL
+            }*/
+
+            int veryEasyDiffToday = taskRepository.countTasksByDifficultyToday(userId, TaskDifficulty.VERY_EASY);
+            int normalPriorityToday = taskRepository.countTasksByPriorityToday(userId, TaskPriority.NORMAL);
+            int easyDiffToday
+
+
+            try {
+                // 1. Fetch the user from UserRepository
                 userRepository.getUser(userId, taskSnapshot -> {
                     if (taskSnapshot.isSuccessful() && taskSnapshot.getResult() != null && taskSnapshot.getResult().exists()) {
                         DocumentSnapshot document = taskSnapshot.getResult();
@@ -115,8 +133,7 @@ public class TaskService {
                         taskRepository.complete(task);
                         Log.d(TAG, "Task '" + task.getName() + "' completed successfully.");
 
-
-                        // 3. Award XP (UserService handles leveling, PP, title)
+                        // 2. Award XP (UserService handles leveling, PP, title)
                         userService.addXP(userId, totalXp, addXpTask -> {
                             if (addXpTask.isSuccessful()) {
                                 Log.d(TAG, "XP awarded successfully to user: " + userId);

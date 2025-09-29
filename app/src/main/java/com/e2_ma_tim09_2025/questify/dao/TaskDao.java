@@ -8,6 +8,8 @@ import androidx.room.Query;
 import androidx.room.Update;
 import java.util.List;
 import com.e2_ma_tim09_2025.questify.models.Task;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
 
 @Dao
 public interface TaskDao {
@@ -45,4 +47,46 @@ public interface TaskDao {
 
     @Query("SELECT * FROM tasks WHERE userId = :userId")
     LiveData<List<Task>> getTasksByUserLiveData(String userId);
+
+    @Query("SELECT COUNT(*) FROM tasks " +
+            "WHERE userId = :userId " +
+            "AND difficulty = :difficulty " +
+            "AND status = 'COMPLETED' " +
+            "AND date(completedAt/1000, 'unixepoch') = date('now')")
+    int countTasksByDifficultyToday(String userId, TaskDifficulty difficulty);
+
+    @Query("SELECT COUNT(*) FROM tasks " +
+            "WHERE userId = :userId " +
+            "AND difficulty = :difficulty " +
+            "AND status = 'COMPLETED' " +
+            "AND strftime('%W', completedAt/1000, 'unixepoch') = strftime('%W', 'now')")
+    int countTasksByDifficultyThisWeek(String userId, TaskDifficulty difficulty);
+
+    @Query("SELECT COUNT(*) FROM tasks " +
+            "WHERE userId = :userId " +
+            "AND difficulty = :difficulty " +
+            "AND status = 'COMPLETED' " +
+            "AND strftime('%m', completedAt/1000, 'unixepoch') = strftime('%m', 'now')")
+    int countTasksByDifficultyThisMonth(String userId, TaskDifficulty difficulty);
+
+    @Query("SELECT COUNT(*) FROM tasks " +
+            "WHERE userId = :userId " +
+            "AND priority = :priority " +
+            "AND status = 'COMPLETED' " +
+            "AND date(completedAt/1000, 'unixepoch') = date('now')")
+    int countTasksByPriorityToday(String userId, TaskPriority priority);
+
+    @Query("SELECT COUNT(*) FROM tasks " +
+            "WHERE userId = :userId " +
+            "AND priority = :priority " +
+            "AND status = 'COMPLETED' " +
+            "AND strftime('%W', completedAt/1000, 'unixepoch') = strftime('%W', 'now')")
+    int countTasksByPriorityThisWeek(String userId, TaskPriority priority);
+
+    @Query("SELECT COUNT(*) FROM tasks " +
+            "WHERE userId = :userId " +
+            "AND priority = :priority " +
+            "AND status = 'COMPLETED' " +
+            "AND strftime('%m', completedAt/1000, 'unixepoch') = strftime('%m', 'now')")
+    int countTasksByPriorityThisMonth(String userId, TaskPriority priority);
 }

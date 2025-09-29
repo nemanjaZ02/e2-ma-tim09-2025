@@ -95,4 +95,28 @@ public class TaskRepository {
     public LiveData<List<Task>> getTasksByUserLiveData(String userId){
         return taskDao.getTasksByUserLiveData(userId);
     }
+
+    public int countTasksByDifficultyToday(String userId, TaskDifficulty difficulty) {
+        return taskDao.countTasksByDifficultyToday(userId, difficulty);
+    }
+
+    public int countTasksByDifficultyThisWeek(String userId, TaskDifficulty difficulty) {
+        return taskDao.countTasksByDifficultyThisWeek(userId, difficulty);
+    }
+
+    public int countTasksByDifficultyThisMonth(String userId, TaskDifficulty difficulty) {
+        return taskDao.countTasksByDifficultyThisMonth(userId, difficulty);
+    }
+
+    public int countTasksByPriorityToday(String userId, TaskPriority priority) {
+        return taskDao.countTasksByPriorityToday(userId, priority);
+    }
+
+    public int countTasksByPriorityThisWeek(String userId, TaskPriority priority) {
+        return taskDao.countTasksByPriorityThisWeek(userId, priority);
+    }
+
+    public int countTasksByPriorityThisMonth(String userId, TaskPriority priority) {
+        return taskDao.countTasksByPriorityThisMonth(userId, priority);
+    }
 }
