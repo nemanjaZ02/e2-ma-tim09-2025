@@ -39,7 +39,6 @@ public class MainActivity extends AppCompatActivity {
         Button tasksButton = findViewById(R.id.tasks_button);
         Button registerButton = findViewById(R.id.btnRegister);
         Button loginButton = findViewById(R.id.btnLogin);
-        Button bossButton = findViewById(R.id.btnBossFight);
 
         tasksButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, TasksMainActivity.class);
@@ -53,11 +52,6 @@ public class MainActivity extends AppCompatActivity {
 
         loginButton.setOnClickListener(v -> {
             Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);
-        });
-
-        bossButton.setOnClickListener(v -> {
-            Intent intent = new Intent(this, BossMainActivity.class);
             startActivity(intent);
         });
     }

@@ -6,9 +6,12 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
 
+import com.e2_ma_tim09_2025.questify.models.Boss;
 import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 import com.e2_ma_tim09_2025.questify.models.User;
+import com.e2_ma_tim09_2025.questify.models.enums.BossStatus;
+import com.e2_ma_tim09_2025.questify.services.BossService;
 import com.e2_ma_tim09_2025.questify.services.TaskCategoryService;
 import com.e2_ma_tim09_2025.questify.services.UserService;
 
@@ -22,25 +25,34 @@ import dagger.hilt.android.lifecycle.HiltViewModel;
 public class TaskCategoryViewModel extends ViewModel {
 
     private final TaskCategoryService categoryService;
+    private final BossService bossService;
     private final LiveData<List<TaskCategory>> allCategories;
+    private final LiveData<Boss> boss;
     private final UserService userService;
     private final MutableLiveData<User> currentUser = new MutableLiveData<>();
 
     @Inject
-    public TaskCategoryViewModel(TaskCategoryService categoryService, UserService userService) {
+    public TaskCategoryViewModel(TaskCategoryService categoryService, UserService userService, BossService bossService) {
         this.categoryService = categoryService;
         this.userService = userService;
+        this.bossService = bossService;
 
         fetchCurrentUser();
 
         MediatorLiveData<List<TaskCategory>> categoriesMediator = new MediatorLiveData<>();
         this.allCategories = categoriesMediator;
+        MediatorLiveData<Boss> bossMediator = new MediatorLiveData<>();
+        this.boss = bossMediator;
 
         currentUser.observeForever(user -> {
             if (user != null) {
                 LiveData<List<TaskCategory>> userTaskCategories = categoryService.getTaskCategoriesByUserLiveData(user.getId());
+                LiveData<Boss> userBoss = bossService.getBoss(user.getId());
                 categoriesMediator.addSource(userTaskCategories, tasks -> {
                     categoriesMediator.setValue(tasks);
+                });
+                bossMediator.addSource(userBoss, bossVal -> {
+                    bossMediator.setValue(bossVal);
                 });
             }
         });
@@ -60,6 +72,13 @@ public class TaskCategoryViewModel extends ViewModel {
         } else {
             currentUser.postValue(null);
         }
+    }
+
+    public LiveData<Boolean> isBossActive() {
+        return Transformations.map(boss, bossVal -> {
+            if (bossVal == null) return false;
+            return bossVal.getStatus() == BossStatus.ACTIVE;
+        });
     }
 
     public LiveData<User> getCurrentUserLiveData() {

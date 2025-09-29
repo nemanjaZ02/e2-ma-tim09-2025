@@ -3,12 +3,17 @@ package com.e2_ma_tim09_2025.questify.viewmodels;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
+import androidx.lifecycle.Transformations;
 import androidx.lifecycle.ViewModel;
+
+import com.e2_ma_tim09_2025.questify.models.Boss;
 import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 import com.e2_ma_tim09_2025.questify.models.User;
+import com.e2_ma_tim09_2025.questify.models.enums.BossStatus;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
+import com.e2_ma_tim09_2025.questify.services.BossService;
 import com.e2_ma_tim09_2025.questify.services.TaskCategoryService;
 import com.e2_ma_tim09_2025.questify.services.TaskService;
 import com.e2_ma_tim09_2025.questify.services.UserService;
@@ -28,6 +33,8 @@ public class TaskViewModel extends ViewModel {
     private final TaskService taskService;
     private final UserService userService;
     private final TaskCategoryService categoryService;
+    private final BossService bossService;
+    private final LiveData<Boss> boss;
     private final MutableLiveData<User> currentUser = new MutableLiveData<>();
     private LiveData<List<Task>> allTasks;
     private LiveData<List<TaskCategory>> allCategories;
@@ -38,10 +45,11 @@ public class TaskViewModel extends ViewModel {
     private final MediatorLiveData<List<Task>> filteredTasks = new MediatorLiveData<>();
 
     @Inject
-    public TaskViewModel(TaskService taskService, UserService userService, TaskCategoryService categoryService) {
+    public TaskViewModel(TaskService taskService, UserService userService, TaskCategoryService categoryService, BossService bossService) {
         this.taskService = taskService;
         this.userService = userService;
         this.categoryService = categoryService;
+        this.bossService = bossService;
 
         fetchCurrentUser();
 
@@ -49,17 +57,23 @@ public class TaskViewModel extends ViewModel {
         this.allTasks = tasksMediator;
         MediatorLiveData<List<TaskCategory>> categoriesMediator = new MediatorLiveData<>();
         this.allCategories = categoriesMediator;
+        MediatorLiveData<Boss> bossMediator = new MediatorLiveData<>();
+        this.boss = bossMediator;
 
         currentUser.observeForever(user -> {
             if (user != null) {
                 LiveData<List<Task>> userTasks = taskService.getTasksByUserLiveData(user.getId());
                 LiveData<List<TaskCategory>> userCategories = categoryService.getTaskCategoriesByUserLiveData(user.getId());
+                LiveData<Boss> userBoss = bossService.getBoss(user.getId());
                 tasksMediator.addSource(userTasks, tasks -> {
                     tasksMediator.setValue(tasks);
                     applyFilters();
                 });
                 categoriesMediator.addSource(userCategories, categories -> {
                     categoriesMediator.setValue(categories);
+                });
+                bossMediator.addSource(userBoss, bossVal -> {
+                    bossMediator.setValue(bossVal);
                 });
             }
         });
@@ -87,6 +101,13 @@ public class TaskViewModel extends ViewModel {
         } else {
             currentUser.postValue(null);
         }
+    }
+
+    public LiveData<Boolean> isBossActive() {
+        return Transformations.map(boss, bossVal -> {
+            if (bossVal == null) return false;
+            return bossVal.getStatus() == BossStatus.ACTIVE;
+        });
     }
 
     public LiveData<User> getCurrentUserLiveData() {

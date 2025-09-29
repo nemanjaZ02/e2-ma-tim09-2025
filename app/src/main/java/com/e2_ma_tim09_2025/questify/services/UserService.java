@@ -4,9 +4,12 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
+import com.e2_ma_tim09_2025.questify.models.Boss;
 import com.e2_ma_tim09_2025.questify.models.User;
+import com.e2_ma_tim09_2025.questify.models.enums.BossStatus;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
+import com.e2_ma_tim09_2025.questify.repositories.BossRepository;
 import com.e2_ma_tim09_2025.questify.repositories.UserRepository;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -32,13 +35,15 @@ import javax.inject.Singleton;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final BossRepository bossRepository;
     private final FirebaseFirestore db;
     private final CollectionReference usersRef ;
 
 
     @Inject
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository, BossRepository bossRepository) {
         this.userRepository = userRepository;
+        this.bossRepository = bossRepository;
         this.db = FirebaseFirestore.getInstance();
         this.usersRef = db.collection("users");
     }
@@ -61,7 +66,32 @@ public class UserService {
         newUser.setAllianceId(null);
         newUser.setFriends(new ArrayList<>());
 
-        userRepository.registerUser(email, password, newUser, authListener, userSaveListener);
+        userRepository.registerUser(email, password, newUser, authTask -> {
+            if (authListener != null) authListener.onComplete(authTask);
+
+            if (authTask.isSuccessful() && authTask.getResult() != null) {
+                String newUserId = authTask.getResult().getUser().getUid();
+
+                Boss newBoss = new Boss(
+                        BossStatus.INACTIVE,
+                        newUserId,
+                        200,
+                        200,
+                        200
+                );
+
+                BossRepository bossRepository = new BossRepository();
+                bossRepository.createBoss(newBoss, bossTask -> {
+                    if (bossTask.isSuccessful()) {
+                        Log.d("REGISTER", "Boss created for user: " + newUserId);
+                    } else {
+                        Log.e("REGISTER", "Boss failed creation.", bossTask.getException());
+                    }
+                });
+
+            }
+
+        }, userSaveListener);
     }
 
     public void login(String email, String password, OnCompleteListener<AuthResult> listener) {
@@ -204,6 +234,8 @@ public class UserService {
 
                 // Check if user levels up
                 int requiredForNext = getRequiredXpForLevel(level);
+                int originalLevel = level;
+
                 while (xpForLevel >= requiredForNext) {
                     xpForLevel -= requiredForNext;
                     level++;
@@ -216,6 +248,27 @@ public class UserService {
 
                     // Get new threshold for next level
                     requiredForNext = getRequiredXpForLevel(level);
+                }
+
+                // If user leveled up activate Boss
+                if (level > originalLevel) {
+                    bossRepository.getBossByUserId(user.getId(), work -> {
+                        if (work.isSuccessful() && work.getResult() != null && work.getResult().exists()) {
+                            Boss boss = work.getResult().toObject(Boss.class);
+                            if (boss != null) {
+                                boss.setStatus(BossStatus.ACTIVE);
+                                bossRepository.updateBoss(boss, updateTask -> {
+                                    if (updateTask.isSuccessful()) {
+                                        Log.d("UserService", "Boss activated for user: " + user.getId());
+                                    } else {
+                                        Log.e("UserService", "Failed to update boss", updateTask.getException());
+                                    }
+                                });
+                            }
+                        } else {
+                            Log.e("UserService", "Getting boss for this user failed.", work.getException());
+                        }
+                    });
                 }
 
                 // Update user object

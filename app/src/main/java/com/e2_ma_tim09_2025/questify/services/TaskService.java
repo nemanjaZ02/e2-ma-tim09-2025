@@ -150,6 +150,7 @@ public class TaskService {
                         task.setStatus(TaskStatus.COMPLETED);
                         task.setXp(totalXp);
                         task.setIsQuotaExceeded(isQuotaExceeded);
+                        task.setLevelWhenCompleted(currentLevel);
                         taskRepository.complete(task);
                         Log.d(TAG, "Task '" + task.getName() + "' completed successfully.");
 
