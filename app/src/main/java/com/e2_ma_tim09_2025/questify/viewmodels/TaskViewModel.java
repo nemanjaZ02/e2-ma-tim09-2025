@@ -9,6 +9,7 @@ import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
+import com.e2_ma_tim09_2025.questify.services.TaskCategoryService;
 import com.e2_ma_tim09_2025.questify.services.TaskService;
 import com.e2_ma_tim09_2025.questify.services.UserService;
 
@@ -26,9 +27,10 @@ public class TaskViewModel extends ViewModel {
 
     private final TaskService taskService;
     private final UserService userService;
+    private final TaskCategoryService categoryService;
     private final MutableLiveData<User> currentUser = new MutableLiveData<>();
     private LiveData<List<Task>> allTasks;
-    private final LiveData<List<TaskCategory>> allCategories;
+    private LiveData<List<TaskCategory>> allCategories;
     private final MutableLiveData<Set<String>> selectedCategoryIds = new MutableLiveData<>(new HashSet<>());
     private final MutableLiveData<Set<TaskDifficulty>> selectedDifficulties = new MutableLiveData<>(new HashSet<>());
     private final MutableLiveData<Set<TaskPriority>> selectedPriorities = new MutableLiveData<>(new HashSet<>());
@@ -36,22 +38,28 @@ public class TaskViewModel extends ViewModel {
     private final MediatorLiveData<List<Task>> filteredTasks = new MediatorLiveData<>();
 
     @Inject
-    public TaskViewModel(TaskService taskService, UserService userService) {
+    public TaskViewModel(TaskService taskService, UserService userService, TaskCategoryService categoryService) {
         this.taskService = taskService;
         this.userService = userService;
-        this.allCategories = taskService.getAllCategories();
+        this.categoryService = categoryService;
 
         fetchCurrentUser();
 
         MediatorLiveData<List<Task>> tasksMediator = new MediatorLiveData<>();
         this.allTasks = tasksMediator;
+        MediatorLiveData<List<TaskCategory>> categoriesMediator = new MediatorLiveData<>();
+        this.allCategories = categoriesMediator;
 
         currentUser.observeForever(user -> {
             if (user != null) {
                 LiveData<List<Task>> userTasks = taskService.getTasksByUserLiveData(user.getId());
+                LiveData<List<TaskCategory>> userCategories = categoryService.getTaskCategoriesByUserLiveData(user.getId());
                 tasksMediator.addSource(userTasks, tasks -> {
                     tasksMediator.setValue(tasks);
                     applyFilters();
+                });
+                categoriesMediator.addSource(userCategories, categories -> {
+                    categoriesMediator.setValue(categories);
                 });
             }
         });
