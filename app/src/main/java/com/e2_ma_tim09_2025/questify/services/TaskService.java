@@ -93,24 +93,39 @@ public class TaskService {
 
             String userId = userRepository.getCurrentUserId();
 
-            /*public enum TaskDifficulty {
-                VERY_EASY,
-                EASY,
-                HARD,
-                EXTREME
-            }*/
+            boolean isQuotaExceeded;
+            boolean isDifficultyQuotaExceeded;
+            boolean isPriorityQuotaExceeded;
 
-            /*public enum TaskPriority {
-                NORMAL,
-                IMPORTANT,
-                CRUCIAL,
-                SPECIAL
-            }*/
+            if(task.getDifficulty() == TaskDifficulty.VERY_EASY && taskRepository.countTasksByDifficultyToday(userId, TaskDifficulty.VERY_EASY) >= 5) {
+                isDifficultyQuotaExceeded = true;
+            } else if (task.getDifficulty() == TaskDifficulty.EASY && taskRepository.countTasksByDifficultyToday(userId, TaskDifficulty.EASY) >= 5) {
+                isDifficultyQuotaExceeded = true;
+            } else if (task.getDifficulty() == TaskDifficulty.HARD && taskRepository.countTasksByDifficultyToday(userId, TaskDifficulty.HARD) >= 2) {
+                isDifficultyQuotaExceeded = true;
+            } else if (task.getDifficulty() == TaskDifficulty.EXTREME && taskRepository.countTasksByDifficultyThisWeek(userId, TaskDifficulty.EXTREME) >= 1) {
+                isDifficultyQuotaExceeded = true;
+            } else {
+                isDifficultyQuotaExceeded = false;
+            }
 
-            int veryEasyDiffToday = taskRepository.countTasksByDifficultyToday(userId, TaskDifficulty.VERY_EASY);
-            int normalPriorityToday = taskRepository.countTasksByPriorityToday(userId, TaskPriority.NORMAL);
-            int easyDiffToday
+            if(task.getPriority() == TaskPriority.NORMAL && taskRepository.countTasksByPriorityToday(userId, TaskPriority.NORMAL) >= 5) {
+                isPriorityQuotaExceeded = true;
+            } else if (task.getPriority() == TaskPriority.IMPORTANT && taskRepository.countTasksByPriorityToday(userId, TaskPriority.IMPORTANT) >= 5) {
+                isPriorityQuotaExceeded = true;
+            } else if (task.getPriority() == TaskPriority.CRUCIAL && taskRepository.countTasksByPriorityToday(userId, TaskPriority.CRUCIAL) >= 2) {
+                isPriorityQuotaExceeded = true;
+            } else if (task.getPriority() == TaskPriority.SPECIAL && taskRepository.countTasksByPriorityThisMonth(userId, TaskPriority.SPECIAL) >= 1) {
+                isPriorityQuotaExceeded = true;
+            } else {
+                isPriorityQuotaExceeded = false;
+            }
 
+            if(isDifficultyQuotaExceeded || isPriorityQuotaExceeded) {
+                isQuotaExceeded = true;
+            } else {
+                isQuotaExceeded = false;
+            }
 
             try {
                 // 1. Fetch the user from UserRepository
@@ -124,12 +139,17 @@ public class TaskService {
                                 : 0;
 
                         // Calculate XP based on task and user's current level
-                        int xpFromImportance = userService.calculateXpForImportance(task.getPriority(), currentLevel);
-                        int xpFromDifficulty = userService.calculateXpForDifficulty(task.getDifficulty(), currentLevel);
+                        int xpFromImportance = isPriorityQuotaExceeded
+                                ? 0
+                                : userService.calculateXpForImportance(task.getPriority(), currentLevel);
+                        int xpFromDifficulty = isDifficultyQuotaExceeded
+                                ? 0
+                                : userService.calculateXpForDifficulty(task.getDifficulty(), currentLevel);
                         int totalXp = xpFromImportance + xpFromDifficulty;
 
                         task.setStatus(TaskStatus.COMPLETED);
                         task.setXp(totalXp);
+                        task.setIsQuotaExceeded(isQuotaExceeded);
                         taskRepository.complete(task);
                         Log.d(TAG, "Task '" + task.getName() + "' completed successfully.");
 

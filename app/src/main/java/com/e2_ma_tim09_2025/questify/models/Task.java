@@ -42,6 +42,7 @@ public class Task {
     private int xp; //koliko ukupno xp je donio zadatak nakon rjesavanja, uzimajuci u obzir bitnost, tezinu i nivo korisnika
     private int levelWhenCreated;
     private int levelWhenCompleted;
+    private boolean isQuotaExceeded;
 
     public Task(String name, int categoryId, String description, TaskDifficulty difficulty,
                 TaskPriority priority, TaskRecurrence recurrence, long createdAt, long finishDate, long remainingTime, TaskStatus status, long lastInteractionAt,
@@ -63,6 +64,7 @@ public class Task {
         this.userId = userId;
         this.levelWhenCreated = levelWhenCreated;
         this.levelWhenCompleted = levelWhenCompleted;
+        this.isQuotaExceeded = false;
     }
 
     @Ignore
@@ -86,6 +88,7 @@ public class Task {
         this.completedAt = completedAt;
         this.levelWhenCreated = levelWhenCreated;
         this.levelWhenCompleted = levelWhenCompleted;
+        this.isQuotaExceeded = false;
     }
 
     public TaskDifficulty getDifficulty() {
@@ -227,5 +230,13 @@ public class Task {
 
     public void setLevelWhenCompleted(int levelWhenCompleted) {
         this.levelWhenCompleted = levelWhenCompleted;
+    }
+
+    public boolean getIsQuotaExceeded() {
+        return isQuotaExceeded;
+    }
+
+    public void setIsQuotaExceeded(boolean isQuotaExceeded) {
+        this.isQuotaExceeded = isQuotaExceeded;
     }
 }
