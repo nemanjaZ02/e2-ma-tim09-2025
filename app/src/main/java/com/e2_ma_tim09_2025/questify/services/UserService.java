@@ -57,7 +57,9 @@ public class UserService {
         newUser.setCoins(0);
         newUser.setBadges(new ArrayList<>());
         newUser.setEquipment(new ArrayList<>());
-        newUser.setQrCode(null); // generate later
+        newUser.setQrCode(null);
+        newUser.setAllianceId(null);
+        newUser.setFriends(new ArrayList<>());
 
         userRepository.registerUser(email, password, newUser, authListener, userSaveListener);
     }
