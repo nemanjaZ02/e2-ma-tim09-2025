@@ -4,6 +4,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.View;
@@ -11,10 +12,12 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.e2_ma_tim09_2025.questify.R;
+import com.e2_ma_tim09_2025.questify.activities.alliance.CreateAllianceActivity;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.viewmodels.UserViewModel;
 import com.google.firebase.auth.FirebaseAuth;
@@ -101,6 +104,31 @@ public class ProfileActivity extends AppCompatActivity {
                 editConfirmPassword.setText("");
             }
         });
+        ImageView menuIcon = findViewById(R.id.profileMenuIcon);
+
+        menuIcon.setOnClickListener(v -> {
+            PopupMenu popup = new PopupMenu(ProfileActivity.this, v);
+            popup.getMenuInflater().inflate(R.menu.profile_menu, popup.getMenu());
+
+            popup.setOnMenuItemClickListener(item -> {
+                int id = item.getItemId();
+                if (id == R.id.menu_all_users) {
+                    startActivity(new Intent(ProfileActivity.this, AllUsersActivity.class));
+                    return true;
+                } else if (id == R.id.menu_friends) {
+                    startActivity(new Intent(ProfileActivity.this, FriendsActivity.class));
+                    return true;
+                } else if (id == R.id.menu_create_alliance) {
+                    startActivity(new Intent(ProfileActivity.this, CreateAllianceActivity.class));
+                    return true;
+                } else {
+                    return false;
+                }
+            });
+
+            popup.show();
+        });
+
 
         loadUserData();
     }

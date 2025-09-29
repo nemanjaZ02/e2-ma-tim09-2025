@@ -7,12 +7,18 @@ import androidx.annotation.NonNull;
 import com.e2_ma_tim09_2025.questify.dao.UserDao;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldPath;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -141,6 +147,69 @@ public class UserRepository {
     }
     public FirebaseUser getCurrentUser() {
         return auth.getCurrentUser();
+    }
+    public void getAllUsers(OnCompleteListener<QuerySnapshot> listener) {
+        firestore.collection("users").get().addOnCompleteListener(listener);
+    }
+    public interface UsersCallback {
+        void onUsersFetched(List<User> users);
+    }
+
+    public void getAllNonFriendUsers(UsersCallback callback) {
+        String currentUserId = getCurrentUserId();
+        if (currentUserId == null) return;
+
+        getUser(currentUserId, task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                User currentUser = task.getResult().toObject(User.class);
+                List<String> friendsIds = currentUser != null && currentUser.getFriends() != null
+                        ? currentUser.getFriends()
+                        : new ArrayList<>();
+
+                getAllUsers(allTask -> {
+                    if (allTask.isSuccessful() && allTask.getResult() != null) {
+                        List<User> filteredUsers = new ArrayList<>();
+                        for (DocumentSnapshot doc : allTask.getResult()) {
+                            User user = doc.toObject(User.class);
+                            if (user != null
+                                    && !user.getId().equals(currentUserId)
+                                    && !friendsIds.contains(user.getId())) {
+                                filteredUsers.add(user);
+                            }
+                        }
+                        callback.onUsersFetched(filteredUsers);
+                    }
+                });
+            }
+        });
+    }
+
+
+    public void getFriends(String userId, OnCompleteListener<QuerySnapshot> listener) {
+        // Step 1: Get the user document
+        usersRef.document(userId).get().addOnCompleteListener(userTask -> {
+            if (userTask.isSuccessful() && userTask.getResult() != null) {
+                User user = userTask.getResult().toObject(User.class);
+
+                if (user == null || user.getFriends() == null || user.getFriends().isEmpty()) {
+                    // No friends, return empty QuerySnapshot-like task
+                    listener.onComplete(Tasks.forResult(null)); // null QuerySnapshot
+                    return;
+                }
+
+                List<String> friendIds = user.getFriends();
+
+                // Step 2: Query the friends by document IDs
+                usersRef.whereIn(FieldPath.documentId(), friendIds)
+                        .get()
+                        .addOnCompleteListener(listener); // This now matches QuerySnapshot
+            } else {
+                // Return failure to listener by creating a failed Task<QuerySnapshot>
+                listener.onComplete(Tasks.forException(
+                        userTask.getException() != null ? userTask.getException() : new Exception("Failed to get user")
+                ));
+            }
+        });
     }
 
 }

@@ -48,6 +48,18 @@
             android:name=".activities.users.ProfileActivity"
             android:exported="false" />
         <activity
+            android:name=".activities.users.AllUsersActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.users.FriendsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.users.OtherProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.alliance.CreateAllianceActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.MainActivity"
             android:exported="true">
             <intent-filter>

@@ -12,11 +12,13 @@ import java.util.List;
 import java.util.UUID;
 
 import javax.annotation.Nullable;
+import javax.inject.Inject;
 
 public class AllianceService {
     private final AllianceRepository allianceRepository;
     private final AllianceInviteService inviteService;
 
+    @Inject
     public AllianceService(AllianceInviteService inviteService) {
         this.allianceRepository = new AllianceRepository();
         this.inviteService = inviteService;
