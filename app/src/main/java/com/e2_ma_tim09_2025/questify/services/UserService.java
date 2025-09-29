@@ -1,5 +1,7 @@
 package com.e2_ma_tim09_2025.questify.services;
 
+import android.util.Log;
+
 import androidx.annotation.NonNull;
 
 import com.e2_ma_tim09_2025.questify.models.User;
@@ -7,14 +9,21 @@ import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
 import com.e2_ma_tim09_2025.questify.repositories.UserRepository;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -23,10 +32,15 @@ import javax.inject.Singleton;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final FirebaseFirestore db;
+    private final CollectionReference usersRef ;
+
 
     @Inject
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
+        this.db = FirebaseFirestore.getInstance();
+        this.usersRef = db.collection("users");
     }
 
     public void registerNewUser(String email, String password, String username, String avatarUri,
@@ -249,6 +263,58 @@ public class UserService {
                     }
                 });
     }
+    public void addFriend(String userId, String friendId) {
+        usersRef.document(userId)
+                .update("friends", FieldValue.arrayUnion(friendId))
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d("UserService", "Friend added successfully");
+                    } else {
+                        Log.e("UserService", "Failed to add friend", task.getException());
+                    }
+                });
+    }
+    public void getAllFriends(String userId, OnCompleteListener<List<User>> listener) {
+        usersRef.document(userId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                        User currentUser = task.getResult().toObject(User.class);
+                        List<String> friendIds = currentUser.getFriends();
+
+                        if (friendIds == null || friendIds.isEmpty()) {
+                            listener.onComplete(Tasks.forResult(Collections.emptyList()));
+                            return;
+                        }
+
+                        // Fetch all friend users
+                        List<Task<DocumentSnapshot>> friendTasks = new ArrayList<>();
+                        for (String fid : friendIds) {
+                            friendTasks.add(usersRef.document(fid).get());
+                        }
+
+                        Tasks.whenAllSuccess(friendTasks)
+                                .addOnSuccessListener(results -> {
+                                    List<User> friends = new ArrayList<>();
+                                    for (Object obj : results) {
+                                        DocumentSnapshot doc = (DocumentSnapshot) obj;
+                                        User friend = doc.toObject(User.class);
+                                        if (friend != null) friends.add(friend);
+                                    }
+                                    listener.onComplete(Tasks.forResult(friends));
+                                })
+                                .addOnFailureListener(e -> {
+                                    listener.onComplete(Tasks.forException(e));
+                                });
+
+                    } else {
+                        listener.onComplete(Tasks.forException(
+                                task.getException() != null ? task.getException() : new Exception("User not found")
+                        ));
+                    }
+                });
+    }
+
 
     public FirebaseUser getCurrentUser(){
         return userRepository.getCurrentUser();
