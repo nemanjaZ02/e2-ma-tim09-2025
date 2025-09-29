@@ -22,6 +22,7 @@ import com.e2_ma_tim09_2025.questify.adapters.tasks.TaskCategoriesSpinnerAdapter
 import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 import com.e2_ma_tim09_2025.questify.models.TaskRecurrence;
+import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.models.enums.RecurrenceUnit;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
@@ -176,8 +177,15 @@ public class AddTaskActivity extends AppCompatActivity {
                 return;
             }
 
+            User currentUser = taskViewModel.getCurrentUserLiveData().getValue();
+
+            if (currentUser == null) {
+                Toast.makeText(AddTaskActivity.this, "You are not logged in!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
             Task newTask = new Task(taskName, categoryId, taskDescription, selectedDifficulty, selectedPriority, recurrence, System.currentTimeMillis(), finishDateMillis, finishDateMillis - System.currentTimeMillis(), TaskStatus.ACTIVE,
-                    System.currentTimeMillis(), 0, 0);
+                    System.currentTimeMillis(), 0, 0, currentUser.getId(), currentUser.getLevel(), -1);
 
             taskViewModel.insertTask(newTask);
 

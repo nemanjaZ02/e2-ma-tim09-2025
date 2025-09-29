@@ -34,17 +34,18 @@ public class Task {
     private long createdAt;
     private long finishDate;
     private long remainingTime;
-    @Ignore
     private String userId;
     private TaskStatus status;
     private Integer originalTaskId;
     private long lastInteractionAt;
     private long completedAt;
     private int xp; //koliko ukupno xp je donio zadatak nakon rjesavanja, uzimajuci u obzir bitnost, tezinu i nivo korisnika
+    private int levelWhenCreated;
+    private int levelWhenCompleted;
 
     public Task(String name, int categoryId, String description, TaskDifficulty difficulty,
                 TaskPriority priority, TaskRecurrence recurrence, long createdAt, long finishDate, long remainingTime, TaskStatus status, long lastInteractionAt,
-                int xp, long completedAt) {
+                int xp, long completedAt, String userId,  int levelWhenCreated, int levelWhenCompleted) {
         this.name = name;
         this.categoryId = categoryId;
         this.description = description;
@@ -59,12 +60,15 @@ public class Task {
         this.lastInteractionAt = lastInteractionAt;//DODATI OVO I ISPOD U OVAJ STO JE IGNORE NISAM BILA SIGURNA
         this.xp = xp;
         this.completedAt = completedAt;
+        this.userId = userId;
+        this.levelWhenCreated = levelWhenCreated;
+        this.levelWhenCompleted = levelWhenCompleted;
     }
 
     @Ignore
     public Task(int id, String name, int categoryId, String description, TaskDifficulty difficulty, TaskPriority priority,
                 TaskRecurrence recurrence, long createdAt, long finishDate, long remainingTime, String userId, TaskStatus status,
-                Integer originalTaskId, int xp, long completedAt) {
+                Integer originalTaskId, int xp, long completedAt, int levelWhenCreated, int levelWhenCompleted) {
         this.id = id;
         this.name = name;
         this.categoryId = categoryId;
@@ -80,6 +84,8 @@ public class Task {
         this.originalTaskId = originalTaskId;
         this.xp = xp;
         this.completedAt = completedAt;
+        this.levelWhenCreated = levelWhenCreated;
+        this.levelWhenCompleted = levelWhenCompleted;
     }
 
     public TaskDifficulty getDifficulty() {
@@ -205,5 +211,21 @@ public class Task {
 
     public void setCompletedAt(long completedAt) {
         this.completedAt = completedAt;
+    }
+
+    public int getLevelWhenCreated() {
+        return levelWhenCreated;
+    }
+
+    public void setLevelWhenCreated(int levelWhenCreated) {
+        this.levelWhenCreated = levelWhenCreated;
+    }
+
+    public int getLevelWhenCompleted() {
+        return levelWhenCompleted;
+    }
+
+    public void setLevelWhenCompleted(int levelWhenCompleted) {
+        this.levelWhenCompleted = levelWhenCompleted;
     }
 }

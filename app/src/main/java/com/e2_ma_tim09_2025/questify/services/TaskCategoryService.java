@@ -82,4 +82,12 @@ public class TaskCategoryService {
             }
         });
     }
+
+    public List<TaskCategory> getTaskCategoriesByUser(String userId) {
+        return categoryRepository.getTaskCategoriesByUser(userId);
+    }
+
+    public LiveData<List<TaskCategory>> getTaskCategoriesByUserLiveData(String userId) {
+        return categoryRepository.getTaskCategoriesByUserLiveData(userId);
+    }
 }

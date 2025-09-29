@@ -8,11 +8,13 @@ public class TaskCategory {
     @PrimaryKey(autoGenerate = true)
     private int id;
     private String name;
+    private String userId;
     private String description;
     private int color;
 
-    public TaskCategory(String name, String description, int color) {
+    public TaskCategory(String name, String description, int color, String userId) {
         this.name = name;
+        this.userId = userId;
         this.description = description;
         this.color = color;
     }
@@ -47,5 +49,13 @@ public class TaskCategory {
 
     public void setColor(int color) {
         this.color = color;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 }

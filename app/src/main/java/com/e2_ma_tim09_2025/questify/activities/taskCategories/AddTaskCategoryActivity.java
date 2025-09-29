@@ -13,7 +13,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
+import com.e2_ma_tim09_2025.questify.activities.tasks.AddTaskActivity;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
+import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.viewmodels.TaskCategoryViewModel;
 import com.google.android.material.textfield.TextInputEditText;
 
@@ -94,7 +96,14 @@ public class AddTaskCategoryActivity extends AppCompatActivity {
             if (isUsed) {
                 Toast.makeText(AddTaskCategoryActivity.this, "This Color is Already Used!", Toast.LENGTH_SHORT).show();
             } else {
-                TaskCategory category = new TaskCategory(name, description, selectedColor);
+                User currentUser = categoryViewModel.getCurrentUserLiveData().getValue();
+
+                if (currentUser == null) {
+                    Toast.makeText(AddTaskCategoryActivity.this, "You are not logged in!", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+
+                TaskCategory category = new TaskCategory(name, description, selectedColor, currentUser.getId());
                 categoryViewModel.insertCategory(category);
                 Toast.makeText(AddTaskCategoryActivity.this, "Category saved!", Toast.LENGTH_SHORT).show();
                 finish();

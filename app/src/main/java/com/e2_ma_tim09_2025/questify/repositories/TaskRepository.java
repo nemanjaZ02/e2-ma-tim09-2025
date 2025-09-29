@@ -91,4 +91,8 @@ public class TaskRepository {
     public List<Task> getTasksByUser(String userId){
         return taskDao.getTasksByUser(userId);
     }
+
+    public LiveData<List<Task>> getTasksByUserLiveData(String userId){
+        return taskDao.getTasksByUserLiveData(userId);
+    }
 }

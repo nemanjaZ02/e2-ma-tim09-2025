@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.google.firebase.auth.FirebaseAuth;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
@@ -49,17 +50,19 @@ public class BossViewModel extends ViewModel {
     public User getCurrentUser() {
         return new User(
                 "11",                                 // id
-                "TheDreadLord",                         // username
-                "avatar_icon_05",                       // avatar
-                55,                                     // level
-                "The Unyielding",                       // title
-                25,                                     // powerPoints
-                350000,                                 // experiencePoints
-                1500,                                   // coins
-                Arrays.asList("Champion", "NoLifer"),   // badges
-                Collections.emptyList(),                // equipment (npr. prazna lista)
-                null,                                   // qrCode (ostavljamo null)
-                System.currentTimeMillis() - 86400000L  // createdAt (npr. juče)
+                "TheDreadLord",                       // username
+                "avatar_icon_05",                     // avatar
+                55,                                   // level
+                "The Unyielding",                     // title
+                25,                                   // powerPoints
+                350000,                               // experiencePoints
+                1500,                                 // coins
+                Arrays.asList("Champion", "NoLifer"), // badges
+                Collections.emptyList(),                     // equipment
+                null,                                       // qrCode
+                System.currentTimeMillis() - 86400000L,     // createdAt
+                new ArrayList<>(Arrays.asList("22", "33")), // friends
+                "alliance_007"                              // allianceId
         );
     }
 }

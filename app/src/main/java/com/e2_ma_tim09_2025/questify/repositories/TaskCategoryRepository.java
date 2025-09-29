@@ -41,4 +41,12 @@ public class TaskCategoryRepository {
     public LiveData<TaskCategory> getById(int categoryId) {
         return categoryDao.getById(categoryId);
     }
+
+    public List<TaskCategory> getTaskCategoriesByUser(String userId) {
+        return categoryDao.getTaskCategoriesByUser(userId);
+    }
+
+    public LiveData<List<TaskCategory>> getTaskCategoriesByUserLiveData(String userId) {
+        return categoryDao.getTaskCategoriesByUserLiveData(userId);
+    }
 }

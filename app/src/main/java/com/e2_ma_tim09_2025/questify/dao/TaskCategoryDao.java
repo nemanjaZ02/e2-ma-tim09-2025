@@ -8,6 +8,8 @@ import androidx.room.Query;
 import androidx.room.Update;
 
 import java.util.List;
+
+import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 
 @Dao
@@ -24,4 +26,10 @@ public interface TaskCategoryDao {
     List<TaskCategory> getAll2();
     @Query("SELECT * FROM taskCategories WHERE id = :categoryId")
     LiveData<TaskCategory> getById(int categoryId);
+
+    @Query("SELECT * FROM taskCategories WHERE userId = :userId")
+    List<TaskCategory> getTaskCategoriesByUser(String userId);
+
+    @Query("SELECT * FROM taskCategories WHERE userId = :userId")
+    LiveData<List<TaskCategory>> getTaskCategoriesByUserLiveData(String userId);
 }

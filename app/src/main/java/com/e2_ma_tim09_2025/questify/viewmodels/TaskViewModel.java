@@ -6,9 +6,11 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
+import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
 import com.e2_ma_tim09_2025.questify.services.TaskService;
+import com.e2_ma_tim09_2025.questify.services.UserService;
 
 import java.util.HashSet;
 import java.util.List;
@@ -23,7 +25,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel;
 public class TaskViewModel extends ViewModel {
 
     private final TaskService taskService;
-    private final LiveData<List<Task>> allTasks;
+    private final UserService userService;
+    private final MutableLiveData<User> currentUser = new MutableLiveData<>();
+    private LiveData<List<Task>> allTasks;
     private final LiveData<List<TaskCategory>> allCategories;
     private final MutableLiveData<Set<String>> selectedCategoryIds = new MutableLiveData<>(new HashSet<>());
     private final MutableLiveData<Set<TaskDifficulty>> selectedDifficulties = new MutableLiveData<>(new HashSet<>());
@@ -32,10 +36,25 @@ public class TaskViewModel extends ViewModel {
     private final MediatorLiveData<List<Task>> filteredTasks = new MediatorLiveData<>();
 
     @Inject
-    public TaskViewModel(TaskService taskService) {
+    public TaskViewModel(TaskService taskService, UserService userService) {
         this.taskService = taskService;
-        this.allTasks = taskService.getAllTasks();
+        this.userService = userService;
         this.allCategories = taskService.getAllCategories();
+
+        fetchCurrentUser();
+
+        MediatorLiveData<List<Task>> tasksMediator = new MediatorLiveData<>();
+        this.allTasks = tasksMediator;
+
+        currentUser.observeForever(user -> {
+            if (user != null) {
+                LiveData<List<Task>> userTasks = taskService.getTasksByUserLiveData(user.getId());
+                tasksMediator.addSource(userTasks, tasks -> {
+                    tasksMediator.setValue(tasks);
+                    applyFilters();
+                });
+            }
+        });
 
         filteredTasks.addSource(allTasks, tasks -> applyFilters());
         filteredTasks.addSource(selectedCategoryIds, newFilter -> applyFilters());
@@ -44,6 +63,26 @@ public class TaskViewModel extends ViewModel {
         filteredTasks.addSource(isRecurringFilter, newFilter -> applyFilters());
 
         applyFilters();
+    }
+
+    public void fetchCurrentUser() {
+        String uid = userService.getCurrentUserId();
+        if (uid != null) {
+            userService.getUser(uid, task -> {
+                if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                    User user = task.getResult().toObject(User.class);
+                    currentUser.postValue(user);
+                } else {
+                    currentUser.postValue(null);
+                }
+            });
+        } else {
+            currentUser.postValue(null);
+        }
+    }
+
+    public LiveData<User> getCurrentUserLiveData() {
+        return currentUser;
     }
 
     private void applyFilters() {

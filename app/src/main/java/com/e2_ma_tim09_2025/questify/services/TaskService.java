@@ -6,6 +6,7 @@ import android.os.Handler;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 import androidx.work.Data;
 import androidx.work.OneTimeWorkRequest;
 import androidx.work.WorkManager;
@@ -41,8 +42,6 @@ public class TaskService {
     private final WorkManager workManager; // DODANO
     private final UserService userService;
     private final UserRepository userRepository;
-
-
 
     @Inject
     public TaskService(@ApplicationContext Context context, TaskRepository taskRepository, TaskCategoryRepository categoryRepository, UserService userService,
@@ -258,7 +257,9 @@ public class TaskService {
     public LiveData<List<Task>> getAllTasks() {
         return taskRepository.getAll();
     }
-
+    public LiveData<List<Task>> getTasksByUserLiveData(String userId) {
+        return taskRepository.getTasksByUserLiveData(userId);
+    }
     public LiveData<List<TaskCategory>> getAllCategories() {
         return categoryRepository.getAll();
     }

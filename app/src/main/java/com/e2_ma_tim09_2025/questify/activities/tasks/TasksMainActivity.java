@@ -120,15 +120,6 @@ public class TasksMainActivity extends AppCompatActivity {
             Intent intent = new Intent(TasksMainActivity.this, ProfileActivity.class);
             startActivity(intent);
         });
-
-        // Za test kategorije
-        taskViewModel.getCategories().observe(this, categories -> {
-            if (categories.isEmpty()) {
-                taskViewModel.insertCategory(new TaskCategory("Adventure", "AdventureDesc", Color.parseColor("#FF6B6B")));
-                taskViewModel.insertCategory(new TaskCategory("Puzzle", "PuzzleDesc", Color.parseColor("#6BCB77")));
-                taskViewModel.insertCategory(new TaskCategory("Health", "HealthDesc", Color.parseColor("#4D96FF")));
-            }
-        });
     }
 
     private void updateFilterState() {
