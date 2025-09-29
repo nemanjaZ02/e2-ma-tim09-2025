@@ -132,13 +132,9 @@ public class UserRepository {
                     }
                 });
     }
-
-    // Logout
     public void logout() {
         auth.signOut();
     }
-
-    // Get current user ID
     public String getCurrentUserId() {
         FirebaseUser currentUser = auth.getCurrentUser();
         return currentUser != null ? currentUser.getUid() : null;
