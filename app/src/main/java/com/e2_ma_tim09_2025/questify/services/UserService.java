@@ -36,14 +36,16 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final BossRepository bossRepository;
+    private final BossService bossService;
     private final FirebaseFirestore db;
     private final CollectionReference usersRef ;
 
 
     @Inject
-    public UserService(UserRepository userRepository, BossRepository bossRepository) {
+    public UserService(UserRepository userRepository, BossRepository bossRepository, BossService bossService) {
         this.userRepository = userRepository;
         this.bossRepository = bossRepository;
+        this.bossService = bossService;
         this.db = FirebaseFirestore.getInstance();
         this.usersRef = db.collection("users");
     }
@@ -77,7 +79,8 @@ public class UserService {
                         newUserId,
                         200,
                         200,
-                        200
+                        200,
+                        0
                 );
 
                 BossRepository bossRepository = new BossRepository();
@@ -257,6 +260,7 @@ public class UserService {
                             Boss boss = work.getResult().toObject(Boss.class);
                             if (boss != null) {
                                 boss.setStatus(BossStatus.ACTIVE);
+                                boss.setHitChance(bossService.calculateHitChance(user.getId(), originalLevel));
                                 bossRepository.updateBoss(boss, updateTask -> {
                                     if (updateTask.isSuccessful()) {
                                         Log.d("UserService", "Boss activated for user: " + user.getId());

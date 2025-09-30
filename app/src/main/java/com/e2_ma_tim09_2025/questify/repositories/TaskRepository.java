@@ -119,4 +119,16 @@ public class TaskRepository {
     public int countTasksByPriorityThisMonth(String userId, TaskPriority priority) {
         return taskDao.countTasksByPriorityThisMonth(userId, priority);
     }
+
+    public int countCompletedTasksByLevel(String userId, int level) {
+        return taskDao.countCompletedTasksByLevel(userId, level);
+    }
+
+    public int countCreatedTasksInLevel(String userId, int level) {
+        return taskDao.countCreatedTasksInLevel(userId, level);
+    }
+
+    public int countCompletedTasksCreatedBeforeLevel(String userId, int level) {
+        return taskDao.countCompletedTasksCreatedBeforeLevel(userId, level);
+    }
 }

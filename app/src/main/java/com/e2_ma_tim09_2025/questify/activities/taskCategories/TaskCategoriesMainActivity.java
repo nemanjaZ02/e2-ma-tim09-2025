@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
+import com.e2_ma_tim09_2025.questify.activities.bosses.BossMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.tasks.TasksMainActivity;
 import com.e2_ma_tim09_2025.questify.fragments.taskCategories.TaskCategoriesListFragment;
 import com.e2_ma_tim09_2025.questify.viewmodels.TaskCategoryViewModel;
@@ -25,6 +26,7 @@ public class TaskCategoriesMainActivity extends AppCompatActivity {
     private MaterialButton logoutButton;
     private MaterialButton profileButton;
     private TextView categoriesTitle;
+    private MaterialButton bossButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +39,7 @@ public class TaskCategoriesMainActivity extends AppCompatActivity {
         addCategoryButton = findViewById(R.id.add_category_button);
         logoutButton = findViewById(R.id.logout_button);
         profileButton = findViewById(R.id.profile_button);
+        bossButton = findViewById(R.id.boss_button);
 
         replaceFragment(new TaskCategoriesListFragment());
 
@@ -61,6 +64,11 @@ public class TaskCategoriesMainActivity extends AppCompatActivity {
 
         logoutButton.setOnClickListener(v -> {});
         profileButton.setOnClickListener(v -> {});
+
+        bossButton.setOnClickListener(v -> {
+            Intent intent = new Intent(TaskCategoriesMainActivity.this, BossMainActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void replaceFragment(Fragment fragment) {

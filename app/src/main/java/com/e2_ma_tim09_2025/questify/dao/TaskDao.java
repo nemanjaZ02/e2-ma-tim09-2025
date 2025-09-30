@@ -89,4 +89,26 @@ public interface TaskDao {
             "AND status = 'COMPLETED' " +
             "AND strftime('%m', completedAt/1000, 'unixepoch') = strftime('%m', 'now')")
     int countTasksByPriorityThisMonth(String userId, TaskPriority priority);
+
+    @Query("SELECT COUNT(*) FROM tasks " +
+            "WHERE userId = :userId " +
+            "AND status = 'COMPLETED' " +
+            "AND levelWhenCompleted = :level " +
+            "AND isQuotaExceeded = 0")
+    int countCompletedTasksByLevel(String userId, int level);
+
+    @Query("SELECT COUNT(*) FROM tasks " +
+            "WHERE userId = :userId " +
+            "AND levelWhenCreated = :level " +
+            "AND status NOT IN ('CANCELLED', 'PAUSED') " +
+            "AND isQuotaExceeded = 0")
+    int countCreatedTasksInLevel(String userId, int level);
+
+    @Query("SELECT COUNT(*) FROM tasks " +
+            "WHERE userId = :userId " +
+            "AND status = 'COMPLETED' " +
+            "AND levelWhenCompleted = :level " +
+            "AND levelWhenCreated != :level " +
+            "AND isQuotaExceeded = 0")
+    int countCompletedTasksCreatedBeforeLevel(String userId, int level);
 }

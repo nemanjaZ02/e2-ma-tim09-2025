@@ -13,6 +13,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.activities.MainActivity;
+import com.e2_ma_tim09_2025.questify.activities.bosses.BossMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.taskCategories.TaskCategoriesMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.users.ProfileActivity;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksCalendarFragment;
@@ -35,6 +36,7 @@ public class TasksMainActivity extends AppCompatActivity {
     private MaterialButton filterButton;
     private MaterialButton logoutButton;
     private MaterialButton profileButton;
+    MaterialButton bossButton;
     private TextView tasksTitle;
     private boolean showingCalendar = false;
     private final MediatorLiveData<Boolean> isFilterActive = new MediatorLiveData<>();
@@ -53,6 +55,7 @@ public class TasksMainActivity extends AppCompatActivity {
         filterButton = findViewById(R.id.filter_button);
         logoutButton = findViewById(R.id.logout_button);
         profileButton = findViewById(R.id.profile_button);
+        bossButton = findViewById(R.id.boss_button);
 
         replaceFragment(new TasksListFragment());
 
@@ -118,6 +121,11 @@ public class TasksMainActivity extends AppCompatActivity {
 
         profileButton.setOnClickListener(v -> {
             Intent intent = new Intent(TasksMainActivity.this, ProfileActivity.class);
+            startActivity(intent);
+        });
+
+        bossButton.setOnClickListener(v -> {
+            Intent intent = new Intent(TasksMainActivity.this, BossMainActivity.class);
             startActivity(intent);
         });
     }

@@ -27,6 +27,17 @@
             android:adjustViewBounds="true"
             android:scaleType="centerCrop" />
 
+        <TextView
+            android:id="@+id/hitResultText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text=""
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:textColor="@android:color/white"
+            android:visibility="gone"/>
+
         <!-- Health bar na vrhu videa -->
         <RelativeLayout
             android:layout_width="match_parent"
@@ -57,7 +68,7 @@
         </RelativeLayout>
     </FrameLayout>
 
-    <!-- PP bar + attacks left ispod videa -->
+    <!-- PP bar + hit chance + attacks left -->
     <LinearLayout
         android:id="@+id/ppBarContainer"
         android:layout_width="0dp"
@@ -99,16 +110,33 @@
                 android:textStyle="bold" />
         </RelativeLayout>
 
-        <!-- Attacks left tekst -->
-        <TextView
-            android:id="@+id/attacksLeftText"
+        <!-- Vertikalni layout za Hit Chance i Attacks Left -->
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:text="Attacks left: 3"
-            android:textColor="@android:color/white"
-            android:textSize="12sp"
-            android:textStyle="bold" />
+            android:orientation="vertical"
+            android:layout_marginStart="12dp">
+
+            <TextView
+                android:id="@+id/hitChanceText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Hit chance: 50%"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="2dp" />
+
+            <TextView
+                android:id="@+id/attacksLeftText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Attacks left: 3"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
     </LinearLayout>
 
     <!-- Attack button na dnu -->

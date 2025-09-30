@@ -6,17 +6,12 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.e2_ma_tim09_2025.questify.models.Boss;
-import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.models.enums.BossStatus;
 import com.e2_ma_tim09_2025.questify.services.BossService;
 import com.e2_ma_tim09_2025.questify.services.UserService;
-import com.google.firebase.auth.FirebaseAuth;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.Random;
 
 import javax.inject.Inject;
 
@@ -25,12 +20,16 @@ import dagger.hilt.android.lifecycle.HiltViewModel;
 @HiltViewModel
 public class BossViewModel extends ViewModel {
     private final UserService userService;
-    private final MutableLiveData<User> currentUser = new MutableLiveData<>();
     private final BossService bossService;
-    private final LiveData<Boss> boss;
-    private final int BOSS_MAX_HEALTH = 100;
-    private int attacksLeft = 5;
-    private final MutableLiveData<Integer> currentHealth = new MutableLiveData<>();
+    private final MutableLiveData<User> currentUser = new MutableLiveData<>();
+    private final MediatorLiveData<Boss> boss = new MediatorLiveData<>();
+    private final MediatorLiveData<Integer> currentHealth = new MediatorLiveData<>();
+    private final MediatorLiveData<Integer> attacksLeft = new MediatorLiveData<>();
+    private final MediatorLiveData<BossStatus> bossStatus = new MediatorLiveData<>();
+    private int maxHealth = 0;
+    private int coinsDrop = 0;
+    private double hitChance = 0.0;
+    private boolean staticDataLoaded = false;
 
     @Inject
     public BossViewModel(BossService bossService, UserService userService) {
@@ -39,19 +38,38 @@ public class BossViewModel extends ViewModel {
 
         fetchCurrentUser();
 
-        MediatorLiveData<Boss> bossMediator = new MediatorLiveData<>();
-        this.boss = bossMediator;
-
         currentUser.observeForever(user -> {
             if (user != null) {
                 LiveData<Boss> userBoss = bossService.getBoss(user.getId());
-                bossMediator.addSource(userBoss, bossVal -> {
-                    bossMediator.setValue(bossVal);
+                boss.addSource(userBoss, bossVal -> {
+                    boss.setValue(bossVal);
                 });
             }
         });
 
-        currentHealth.setValue(BOSS_MAX_HEALTH);
+        currentHealth.addSource(boss, bossVal -> {
+            if (bossVal != null) {
+                currentHealth.setValue(bossVal.getCurrentHealth());
+                if (!staticDataLoaded) {
+                    maxHealth = bossVal.getMaxHealth();
+                    coinsDrop = bossVal.getCoinsDrop();
+                    hitChance = bossVal.getHitChance();
+                    staticDataLoaded = true;
+                }
+            }
+        });
+
+        attacksLeft.addSource(boss, bossVal -> {
+            if (bossVal != null) {
+                attacksLeft.setValue(bossVal.getAttacksLeft());
+            }
+        });
+
+        bossStatus.addSource(boss, bossVal -> {
+            if (bossVal != null) {
+                bossStatus.setValue(bossVal.getStatus());
+            }
+        });
     }
 
     public void fetchCurrentUser() {
@@ -74,39 +92,151 @@ public class BossViewModel extends ViewModel {
         return currentHealth;
     }
 
-    public int getMaxHealth() {
-        return BOSS_MAX_HEALTH;
-    }
-
-    public void damage(int damageAmount) {
-        if (damageAmount < 0) return;
-        Integer current = currentHealth.getValue();
-        if (current == null) return;
-        int newHealth = Math.max(0, current - damageAmount);
-        currentHealth.setValue(newHealth);
-    }
-
-    public int attackUsed() {
-        attacksLeft = attacksLeft - 1;
+    public LiveData<Integer> getAttacksLeft() {
         return attacksLeft;
     }
 
-    public User getCurrentUser() {
-        return new User(
-                "11",                                 // id
-                "TheDreadLord",                       // username
-                "avatar_icon_05",                     // avatar
-                55,                                   // level
-                "The Unyielding",                     // title
-                25,                                   // powerPoints
-                350000,                               // experiencePoints
-                1500,                                 // coins
-                Arrays.asList("Champion", "NoLifer"), // badges
-                Collections.emptyList(),                     // equipment
-                null,                                       // qrCode
-                System.currentTimeMillis() - 86400000L,     // createdAt
-                new ArrayList<>(Arrays.asList("22", "33")), // friends
-                "alliance_007"                              // allianceId
-        );
+    public int getMaxHealth() {
+        return maxHealth;
+    }
+
+    public int getCoinsDrop() {
+        return coinsDrop;
+    }
+
+    public LiveData<BossStatus> getBossStatus() {
+        return bossStatus;
+    }
+
+    public double getHitChance() {
+        return hitChance;
+    }
+
+    public void damage(int damageAmount, OnDamageCompleteListener listener) {
+        if (damageAmount < 0) {
+            if (listener != null) listener.onFailure("Damage cannot be lower than 0");
+            return;
+        }
+
+        User user = currentUser.getValue();
+        if (user == null) {
+            if (listener != null) listener.onFailure("User not loaded.");
+            return;
+        }
+
+        Boss currentBoss = boss.getValue();
+        if (currentBoss == null) {
+            if (listener != null) listener.onFailure("Boss not loaded.");
+            return;
+        }
+
+        Integer attacks = attacksLeft.getValue();
+        if (attacks == null || attacks <= 0) {
+            if (listener != null) listener.onFailure("No attacks left.");
+            return;
+        }
+
+        Integer health = currentHealth.getValue();
+        if (health == null || health <= 0) {
+            if (listener != null) listener.onFailure("Boss is already dead.");
+            return;
+        }
+
+        currentBoss.setAttacksLeft(currentBoss.getAttacksLeft() - 1);
+
+        Random random = new Random();
+        int roll = random.nextInt(100) + 1;
+
+        if (roll > hitChance) {
+            bossService.updateBoss(currentBoss, task -> {
+                if (task.isSuccessful()) {
+                    refreshBoss();
+                    if (listener != null) listener.onMiss();
+                } else {
+                    if (listener != null) listener.onFailure("Failed updating boss.");
+                }
+            });
+            return;
+        }
+
+        bossService.damageBoss(user.getId(), damageAmount, task -> {
+            if (task.isSuccessful()) {
+                refreshBoss();
+                if (listener != null) listener.onSuccess();
+            } else {
+                if (listener != null) listener.onFailure("Failed updating boss.");
+            }
+        });
+    }
+
+    public void rewardUser() {
+        User user = currentUser.getValue();
+        if (user == null) return;
+
+        int reward = coinsDrop;
+
+        Integer currentHealthValue = currentHealth.getValue();
+        if (currentHealthValue != null && currentHealthValue <= (maxHealth / 2)) {
+            reward = coinsDrop / 2;
+
+            // Ovo ako nije pobedio bossa da mu da pola nagrada a iskoristio je sve napade
+            Boss currentBoss = boss.getValue();
+            if (currentBoss != null) {
+                Boss newBoss = bossService.setNewBoss(currentBoss);
+                bossService.updateBoss(newBoss, task -> {
+                    if (task.isSuccessful()) {
+                        boss.postValue(newBoss);
+                    }
+                });
+            }
+            // Ovo znaci da niti je pobedio bossa niti mu je spustio health ispod pola (currentHealthValue < maxHealth gledam
+            // jer nakon pobede se currentHealth odma azurira na maxHealth koji je veci od sadasnjeg pa ako je manje od toga
+            // znaci da se nije azuriralo tj nije ga pobedio pa nema nagrade
+        } else if(currentHealthValue != null && currentHealthValue > (maxHealth / 2) && currentHealthValue < maxHealth) {
+            reward = 0;
+
+            Boss currentBoss = boss.getValue();
+            if (currentBoss != null) {
+                Boss newBoss = bossService.setNewBoss(currentBoss);
+                bossService.updateBoss(newBoss, task -> {
+                    if (task.isSuccessful()) {
+                        boss.postValue(newBoss);
+                    }
+                });
+            }
+        }
+
+        user.setCoins(user.getCoins() + reward);
+
+        userService.updateUser(user, task -> {
+            if (task.isSuccessful()) {
+                currentUser.postValue(user);
+            }
+        });
+    }
+
+    public void refreshBoss() {
+        User user = currentUser.getValue();
+        if (user != null) {
+            LiveData<Boss> freshBoss = bossService.getBoss(user.getId());
+            boss.addSource(freshBoss, bossVal -> {
+                boss.setValue(bossVal);
+                boss.removeSource(freshBoss);
+            });
+        }
+    }
+
+    public LiveData<Boss> getBoss() {
+        return boss;
+    }
+
+    public LiveData<User> getCurrentUserLiveData() {
+        return currentUser;
+    }
+
+    public interface OnDamageCompleteListener {
+        void onSuccess();
+        void onMiss();
+        void onFailure(String error);
     }
 }

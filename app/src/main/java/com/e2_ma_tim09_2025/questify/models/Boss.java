@@ -11,7 +11,9 @@ public class Boss {
     private int attacksLeft;
     private double hitChance;
 
-    public Boss(BossStatus status, String userId, int currentHealth, int maxHealth, int coinsDrop) {
+    public Boss() {}
+
+    public Boss(BossStatus status, String userId, int currentHealth, int maxHealth, int coinsDrop, double hitChance) {
         this.status = status;
         this.userId = userId;
         this.currentHealth = currentHealth;
@@ -66,5 +68,13 @@ public class Boss {
 
     public void setAttacksLeft(int attacksLeft) {
         this.attacksLeft = attacksLeft;
+    }
+
+    public double getHitChance() {
+        return hitChance;
+    }
+
+    public void setHitChance(double hitChance) {
+        this.hitChance = hitChance;
     }
 }
