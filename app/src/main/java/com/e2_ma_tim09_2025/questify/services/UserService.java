@@ -23,6 +23,7 @@ import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -326,17 +327,23 @@ public class UserService {
                     }
                 });
     }
-    public void addFriend(String userId, String friendId) {
-        usersRef.document(userId)
-                .update("friends", FieldValue.arrayUnion(friendId))
-                .addOnCompleteListener(task -> {
-                    if (task.isSuccessful()) {
-                        Log.d("UserService", "Friend added successfully");
-                    } else {
-                        Log.e("UserService", "Failed to add friend", task.getException());
-                    }
-                });
+    public void addFriend(String friendId) {
+        String currentUserId = getCurrentUserId(); // your method to get current user
+        if (currentUserId != null) {
+            usersRef.document(currentUserId)
+                    .update("friends", FieldValue.arrayUnion(friendId))
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Log.d("UserService", "Friend added successfully");
+                            // Optional: trigger LiveData or UI update here
+                        } else {
+                            Log.e("UserService", "Failed to add friend", task.getException());
+                        }
+                    });
+        }
     }
+
+
     public void getAllFriends(String userId, OnCompleteListener<List<User>> listener) {
         usersRef.document(userId)
                 .get()
@@ -381,6 +388,17 @@ public class UserService {
 
     public FirebaseUser getCurrentUser(){
         return userRepository.getCurrentUser();
+    }
+    public void getAllUsers(OnCompleteListener<QuerySnapshot> listener){
+        userRepository.getAllUsers(listener);
+    }
+    public void getAllNonFriendUsers(UserRepository.UsersCallback callback) {
+        userRepository.getAllNonFriendUsers(callback);
+    }
+
+
+    public void getFriends(String userId, OnCompleteListener<QuerySnapshot> listener) {
+        userRepository.getFriends(userId, listener);
     }
 }
 
