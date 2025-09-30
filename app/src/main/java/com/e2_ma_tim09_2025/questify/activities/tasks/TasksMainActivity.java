@@ -124,6 +124,14 @@ public class TasksMainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
+        taskViewModel.isBossActive().observe(this, isActive -> {
+            if (isActive != null && isActive) {
+                bossButton.setVisibility(MaterialButton.VISIBLE);
+            } else {
+                bossButton.setVisibility(MaterialButton.GONE);
+            }
+        });
+
         bossButton.setOnClickListener(v -> {
             Intent intent = new Intent(TasksMainActivity.this, BossMainActivity.class);
             startActivity(intent);

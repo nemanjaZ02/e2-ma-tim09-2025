@@ -58,6 +58,7 @@
         app:cornerRadius="30dp"
         app:elevation="8dp"
         app:icon="@drawable/ic_boss"
+        android:visibility="gone"
         app:iconTint="#D2B48C"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toEndOf="@id/profile_button"

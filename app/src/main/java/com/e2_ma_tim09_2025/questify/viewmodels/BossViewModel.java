@@ -182,7 +182,7 @@ public class BossViewModel extends ViewModel {
             // Ovo ako nije pobedio bossa da mu da pola nagrada a iskoristio je sve napade
             Boss currentBoss = boss.getValue();
             if (currentBoss != null) {
-                Boss newBoss = bossService.setNewBoss(currentBoss);
+                Boss newBoss = bossService.setNewBoss(currentBoss, false);
                 bossService.updateBoss(newBoss, task -> {
                     if (task.isSuccessful()) {
                         boss.postValue(newBoss);
@@ -192,12 +192,12 @@ public class BossViewModel extends ViewModel {
             // Ovo znaci da niti je pobedio bossa niti mu je spustio health ispod pola (currentHealthValue < maxHealth gledam
             // jer nakon pobede se currentHealth odma azurira na maxHealth koji je veci od sadasnjeg pa ako je manje od toga
             // znaci da se nije azuriralo tj nije ga pobedio pa nema nagrade
-        } else if(currentHealthValue != null && currentHealthValue > (maxHealth / 2) && currentHealthValue < maxHealth) {
+        } else if(currentHealthValue != null && currentHealthValue > (maxHealth / 2) && currentHealthValue <= maxHealth) {
             reward = 0;
 
             Boss currentBoss = boss.getValue();
             if (currentBoss != null) {
-                Boss newBoss = bossService.setNewBoss(currentBoss);
+                Boss newBoss = bossService.setNewBoss(currentBoss, false);
                 bossService.updateBoss(newBoss, task -> {
                     if (task.isSuccessful()) {
                         boss.postValue(newBoss);

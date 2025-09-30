@@ -115,7 +115,7 @@ public class BossMainActivity extends AppCompatActivity {
         });
 
         bossViewModel.getBossStatus().observe(this, status -> {
-            if (status == BossStatus.INACTIVE) {
+            if (status == BossStatus.DEFEATED) {
                 attackButton.setEnabled(false);
                 attackButton.setVisibility(View.GONE);
                 healthBar.setVisibility(View.GONE);
@@ -129,7 +129,18 @@ public class BossMainActivity extends AppCompatActivity {
                     playDeathAnimation();
                 }
                 isBossDead = true;
-            } else {
+            } else if(status == BossStatus.INACTIVE) {
+                attackButton.setEnabled(false);
+                attackButton.setVisibility(View.GONE);
+                healthBar.setVisibility(View.GONE);
+                ppBar.setVisibility(View.GONE);
+                healthTextView.setVisibility(View.GONE);
+                attacksLeftText.setVisibility(View.GONE);
+                ppText.setVisibility(View.GONE);
+                hitChanceText.setVisibility(View.GONE);
+            }
+            else
+            {
                 attackButton.setEnabled(true);
                 healthBar.setVisibility(View.VISIBLE);
                 ppBar.setVisibility(View.VISIBLE);

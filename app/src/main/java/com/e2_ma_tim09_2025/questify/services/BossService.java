@@ -1,5 +1,7 @@
 package com.e2_ma_tim09_2025.questify.services;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
@@ -12,17 +14,24 @@ import com.e2_ma_tim09_2025.questify.repositories.TaskRepository;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.firestore.DocumentSnapshot;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+
 import javax.inject.Inject;
 
 public class BossService {
 
     private final BossRepository bossRepository;
     private final TaskRepository taskRepository;
+    private final Executor backgroundExecutor;
+    private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Inject
     public BossService(BossRepository bossRepository, TaskRepository taskRepository) {
         this.bossRepository = bossRepository;
         this.taskRepository = taskRepository;
+        this.backgroundExecutor = Executors.newSingleThreadExecutor();
     }
 
     public LiveData<Boss> getBoss(String userId) {
@@ -40,21 +49,37 @@ public class BossService {
         return liveData;
     }
 
-    public double calculateHitChance(String userId, int originalLevel) {
-        int completedInThisLevel = taskRepository.countCompletedTasksByLevel(userId, originalLevel);
-        int createdInThisLevel = taskRepository.countCreatedTasksInLevel(userId, originalLevel);
-        int completedInThisLevelCreatedBefore = taskRepository.countCompletedTasksCreatedBeforeLevel(userId, originalLevel);
+    public void calculateHitChanceAsync(String userId, int originalLevel, Consumer<Double> callback) {
+        backgroundExecutor.execute(() -> {
+            try {
+                int completedInThisLevel = taskRepository.countCompletedTasksByLevel(userId, originalLevel);
+                int createdInThisLevel = taskRepository.countCreatedTasksInLevel(userId, originalLevel);
+                int completedInThisLevelCreatedBefore = taskRepository.countCompletedTasksCreatedBeforeLevel(userId, originalLevel);
 
-        int denominator = createdInThisLevel + completedInThisLevelCreatedBefore;
-        if (denominator == 0) {
-            denominator = 1;
-        }
-        double hitChance = (double) completedInThisLevel / denominator;
-        if (hitChance == 0) {
-            return 52.0;
-        }
+                int denominator = createdInThisLevel + completedInThisLevelCreatedBefore;
+                if (denominator == 0) {
+                    denominator = 1;
+                }
 
-        return hitChance;
+                double hitChance = (double) completedInThisLevel / denominator;
+
+                if (hitChance == 0) {
+                    hitChance = 52.0;
+                } else {
+                    hitChance = Math.round(hitChance * 10000.0) / 100.0;
+                }
+
+                final double finalHitChance = hitChance;
+
+                mainHandler.post(() -> {
+                    callback.accept(finalHitChance);
+                });
+
+            } catch (Exception e) {
+                Log.e("BossService", "Error calculating hit chance asynchronously", e);
+                mainHandler.post(() -> callback.accept(0.0));
+            }
+        });
     }
 
     public void updateBoss(Boss boss, OnCompleteListener<Void> listener) {
@@ -71,7 +96,7 @@ public class BossService {
                     boss.setAttacksLeft(boss.getAttacksLeft() - 1);
 
                     if (boss.getCurrentHealth() <= 0) {
-                        boss = setNewBoss(boss);
+                        boss = setNewBoss(boss, true);
                     }
 
                     bossRepository.updateBoss(boss, listener);
@@ -84,11 +109,14 @@ public class BossService {
         });
     }
 
-    public Boss setNewBoss(Boss boss) {
+    public Boss setNewBoss(Boss boss, boolean isDefeated) {
         int newMaxHealth = boss.getMaxHealth() * 2 + boss.getMaxHealth() / 2;
         int newCoinsDrop = (int) Math.round(boss.getCoinsDrop() * 1.2);
 
-        boss.setStatus(BossStatus.INACTIVE);
+        if(isDefeated)
+            boss.setStatus(BossStatus.DEFEATED);
+        else
+            boss.setStatus(BossStatus.INACTIVE);
         boss.setMaxHealth(newMaxHealth);
         boss.setCurrentHealth(newMaxHealth);
         boss.setCoinsDrop(newCoinsDrop);

@@ -65,6 +65,14 @@ public class TaskCategoriesMainActivity extends AppCompatActivity {
         logoutButton.setOnClickListener(v -> {});
         profileButton.setOnClickListener(v -> {});
 
+        categoryViewModel.isBossActive().observe(this, isActive -> {
+            if (isActive != null && isActive) {
+                bossButton.setVisibility(MaterialButton.VISIBLE);
+            } else {
+                bossButton.setVisibility(MaterialButton.GONE);
+            }
+        });
+
         bossButton.setOnClickListener(v -> {
             Intent intent = new Intent(TaskCategoriesMainActivity.this, BossMainActivity.class);
             startActivity(intent);

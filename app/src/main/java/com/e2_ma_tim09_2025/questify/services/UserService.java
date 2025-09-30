@@ -260,13 +260,17 @@ public class UserService {
                             Boss boss = work.getResult().toObject(Boss.class);
                             if (boss != null) {
                                 boss.setStatus(BossStatus.ACTIVE);
-                                boss.setHitChance(bossService.calculateHitChance(user.getId(), originalLevel));
-                                bossRepository.updateBoss(boss, updateTask -> {
-                                    if (updateTask.isSuccessful()) {
-                                        Log.d("UserService", "Boss activated for user: " + user.getId());
-                                    } else {
-                                        Log.e("UserService", "Failed to update boss", updateTask.getException());
-                                    }
+                                bossService.calculateHitChanceAsync(user.getId(), originalLevel, hitChance -> {
+
+                                    boss.setHitChance(hitChance);
+
+                                    bossRepository.updateBoss(boss, updateTask -> {
+                                        if (updateTask.isSuccessful()) {
+                                            Log.d("UserService", "Boss activated and updated for user: " + user.getId());
+                                        } else {
+                                            Log.e("UserService", "Failed to update boss", updateTask.getException());
+                                        }
+                                    });
                                 });
                             }
                         } else {
