@@ -1,5 +1,7 @@
 package com.e2_ma_tim09_2025.questify.viewmodels;
 
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -102,22 +104,33 @@ public class CreateAllianceViewModel extends ViewModel {
     }
 
     public void createAlliance(String allianceName) {
+        Log.d("CreateAllianceViewModel", "=== CREATE ALLIANCE CALLED ===");
+        Log.d("CreateAllianceViewModel", "Alliance Name: " + allianceName);
+        
         String currentUserId = userService.getCurrentUserId();
         if (currentUserId == null) {
+            Log.e("CreateAllianceViewModel", "❌ User not logged in");
             errorMessageLiveData.postValue("User not logged in");
             return;
         }
+        
+        Log.d("CreateAllianceViewModel", "Current User ID: " + currentUserId);
 
         List<String> invitedFriendIds = new ArrayList<>(selectedFriendIds);
+        Log.d("CreateAllianceViewModel", "Selected Friend IDs: " + invitedFriendIds.toString());
+        Log.d("CreateAllianceViewModel", "Number of friends to invite: " + invitedFriendIds.size());
 
+        Log.d("CreateAllianceViewModel", "🚀 Calling allianceService.createAllianceWithInvites...");
         allianceService.createAllianceWithInvites(
                 allianceName,
                 currentUserId,
                 invitedFriendIds,
                 task -> {
                     if (task.isSuccessful()) {
+                        Log.d("CreateAllianceViewModel", "✅ Alliance creation completed successfully");
                         isAllianceCreatedLiveData.postValue(true);
                     } else {
+                        Log.e("CreateAllianceViewModel", "❌ Alliance creation failed", task.getException());
                         errorMessageLiveData.postValue("Failed to create alliance: " +
                                 (task.getException() != null ? task.getException().getMessage() : "Unknown error"));
                     }

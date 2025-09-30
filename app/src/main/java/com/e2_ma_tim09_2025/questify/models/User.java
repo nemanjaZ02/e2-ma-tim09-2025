@@ -19,10 +19,11 @@ public class User {
     private long createdAt;
     private List<String> friends;
     private String allianceId;
+    private List<String> fcmTokens;
 
     public User() {
         friends = new ArrayList<>();
-
+        fcmTokens = new ArrayList<>();
     }
 
     public User(String id, String username, String avatar, int level, String title,
@@ -43,6 +44,7 @@ public class User {
         this.createdAt = createdAt;
         this.friends = friends;
         this.allianceId = allianceId;
+        this.fcmTokens = new ArrayList<>();
     }
 
     public String getId() { return id; }
@@ -94,5 +96,13 @@ public class User {
 
     public void setAllianceId(String allianceId) {
         this.allianceId = allianceId;
+    }
+
+    public List<String> getFcmTokens() {
+        return fcmTokens;
+    }
+
+    public void setFcmTokens(List<String> fcmTokens) {
+        this.fcmTokens = fcmTokens;
     }
 }

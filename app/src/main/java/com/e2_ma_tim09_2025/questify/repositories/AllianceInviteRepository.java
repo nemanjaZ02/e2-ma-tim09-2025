@@ -1,5 +1,7 @@
 package com.e2_ma_tim09_2025.questify.repositories;
 
+import android.util.Log;
+
 import com.e2_ma_tim09_2025.questify.models.AllianceInvite;
 import com.e2_ma_tim09_2025.questify.models.enums.AllianceInviteStatus;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -22,9 +24,36 @@ public class AllianceInviteRepository {
 
     // Send invite
     public void sendInvite(AllianceInvite invite, OnCompleteListener<Void> listener) {
+        Log.d("AllianceInviteRepository", "=== SAVING INVITE TO FIRESTORE ===");
+        Log.d("AllianceInviteRepository", "Invite ID: " + invite.getId());
+        Log.d("AllianceInviteRepository", "From User: " + invite.getFromUserId());
+        Log.d("AllianceInviteRepository", "To User: " + invite.getToUserId());
+        Log.d("AllianceInviteRepository", "Alliance ID: " + invite.getAllianceId());
+        Log.d("AllianceInviteRepository", "Status: " + invite.getStatus());
+        
+        // Check for null ID
+        if (invite.getId() == null || invite.getId().isEmpty()) {
+            Log.e("AllianceInviteRepository", "❌ CRITICAL ERROR: Invite ID is null or empty!");
+            Log.e("AllianceInviteRepository", "Invite object: " + invite.toString());
+            if (listener != null) {
+                // Create a failed task
+                com.google.android.gms.tasks.Tasks.<Void>forException(new Exception("Invite ID is null"))
+                    .addOnCompleteListener(listener);
+            }
+            return;
+        }
+        
+        Log.d("AllianceInviteRepository", "🔥 Saving invite with ID: " + invite.getId());
         invitesRef.document(invite.getId())
                 .set(invite)
-                .addOnCompleteListener(listener);
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Log.d("AllianceInviteRepository", "✅ Invite saved successfully to Firestore");
+                    } else {
+                        Log.e("AllianceInviteRepository", "❌ Failed to save invite to Firestore", task.getException());
+                    }
+                    listener.onComplete(task);
+                });
     }
 
     // Get invite by ID
