@@ -4,6 +4,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <application
         android:name=".App"
@@ -15,6 +16,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Questify"
+        android:usesCleartextTraffic="true"
+        android:networkSecurityConfig="@xml/network_security_config"
         tools:targetApi="31">
         <activity
             android:name=".activities.bosses.BossMainActivity"
@@ -66,6 +69,16 @@
             android:name=".activities.alliance.CreateAllianceActivity"
             android:exported="false" />
         <activity
+            android:name=".activities.alliance.MyAllianceActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.alliance.AllianceInviteDialogActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Material3.DayNight.Dialog" />
+        <activity
+            android:name=".activities.alliance.MemberAllianceActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.MainActivity"
             android:exported="true">
             <intent-filter>
@@ -74,6 +87,25 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Firebase Messaging Service -->
+        <service
+            android:name=".services.MyFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Alliance Invite Action Receiver -->
+        <receiver
+            android:name=".receivers.AllianceInviteActionReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="ACCEPT_INVITE" />
+                <action android:name="DECLINE_INVITE" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

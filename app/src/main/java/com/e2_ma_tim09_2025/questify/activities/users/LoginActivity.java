@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.activities.tasks.TasksMainActivity;
+import com.e2_ma_tim09_2025.questify.services.FCMTokenService;
 import com.e2_ma_tim09_2025.questify.viewmodels.UserViewModel;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -19,6 +20,7 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.auth.FirebaseAuthInvalidUserException;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 
+import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -30,6 +32,9 @@ public class LoginActivity extends AppCompatActivity {
     private UserViewModel userViewModel;
     private FirebaseAuth auth;
     private FirebaseFirestore db;
+
+    @Inject
+    FCMTokenService fcmTokenService;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,6 +116,18 @@ private void loginUser() {
                         if (user.isEmailVerified()) {
                             // CASE 1: User is logged in and email is verified.
                             Toast.makeText(this, "Login successful!", Toast.LENGTH_SHORT).show();
+                            
+                            // Generate and store FCM token for this device
+                            if (fcmTokenService != null) {
+                                fcmTokenService.generateAndStoreToken(fcmTask -> {
+                                    if (fcmTask.isSuccessful()) {
+                                        android.util.Log.d("LoginActivity", "FCM token generated and stored successfully");
+                                    } else {
+                                        android.util.Log.e("LoginActivity", "Failed to generate FCM token", fcmTask.getException());
+                                    }
+                                });
+                            }
+                            
                             Intent intent = new Intent(this, TasksMainActivity.class);
                             startActivity(intent);
                             finish();
