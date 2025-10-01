@@ -12,6 +12,7 @@ import androidx.core.app.NotificationCompat;
 
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.activities.MainActivity;
+import com.e2_ma_tim09_2025.questify.activities.alliance.AllianceInviteDialogActivity;
 import com.e2_ma_tim09_2025.questify.receivers.AllianceInviteActionReceiver;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -148,29 +149,31 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        // Create accept action intent
-        Intent acceptIntent = new Intent(this, AllianceInviteActionReceiver.class);
-        acceptIntent.setAction("ACCEPT_INVITE");
+        // Create accept action intent - opens dialog activity
+        Intent acceptIntent = new Intent(this, AllianceInviteDialogActivity.class);
+        acceptIntent.putExtra("notification_type", "alliance_invite_accept");
         acceptIntent.putExtra("invite_id", inviteId);
         acceptIntent.putExtra("alliance_id", allianceId);
         acceptIntent.putExtra("from_user_id", fromUserId);
         acceptIntent.putExtra("from_username", fromUsername);
         acceptIntent.putExtra("alliance_name", allianceName);
+        acceptIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         
-        PendingIntent acceptPendingIntent = PendingIntent.getBroadcast(this, 
+        PendingIntent acceptPendingIntent = PendingIntent.getActivity(this, 
                 (int) System.currentTimeMillis(), acceptIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        // Create decline action intent
-        Intent declineIntent = new Intent(this, AllianceInviteActionReceiver.class);
-        declineIntent.setAction("DECLINE_INVITE");
+        // Create decline action intent - opens dialog activity
+        Intent declineIntent = new Intent(this, AllianceInviteDialogActivity.class);
+        declineIntent.putExtra("notification_type", "alliance_invite_decline");
         declineIntent.putExtra("invite_id", inviteId);
         declineIntent.putExtra("alliance_id", allianceId);
         declineIntent.putExtra("from_user_id", fromUserId);
         declineIntent.putExtra("from_username", fromUsername);
         declineIntent.putExtra("alliance_name", allianceName);
+        declineIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         
-        PendingIntent declinePendingIntent = PendingIntent.getBroadcast(this, 
+        PendingIntent declinePendingIntent = PendingIntent.getActivity(this, 
                 (int) (System.currentTimeMillis() + 1), declineIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 

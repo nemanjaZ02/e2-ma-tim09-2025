@@ -69,6 +69,16 @@
             android:name=".activities.alliance.CreateAllianceActivity"
             android:exported="false" />
         <activity
+            android:name=".activities.alliance.MyAllianceActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activities.alliance.AllianceInviteDialogActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Material3.DayNight.Dialog" />
+        <activity
+            android:name=".activities.alliance.MemberAllianceActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.MainActivity"
             android:exported="true">
             <intent-filter>

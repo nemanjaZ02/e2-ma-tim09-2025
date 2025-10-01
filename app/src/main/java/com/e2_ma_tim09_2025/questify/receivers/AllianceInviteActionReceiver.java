@@ -6,7 +6,10 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import com.e2_ma_tim09_2025.questify.models.AllianceConflictResult;
+import com.e2_ma_tim09_2025.questify.services.AllianceInviteService;
 import com.e2_ma_tim09_2025.questify.services.NotificationService;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
@@ -20,6 +23,9 @@ public class AllianceInviteActionReceiver extends BroadcastReceiver {
     
     @Inject
     NotificationService notificationService;
+    
+    @Inject
+    AllianceInviteService allianceInviteService;
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -67,20 +73,39 @@ public class AllianceInviteActionReceiver extends BroadcastReceiver {
     }
     
     private void handleAcceptInvite(Context context, String userId, String inviteId, String allianceId, String fromUserId) {
-        Log.d(TAG, "Handling accept invite");
+        Log.d(TAG, "Handling accept invite with conflict resolution");
         
-        // Send response to server
-        notificationService.sendAllianceInviteResponse("accept", inviteId, userId, allianceId, fromUserId, new NotificationService.NotificationCallback() {
+        // Use conflict resolution logic
+        allianceInviteService.acceptInviteWithConflictResolution(inviteId, userId, new OnCompleteListener<AllianceConflictResult>() {
             @Override
-            public void onSuccess() {
-                Log.d(TAG, "✅ Alliance invite accepted successfully");
-                // Cancel the notification
-                cancelNotification(context, inviteId);
-            }
-            
-            @Override
-            public void onFailure(String error) {
-                Log.e(TAG, "❌ Failed to accept alliance invite: " + error);
+            public void onComplete(com.google.android.gms.tasks.Task<AllianceConflictResult> task) {
+                if (task.isSuccessful()) {
+                    AllianceConflictResult result = task.getResult();
+                    if (result != null) {
+                        if (result.isCanAccept()) {
+                            if (result.isNeedsConfirmation()) {
+                                // User needs to confirm leaving current alliance
+                                Log.w(TAG, "⚠️ User needs to confirm leaving current alliance");
+                                // For now, we'll show a simple message - in a real app you'd show a dialog
+                                Log.w(TAG, "Cannot accept invitation: " + result.getReason());
+                                // TODO: Show confirmation dialog to user
+                            } else {
+                                // Direct acceptance successful
+                                Log.d(TAG, "✅ Alliance invite accepted successfully");
+                                cancelNotification(context, inviteId);
+                            }
+                        } else {
+                            // Cannot accept due to mission or other constraints
+                            Log.w(TAG, "❌ Cannot accept invitation: " + result.getReason());
+                            // TODO: Show error message to user
+                        }
+                    } else {
+                        Log.e(TAG, "❌ Null result from conflict resolution");
+                    }
+                } else {
+                    Log.e(TAG, "❌ Failed to process alliance invite: " + 
+                        (task.getException() != null ? task.getException().getMessage() : "Unknown error"));
+                }
             }
         });
     }

@@ -11,4 +11,12 @@
     <item
         android:id="@+id/menu_create_alliance"
         android:title="Create Alliance" />
+
+    <item
+        android:id="@+id/menu_my_alliance"
+        android:title="My Alliance" />
+
+    <item
+        android:id="@+id/menu_member_alliance"
+        android:title="Member Alliance" />
 </menu>

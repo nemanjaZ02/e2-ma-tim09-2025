@@ -11,15 +11,17 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import javax.inject.Inject;
+import javax.inject.Singleton;
 
+@Singleton
 public class AllianceInviteRepository {
     private final FirebaseFirestore db;
     private final CollectionReference invitesRef;
 
     @Inject
-    public AllianceInviteRepository() {
-        db = FirebaseFirestore.getInstance();
-        invitesRef = db.collection("allianceInvites");
+    public AllianceInviteRepository(FirebaseFirestore firestore) {
+        this.db = firestore;
+        this.invitesRef = db.collection("allianceInvites");
     }
 
     // Send invite
@@ -87,6 +89,26 @@ public class AllianceInviteRepository {
         invitesRef.document(inviteId)
                 .update("status", status.name()) // Firestore čuva string
                 .addOnCompleteListener(listener);
+    }
+
+    // Get all invites for a specific alliance
+    public void getInvitesForAlliance(String allianceId, OnCompleteListener<QuerySnapshot> listener) {
+        invitesRef.whereEqualTo("allianceId", allianceId)
+                .get()
+                .addOnCompleteListener(listener);
+    }
+
+    // Get all invites sent by a user (for filtering out users who already have pending invites)
+    public void getInvitesSentByUser(String fromUserId, OnCompleteListener<QuerySnapshot> listener) {
+        invitesRef.whereEqualTo("fromUserId", fromUserId)
+                .whereEqualTo("status", AllianceInviteStatus.PENDING.name())
+                .get()
+                .addOnCompleteListener(listener);
+    }
+
+    // Delete invite task for use with Tasks.whenAll
+    public com.google.android.gms.tasks.Task<Void> deleteInviteTask(String inviteId) {
+        return invitesRef.document(inviteId).delete();
     }
 
 }
