@@ -110,6 +110,11 @@ public class UserRepository {
                 });
     }
 
+    // Get user task for use with Tasks.whenAllSuccess
+    public com.google.android.gms.tasks.Task<DocumentSnapshot> getUserTask(String uid) {
+        return usersRef.document(uid).get();
+    }
+
 
     // Update user in Firestore
     public void updateUser(User user, OnCompleteListener<Void> listener) {

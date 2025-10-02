@@ -18,6 +18,8 @@ import android.widget.Toast;
 
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.activities.alliance.CreateAllianceActivity;
+import com.e2_ma_tim09_2025.questify.activities.alliance.MemberAllianceActivity;
+import com.e2_ma_tim09_2025.questify.activities.alliance.MyAllianceActivity;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.viewmodels.UserViewModel;
 import com.google.firebase.auth.FirebaseAuth;
@@ -120,6 +122,12 @@ public class ProfileActivity extends AppCompatActivity {
                     return true;
                 } else if (id == R.id.menu_create_alliance) {
                     startActivity(new Intent(ProfileActivity.this, CreateAllianceActivity.class));
+                    return true;
+                } else if (id == R.id.menu_my_alliance) {
+                    startActivity(new Intent(ProfileActivity.this, MyAllianceActivity.class));
+                    return true;
+                } else if (id == R.id.menu_member_alliance) {
+                    startActivity(new Intent(ProfileActivity.this, MemberAllianceActivity.class));
                     return true;
                 } else {
                     return false;

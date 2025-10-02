@@ -78,4 +78,17 @@ public class AllianceInvite {
     public void setStatus(AllianceInviteStatus status) {
         this.status = status;
     }
+
+    @Override
+    public String toString() {
+        return "AllianceInvite{" +
+                "id='" + id + '\'' +
+                ", allianceId='" + allianceId + '\'' +
+                ", fromUserId='" + fromUserId + '\'' +
+                ", toUserId='" + toUserId + '\'' +
+                ", accepted=" + accepted +
+                ", timestamp=" + timestamp +
+                ", status=" + status +
+                '}';
+    }
 }
