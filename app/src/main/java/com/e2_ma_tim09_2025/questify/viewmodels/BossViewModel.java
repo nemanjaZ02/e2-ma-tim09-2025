@@ -70,6 +70,14 @@ public class BossViewModel extends ViewModel {
                 bossStatus.setValue(bossVal.getStatus());
             }
         });
+
+        boss.observeForever(bossVal -> {
+            if (bossVal != null) {
+                if (bossVal.getStatus() == BossStatus.DEFEATED || bossVal.getAttacksLeft() <= 0) {
+                    rewardUser();
+                }
+            }
+        });
     }
 
     public void fetchCurrentUser() {
@@ -176,7 +184,7 @@ public class BossViewModel extends ViewModel {
         int reward = coinsDrop;
 
         Integer currentHealthValue = currentHealth.getValue();
-        if (currentHealthValue != null && currentHealthValue <= (maxHealth / 2)) {
+        if (currentHealthValue != null && currentHealthValue <= (maxHealth / 2) && currentHealthValue > 0) {
             reward = coinsDrop / 2;
 
             // Ovo ako nije pobedio bossa da mu da pola nagrada a iskoristio je sve napade

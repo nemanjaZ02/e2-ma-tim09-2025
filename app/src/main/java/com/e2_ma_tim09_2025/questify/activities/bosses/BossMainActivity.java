@@ -83,6 +83,7 @@ public class BossMainActivity extends AppCompatActivity {
                 currentUser = user;
                 ppBar.setMax(currentUser.getPowerPoints());
                 ppBar.setProgress(currentUser.getPowerPoints());
+                ppText.setText(currentUser.getPowerPoints() + " / " + currentUser.getPowerPoints());
             }
         });
 
@@ -125,7 +126,6 @@ public class BossMainActivity extends AppCompatActivity {
                 ppText.setVisibility(View.GONE);
                 hitChanceText.setVisibility(View.GONE);
                 if (!isBossDead) {
-                    bossViewModel.rewardUser();
                     playDeathAnimation();
                 }
                 isBossDead = true;
@@ -161,8 +161,6 @@ public class BossMainActivity extends AppCompatActivity {
 
                         Integer attacksLeft = bossViewModel.getAttacksLeft().getValue() - 1;
                         if (attacksLeft != null && attacksLeft <= 0) {
-                            bossViewModel.rewardUser();
-                            // Sakrij UI elemente
                             ppBar.setVisibility(View.GONE);
                             healthBar.setVisibility(View.GONE);
                             healthTextView.setVisibility(View.GONE);

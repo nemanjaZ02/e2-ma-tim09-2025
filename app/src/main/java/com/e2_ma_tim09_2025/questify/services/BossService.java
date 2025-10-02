@@ -110,17 +110,20 @@ public class BossService {
     }
 
     public Boss setNewBoss(Boss boss, boolean isDefeated) {
-        int newMaxHealth = boss.getMaxHealth() * 2 + boss.getMaxHealth() / 2;
-        int newCoinsDrop = (int) Math.round(boss.getCoinsDrop() * 1.2);
-
-        if(isDefeated)
+        if(isDefeated) {
+            int newMaxHealth = boss.getMaxHealth() * 2 + boss.getMaxHealth() / 2;
+            int newCoinsDrop = (int) Math.round(boss.getCoinsDrop() * 1.2);
             boss.setStatus(BossStatus.DEFEATED);
-        else
+            boss.setMaxHealth(newMaxHealth);
+            boss.setCurrentHealth(newMaxHealth);
+            boss.setCoinsDrop(newCoinsDrop);
+            boss.setAttacksLeft(5);
+        }
+        else {
+            boss.setCurrentHealth(boss.getMaxHealth());
+            boss.setAttacksLeft(5);
             boss.setStatus(BossStatus.INACTIVE);
-        boss.setMaxHealth(newMaxHealth);
-        boss.setCurrentHealth(newMaxHealth);
-        boss.setCoinsDrop(newCoinsDrop);
-        boss.setAttacksLeft(5);
+        }
 
         return boss;
     }
