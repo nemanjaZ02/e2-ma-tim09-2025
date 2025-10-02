@@ -14,6 +14,7 @@ import com.e2_ma_tim09_2025.questify.repositories.TaskRepository;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.firestore.DocumentSnapshot;
 
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -127,5 +128,38 @@ public class BossService {
 
     public void deleteBoss(String userId, OnCompleteListener<Void> listener) {
         bossRepository.deleteBossByUserId(userId, listener);
+    }
+    public void getBossByUser(String userId, OnCompleteListener<Boss> listener) {
+        bossRepository.getBossByUserId(userId, task -> {
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                Boss boss = task.getResult().toObject(Boss.class);
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(boss));
+            } else {
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(null));
+            }
+        });
+    }
+
+    public Boss getBossForUser(String userId) {
+        // This is synchronous - you'll need to handle the async nature differently
+        final Boss[] result = {null};
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        bossRepository.getBossByUserId(userId, task -> {
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                result[0] = task.getResult().toObject(Boss.class);
+            } else {
+                result[0] = null;
+            }
+            latch.countDown();
+        });
+
+        try {
+            latch.await(); // Wait for the async operation to complete
+            return result[0];
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        }
     }
 }

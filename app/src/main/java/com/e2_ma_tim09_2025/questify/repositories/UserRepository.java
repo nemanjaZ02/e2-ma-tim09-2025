@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 
 import com.e2_ma_tim09_2025.questify.dao.UserDao;
 import com.e2_ma_tim09_2025.questify.models.User;
+import com.e2_ma_tim09_2025.questify.models.MyEquipment;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.auth.FirebaseAuth;
@@ -215,6 +216,88 @@ public class UserRepository {
                 ));
             }
         });
+    }
+
+    /**
+     * Get user's equipment list
+     */
+    public void getUserEquipment(String userId, OnCompleteListener<List<MyEquipment>> listener) {
+        usersRef.document(userId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                        User user = task.getResult().toObject(User.class);
+                        if (user != null) {
+                            List<MyEquipment> equipment = user.getEquipment();
+                            if (equipment == null) {
+                                equipment = new ArrayList<>();
+                            }
+                            listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(equipment));
+                        } else {
+                            listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                                new Exception("Failed to parse user data")));
+                        }
+                    } else {
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                            task.getException() != null ? task.getException() : new Exception("User not found")));
+                    }
+                });
+    }
+
+    /**
+     * Get specific equipment item from user's inventory
+     */
+    public void getUserEquipmentById(String userId, String equipmentId, OnCompleteListener<MyEquipment> listener) {
+        usersRef.document(userId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                        User user = task.getResult().toObject(User.class);
+                        if (user != null && user.getEquipment() != null) {
+                            MyEquipment foundEquipment = null;
+                            for (MyEquipment equipment : user.getEquipment()) {
+                                if (equipmentId.equals(equipment.getId())) {
+                                    foundEquipment = equipment;
+                                    break;
+                                }
+                            }
+                            listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(foundEquipment));
+                        } else {
+                            listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(null));
+                        }
+                    } else {
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                            task.getException() != null ? task.getException() : new Exception("User not found")));
+                    }
+                });
+    }
+
+    /**
+     * Get activated equipment for a user
+     */
+    public void getUserActivatedEquipment(String userId, OnCompleteListener<List<MyEquipment>> listener) {
+        usersRef.document(userId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                        User user = task.getResult().toObject(User.class);
+                        if (user != null && user.getEquipment() != null) {
+                            List<MyEquipment> activatedEquipment = new ArrayList<>();
+                            for (MyEquipment equipment : user.getEquipment()) {
+                                if (equipment.isActivated()) {
+                                    activatedEquipment.add(equipment);
+                                }
+                            }
+                            listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(activatedEquipment));
+                        } else {
+                            listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                                new Exception("Failed to parse user data")));
+                        }
+                    } else {
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                            task.getException() != null ? task.getException() : new Exception("User not found")));
+                    }
+                });
     }
 
 }

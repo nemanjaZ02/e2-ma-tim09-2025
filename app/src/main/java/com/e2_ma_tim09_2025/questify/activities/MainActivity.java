@@ -16,14 +16,20 @@ import com.e2_ma_tim09_2025.questify.activities.bosses.BossMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.tasks.TasksMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.users.LoginActivity;
 import com.e2_ma_tim09_2025.questify.activities.users.RegisterActivity;
+import com.e2_ma_tim09_2025.questify.repositories.EquipmentRepository;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import javax.inject.Inject;
+import dagger.hilt.android.AndroidEntryPoint;
+
 import java.util.HashMap;
 import java.util.Map;
 
+@AndroidEntryPoint
 public class MainActivity extends AppCompatActivity {
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

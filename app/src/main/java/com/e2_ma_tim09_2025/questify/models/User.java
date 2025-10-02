@@ -14,7 +14,7 @@ public class User {
     private int experiencePoints;
     private int coins;
     private List<String> badges;
-    private List<String> equipment;
+    private List<MyEquipment> equipment;
     private String qrCode;
     private long createdAt;
     private List<String> friends;
@@ -28,7 +28,7 @@ public class User {
 
     public User(String id, String username, String avatar, int level, String title,
                 int powerPoints, int experiencePoints, int coins,
-                List<String> badges, List<String> equipment, String qrCode, long createdAt,
+                List<String> badges, List<MyEquipment> equipment, String qrCode, long createdAt,
                 ArrayList<String> friends, String allianceId) {
         this.id = id;
         this.username = username;
@@ -74,8 +74,8 @@ public class User {
     public List<String> getBadges() { return badges; }
     public void setBadges(List<String> badges) { this.badges = badges; }
 
-    public List<String> getEquipment() { return equipment; }
-    public void setEquipment(List<String> equipment) { this.equipment = equipment; }
+    public List<MyEquipment> getEquipment() { return equipment; }
+    public void setEquipment(List<MyEquipment> equipment) { this.equipment = equipment; }
 
     public String getQrCode() { return qrCode; }
     public void setQrCode(String qrCode) { this.qrCode = qrCode; }
