@@ -434,12 +434,9 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
         if (currentHealth != null && maxHealth > 0) {
             if (currentHealth <= maxHealth / 2) {
                 showChest();
-            } else {
-
-                showDefeatMessage();
-            }
+            } 
         } else {
-            navigateToTasksMain()
+            navigateToTasksMain();
         }
     }
     
