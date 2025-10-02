@@ -1,6 +1,11 @@
 package com.e2_ma_tim09_2025.questify.activities.bosses;
 
+import android.content.Intent;
 import android.graphics.Color;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -19,6 +24,7 @@ import androidx.core.view.WindowInsetsCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
+import com.e2_ma_tim09_2025.questify.activities.tasks.TasksMainActivity;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.models.enums.BossStatus;
 import com.e2_ma_tim09_2025.questify.viewmodels.BossViewModel;
@@ -28,13 +34,14 @@ import java.util.Random;
 import dagger.hilt.android.AndroidEntryPoint;
 
 @AndroidEntryPoint
-public class BossMainActivity extends AppCompatActivity {
+public class BossMainActivity extends AppCompatActivity implements SensorEventListener {
 
     private VideoView bossVideoView;
     private Button attackButton;
     private ProgressBar healthBar, ppBar;
     private TextView healthTextView, ppText, attacksLeftText;
     TextView hitChanceText;
+    private TextView rewardText;
     private boolean isPlayingAction = false;
     private Random random = new Random();
     private BossViewModel bossViewModel;
@@ -43,6 +50,17 @@ public class BossMainActivity extends AppCompatActivity {
     private TextView hitResultText;
     private static final long BOSS_ATTACK_DELAY_MS = 4000;
     private boolean isBossDead = false;
+    
+    // Shake detection
+    private SensorManager sensorManager;
+    private Sensor accelerometer;
+    private long lastShakeTime = 0;
+    private static final int SHAKE_THRESHOLD = 15;
+    private static final int SHAKE_SLOP_TIME_MS = 500;
+
+    private boolean isChestActive = false;
+    private boolean isChestOpen = false;
+    private String rewardType = "";
 
     private final Runnable bossAttackRunnable = new Runnable() {
         @Override
@@ -75,6 +93,10 @@ public class BossMainActivity extends AppCompatActivity {
         attacksLeftText = findViewById(R.id.attacksLeftText);
         hitResultText = findViewById(R.id.hitResultText);
         hitChanceText = findViewById(R.id.hitChanceText);
+        rewardText = findViewById(R.id.rewardText);
+
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
         bossViewModel = new ViewModelProvider(this).get(BossViewModel.class);
 
@@ -159,13 +181,10 @@ public class BossMainActivity extends AppCompatActivity {
                         showHitResult(true);
                         playRandomHitAnimation();
 
-                        Integer attacksLeft = bossViewModel.getAttacksLeft().getValue() - 1;
+                        Integer attacksLeft = bossViewModel.getAttacksLeft().getValue();
                         if (attacksLeft != null && attacksLeft <= 0) {
-                            ppBar.setVisibility(View.GONE);
-                            healthBar.setVisibility(View.GONE);
-                            healthTextView.setVisibility(View.GONE);
-                            attacksLeftText.setVisibility(View.GONE);
-                            hitChanceText.setVisibility(View.GONE);
+                            // Out of attacks - check health and decide what to do
+                            checkAttacksExhausted();
                         }
                     }
 
@@ -179,15 +198,10 @@ public class BossMainActivity extends AppCompatActivity {
                         showHitResult(false);
                         Log.e("BossArena", "Chances not on your side... You missed!");
 
-                        Integer attacksLeft = bossViewModel.getAttacksLeft().getValue() - 1;
+                        Integer attacksLeft = bossViewModel.getAttacksLeft().getValue();
                         if (attacksLeft != null && attacksLeft <= 0) {
-                            bossViewModel.rewardUser();
-                            // Sakrij UI elemente
-                            ppBar.setVisibility(View.GONE);
-                            healthBar.setVisibility(View.GONE);
-                            healthTextView.setVisibility(View.GONE);
-                            attacksLeftText.setVisibility(View.GONE);
-                            hitChanceText.setVisibility(View.GONE);
+                            // Out of attacks - check health and decide what to do
+                            checkAttacksExhausted();
                         }
                     }
                 });
@@ -265,9 +279,9 @@ public class BossMainActivity extends AppCompatActivity {
         bossVideoView.setOnCompletionListener(mp -> {
             isPlayingAction = false;
             if (isDeathAnimation) {
-                if (bossViewModel != null) {
-                    bossViewModel.rewardUser();
-                }
+                // Boss died - call rewardUser and show chest
+                bossViewModel.rewardUser();
+                showChest();
                 return;
             }
             if (bossViewModel.getCurrentHealth().getValue() != null && bossViewModel.getCurrentHealth().getValue() > 0) {
@@ -288,6 +302,9 @@ public class BossMainActivity extends AppCompatActivity {
         if (bossVideoView != null && !bossVideoView.isPlaying()) {
             bossVideoView.start();
         }
+        if (sensorManager != null && accelerometer != null) {
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI);
+        }
     }
 
     @Override
@@ -296,11 +313,140 @@ public class BossMainActivity extends AppCompatActivity {
         if (bossVideoView != null && bossVideoView.isPlaying()) {
             bossVideoView.pause();
         }
+        if (sensorManager != null) {
+            sensorManager.unregisterListener(this);
+        }
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
         stopBossAttackTimer();
+        if (sensorManager != null) {
+            sensorManager.unregisterListener(this);
+        }
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            float x = event.values[0];
+            float y = event.values[1];
+            float z = event.values[2];
+            
+            float acceleration = (float) Math.sqrt(x * x + y * y + z * z) - SensorManager.GRAVITY_EARTH;
+            
+            if (acceleration > SHAKE_THRESHOLD) {
+                long currentTime = System.currentTimeMillis();
+                if (currentTime - lastShakeTime > SHAKE_SLOP_TIME_MS) {
+                    lastShakeTime = currentTime;
+                    
+                    if (isChestActive && !isChestOpen) {
+                        openChest();
+                    } else if (!isChestActive && attackButton.isEnabled() && attackButton.getVisibility() == View.VISIBLE) {
+                        attackButton.performClick();
+                    }
+                }
+            }
+        }
+    }
+    
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int accuracy) {
+    }
+
+    private void showChest() {
+        Log.d("BossMainActivity", "showChest() called");
+        isChestActive = true;
+        isChestOpen = false;
+
+        Integer currentHealth = bossViewModel.getCurrentHealth().getValue();
+        Integer maxHealth = bossViewModel.getMaxHealth();
+        if (currentHealth != null && maxHealth > 0) {
+            if (currentHealth <= 0) {
+                rewardType = "FULL REWARD :)";
+            } else if (currentHealth <= maxHealth / 2) {
+                rewardType = "HALF REWARD :/";
+            } else {
+                rewardType = "NO REWARD :(";
+            }
+        }
+
+        Log.d("BossMainActivity", "Reward type: " + rewardType);
+        rewardText.setVisibility(View.VISIBLE);
+        rewardText.setText(rewardType);
+
+        playChestAnimation(false);
+    }
+    
+    private void openChest() {
+        if (!isChestActive || isChestOpen) return;
+        
+        isChestOpen = true;
+        playChestAnimation(true);
+    }
+    
+    private void playChestAnimation(boolean isOpen) {
+        String resourceName = isOpen ? "chest1_open" : "chest1_closed";
+        int resourceId = getResources().getIdentifier(resourceName, "raw", getPackageName());
+        
+        if (resourceId == 0) {
+            Log.e("BossMainActivity", "Chest video resource not found: " + resourceName);
+            return;
+        }
+        
+        Uri videoUri = Uri.parse("android.resource://" + getPackageName() + "/" + resourceId);
+        bossVideoView.stopPlayback();
+        bossVideoView.setVideoURI(videoUri);
+        
+        bossVideoView.setOnCompletionListener(mp -> {
+            if (!isOpen) {
+                playChestAnimation(false);
+            } else {
+                navigateToTasksMain();
+            }
+        });
+        
+        bossVideoView.setOnPreparedListener(mp -> {
+            mp.setLooping(!isOpen);
+            bossVideoView.start();
+        });
+    }
+    
+    private void checkAttacksExhausted() {
+        // Hide UI elements
+        stopBossAttackTimer();
+        attackButton.setEnabled(false);
+        attackButton.setVisibility(View.GONE);
+        ppBar.setVisibility(View.GONE);
+        healthBar.setVisibility(View.GONE);
+        healthTextView.setVisibility(View.GONE);
+        attacksLeftText.setVisibility(View.GONE);
+        hitChanceText.setVisibility(View.GONE);
+        
+        // Call rewardUser
+        bossViewModel.rewardUser();
+        
+        // Check health to decide what to do
+        Integer currentHealth = bossViewModel.getCurrentHealth().getValue();
+        Integer maxHealth = bossViewModel.getMaxHealth();
+        
+        if (currentHealth != null && maxHealth > 0) {
+            if (currentHealth <= maxHealth / 2) {
+                showChest();
+            } else {
+
+                showDefeatMessage();
+            }
+        } else {
+            navigateToTasksMain()
+        }
+    }
+    
+    private void navigateToTasksMain() {
+        Intent intent = new Intent(this, TasksMainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        finish();
     }
 }
