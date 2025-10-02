@@ -50,7 +50,10 @@ public class BossViewModel extends ViewModel {
         currentHealth.addSource(boss, bossVal -> {
             if (bossVal != null) {
                 currentHealth.setValue(bossVal.getCurrentHealth());
-                if (!staticDataLoaded) {
+                if (!staticDataLoaded
+                        || maxHealth != bossVal.getMaxHealth()
+                        || coinsDrop != bossVal.getCoinsDrop()
+                        || hitChance != bossVal.getHitChance()) {
                     maxHealth = bossVal.getMaxHealth();
                     coinsDrop = bossVal.getCoinsDrop();
                     hitChance = bossVal.getHitChance();
@@ -142,13 +145,13 @@ public class BossViewModel extends ViewModel {
             return;
         }
 
-        currentBoss.setAttacksLeft(currentBoss.getAttacksLeft() - 1);
-
         Random random = new Random();
         int roll = random.nextInt(100) + 1;
 
+        // Normalize hit chance: treat hitChance as percentage (0-100)
         if (roll > hitChance) {
-            bossService.updateBoss(currentBoss, task -> {
+            // Miss: decrement attacks on server side to avoid local desync
+            bossService.damageBoss(user.getId(), 0, task -> {
                 if (task.isSuccessful()) {
                     refreshBoss();
                     if (listener != null) listener.onMiss();
@@ -176,7 +179,18 @@ public class BossViewModel extends ViewModel {
         int reward = coinsDrop;
 
         Integer currentHealthValue = currentHealth.getValue();
-        if (currentHealthValue != null && currentHealthValue <= (maxHealth / 2)) {
+        if (currentHealthValue != null && currentHealthValue <= 0) {
+            // Defeated: full reward and respawn with difficulty scaling
+            Boss currentBoss = boss.getValue();
+            if (currentBoss != null) {
+                Boss newBoss = bossService.setNewBoss(currentBoss, true);
+                bossService.updateBoss(newBoss, task -> {
+                    if (task.isSuccessful()) {
+                        boss.postValue(newBoss);
+                    }
+                });
+            }
+        } else if (currentHealthValue != null && currentHealthValue <= (maxHealth / 2) && currentHealthValue > 0) {
             reward = coinsDrop / 2;
 
             // Ovo ako nije pobedio bossa da mu da pola nagrada a iskoristio je sve napade

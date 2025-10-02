@@ -37,9 +37,13 @@ public class BossService {
     public LiveData<Boss> getBoss(String userId) {
         MutableLiveData<Boss> liveData = new MutableLiveData<>();
 
-        bossRepository.getBossByUserId(userId, task -> {
-            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
-                Boss boss = task.getResult().toObject(Boss.class);
+        bossRepository.listenBossByUserId(userId, (snapshot, e) -> {
+            if (e != null) {
+                liveData.postValue(null);
+                return;
+            }
+            if (snapshot != null && snapshot.exists()) {
+                Boss boss = snapshot.toObject(Boss.class);
                 liveData.postValue(boss);
             } else {
                 liveData.postValue(null);
@@ -96,7 +100,7 @@ public class BossService {
                     boss.setAttacksLeft(boss.getAttacksLeft() - 1);
 
                     if (boss.getCurrentHealth() <= 0) {
-                        boss = setNewBoss(boss, true);
+                        boss.setStatus(BossStatus.DEFEATED);
                     }
 
                     bossRepository.updateBoss(boss, listener);
@@ -110,17 +114,20 @@ public class BossService {
     }
 
     public Boss setNewBoss(Boss boss, boolean isDefeated) {
-        int newMaxHealth = boss.getMaxHealth() * 2 + boss.getMaxHealth() / 2;
-        int newCoinsDrop = (int) Math.round(boss.getCoinsDrop() * 1.2);
-
-        if(isDefeated)
+        if(isDefeated) {
+            int newMaxHealth = boss.getMaxHealth() * 2 + boss.getMaxHealth() / 2;
+            int newCoinsDrop = (int) Math.round(boss.getCoinsDrop() * 1.2);
             boss.setStatus(BossStatus.DEFEATED);
-        else
+            boss.setMaxHealth(newMaxHealth);
+            boss.setCurrentHealth(newMaxHealth);
+            boss.setCoinsDrop(newCoinsDrop);
+            boss.setAttacksLeft(5);
+        }
+        else {
+            boss.setCurrentHealth(boss.getMaxHealth());
+            boss.setAttacksLeft(5);
             boss.setStatus(BossStatus.INACTIVE);
-        boss.setMaxHealth(newMaxHealth);
-        boss.setCurrentHealth(newMaxHealth);
-        boss.setCoinsDrop(newCoinsDrop);
-        boss.setAttacksLeft(5);
+        }
 
         return boss;
     }

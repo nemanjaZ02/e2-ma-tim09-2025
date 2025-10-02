@@ -7,7 +7,7 @@ public class Boss {
     private String userId;
     private int currentHealth;
     private int maxHealth;
-    private int coinsDrop;
+    private int coinsDrop; // Koliko novcica boss dropuje
     private int attacksLeft;
     private double hitChance;
 
