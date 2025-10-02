@@ -264,7 +264,12 @@ public class BossMainActivity extends AppCompatActivity {
         bossVideoView.setVideoURI(videoUri);
         bossVideoView.setOnCompletionListener(mp -> {
             isPlayingAction = false;
-            if (isDeathAnimation) return;
+            if (isDeathAnimation) {
+                if (bossViewModel != null) {
+                    bossViewModel.rewardUser();
+                }
+                return;
+            }
             if (bossViewModel.getCurrentHealth().getValue() != null && bossViewModel.getCurrentHealth().getValue() > 0) {
                 playIdleAnimation();
             } else {

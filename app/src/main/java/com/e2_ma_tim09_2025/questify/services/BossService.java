@@ -37,9 +37,13 @@ public class BossService {
     public LiveData<Boss> getBoss(String userId) {
         MutableLiveData<Boss> liveData = new MutableLiveData<>();
 
-        bossRepository.getBossByUserId(userId, task -> {
-            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
-                Boss boss = task.getResult().toObject(Boss.class);
+        bossRepository.listenBossByUserId(userId, (snapshot, e) -> {
+            if (e != null) {
+                liveData.postValue(null);
+                return;
+            }
+            if (snapshot != null && snapshot.exists()) {
+                Boss boss = snapshot.toObject(Boss.class);
                 liveData.postValue(boss);
             } else {
                 liveData.postValue(null);
@@ -96,7 +100,7 @@ public class BossService {
                     boss.setAttacksLeft(boss.getAttacksLeft() - 1);
 
                     if (boss.getCurrentHealth() <= 0) {
-                        boss = setNewBoss(boss, true);
+                        boss.setStatus(BossStatus.DEFEATED);
                     }
 
                     bossRepository.updateBoss(boss, listener);
