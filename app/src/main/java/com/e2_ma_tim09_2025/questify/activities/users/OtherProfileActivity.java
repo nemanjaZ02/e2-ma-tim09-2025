@@ -14,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
+import com.e2_ma_tim09_2025.questify.models.MyEquipment;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.utils.QrCodeUtils;
 import com.e2_ma_tim09_2025.questify.viewmodels.OtherProfileViewModel;
@@ -114,9 +115,9 @@ public class OtherProfileActivity extends AppCompatActivity {
 
         // Load equipment
         equipmentContainer.removeAllViews();
-        for (String item : user.getEquipment()) {
+        for (MyEquipment item : user.getEquipment()) {
             ImageView itemView = new ImageView(this);
-            itemView.setImageResource(getResources().getIdentifier(item, "drawable", getPackageName()));
+            //itemView.setImageResource(getResources().getIdentifier(item, "drawable", getPackageName()));
             LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(80, 80);
             params.setMargins(8, 0, 8, 0);
             itemView.setLayoutParams(params);

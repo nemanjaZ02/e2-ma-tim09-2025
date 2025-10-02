@@ -79,6 +79,9 @@
             android:name=".activities.alliance.MemberAllianceActivity"
             android:exported="false" />
         <activity
+            android:name=".activities.ShopActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.MainActivity"
             android:exported="true">
             <intent-filter>

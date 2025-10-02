@@ -6,6 +6,7 @@ import androidx.annotation.NonNull;
 
 import com.e2_ma_tim09_2025.questify.models.Boss;
 import com.e2_ma_tim09_2025.questify.models.User;
+import com.e2_ma_tim09_2025.questify.models.MyEquipment;
 import com.e2_ma_tim09_2025.questify.models.enums.BossStatus;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
@@ -400,5 +401,47 @@ public class UserService {
     public void getFriends(String userId, OnCompleteListener<QuerySnapshot> listener) {
         userRepository.getFriends(userId, listener);
     }
+
+    /**
+     * Get user's equipment list
+     * Business logic: Provides equipment data for user
+     */
+    public void getUserEquipment(String userId, OnCompleteListener<List<MyEquipment>> listener) {
+        userRepository.getUserEquipment(userId, listener);
+    }
+
+    /**
+     * Get specific equipment item from user's inventory
+     * Business logic: Provides single equipment item for user
+     */
+    public void getUserEquipmentById(String userId, String equipmentId, OnCompleteListener<MyEquipment> listener) {
+        userRepository.getUserEquipmentById(userId, equipmentId, listener);
+    }
+
+    /**
+     * Get equipment count for user
+     * Business logic: Counts total equipment in inventory
+     */
+    public void getUserEquipmentCount(String userId, OnCompleteListener<Integer> listener) {
+        userRepository.getUserEquipment(userId, equipmentTask -> {
+            if (equipmentTask.isSuccessful()) {
+                List<MyEquipment> equipment = equipmentTask.getResult();
+                int count = (equipment != null) ? equipment.size() : 0;
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(count));
+            } else {
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                    equipmentTask.getException() != null ? equipmentTask.getException() : new Exception("Failed to fetch equipment")));
+            }
+        });
+    }
+
+    /**
+     * Get activated equipment for user
+     * Business logic: Provides only activated equipment items
+     */
+    public void getUserActivatedEquipment(String userId, OnCompleteListener<List<MyEquipment>> listener) {
+        userRepository.getUserActivatedEquipment(userId, listener);
+    }
+    
 }
 

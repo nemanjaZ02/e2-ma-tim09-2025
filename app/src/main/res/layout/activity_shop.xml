@@ -1,0 +1,654 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#D2B48C"
+    android:padding="16dp">
+
+    <!-- Header -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="🏪 Questify Shop"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="8dp"
+        android:textColor="#5C4033" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Purchase equipment and potions"
+        android:textSize="14sp"
+        android:gravity="center"
+        android:layout_marginBottom="24dp"
+        android:textColor="#5C4033" />
+
+    <!-- Filter Tabs -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginBottom="16dp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/tabPotions"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="🧪 POTIONS"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:padding="12dp"
+            android:textColor="#5C4033"
+            android:layout_marginEnd="4dp" />
+
+        <TextView
+            android:id="@+id/tabClothes"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="👕 CLOTHES"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:padding="12dp"
+            android:textColor="#5C4033"
+            android:layout_marginStart="4dp" />
+    </LinearLayout>
+
+    <!-- ScrollView for Items -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- Potions Container -->
+            <LinearLayout
+                android:id="@+id/potionsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Health Potion -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp"
+                android:padding="16dp"
+                android:layout_margin="8dp"
+                android:background="@drawable/card_background"
+                android:elevation="4dp">
+
+                <ImageView
+                    android:id="@+id/imgPotion1"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/potion1"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvPotion1Name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Health Potion"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#5C4033" />
+
+                    <TextView
+                        android:id="@+id/tvPotion1Description"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="+25% Health Boost"
+                        android:textSize="12sp"
+                        android:textColor="#5C4033" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tvHealthPotionPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="50"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#5C4033" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💰 Coins"
+                        android:textSize="12sp"
+                        android:textColor="#5C4033" />
+
+                    <Button
+                        android:id="@+id/btnBuyHealthPotion"
+                        android:layout_width="80dp"
+                        android:layout_height="36dp"
+                        android:text="BUY"
+                        android:textSize="10sp"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Strength Elixir -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp"
+                android:padding="16dp"
+                android:background="@drawable/card_background"
+android:elevation="4dp">
+
+                <ImageView
+                    android:id="@+id/imgPotion2"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/potion2"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvPotion2Name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Strength Elixir"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#5C4033" />
+
+                    <TextView
+                        android:id="@+id/tvPotion2Description"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="+15% Damage Boost"
+                        android:textSize="12sp"
+                        android:textColor="#5C4033" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tvStrengthElixirPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="75"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#5C4033" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💰 Coins"
+                        android:textSize="12sp"
+                        android:textColor="#5C4033" />
+
+                    <Button
+                        android:id="@+id/btnBuyStrengthElixir"
+                        android:layout_width="80dp"
+                        android:layout_height="36dp"
+                        android:text="BUY"
+                        android:textSize="10sp"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- XP Booster -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp"
+                android:padding="16dp"
+                android:background="@drawable/card_background"
+android:elevation="4dp">
+
+                <ImageView
+                    android:id="@+id/imgPotion3"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/potion3"
+                    
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvPotion3Name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="XP Booster"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#5C4033" />
+
+                    <TextView
+                        android:id="@+id/tvPotion3Description"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="+30% XP Gain"
+                        android:textSize="12sp"
+                        android:textColor="#5C4033" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tvXPBoosterPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="100"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#5C4033" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💰 Coins"
+                        android:textSize="12sp"
+                        android:textColor="#5C4033" />
+
+                    <Button
+                        android:id="@+id/btnBuyXPBooster"
+                        android:layout_width="80dp"
+                        android:layout_height="36dp"
+                        android:text="BUY"
+                        android:textSize="10sp"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Special Potion (using 4th image) -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp"
+                android:padding="16dp"
+                android:background="@drawable/card_background"
+android:elevation="4dp">
+
+                <ImageView
+                    android:id="@+id/imgPotion4"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/potion4"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvPotion4Name"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Mystic Potion"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#5C4033" />
+
+                    <TextView
+                        android:id="@+id/tvPotion4Description"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="+20% All Stats"
+                        android:textSize="12sp"
+                        android:textColor="#5C4033" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tvMysticPotionPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="150"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#5C4033" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💰 Coins"
+                        android:textSize="12sp"
+                        android:textColor="#5C4033" />
+
+                    <Button
+                        android:id="@+id/btnBuyMysticPotion"
+                        android:layout_width="80dp"
+                        android:layout_height="36dp"
+                        android:text="BUY"
+                        android:textSize="10sp"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+            </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Clothes Container -->
+            <LinearLayout
+                android:id="@+id/clothesContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <!-- Magic Gloves -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp"
+                android:padding="16dp"
+                android:layout_margin="8dp"
+                android:background="@drawable/card_background"
+android:elevation="4dp">
+
+                <ImageView
+                    android:id="@+id/imgGloves"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/gloves"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvGlovesName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Magic Gloves"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#5C4033" />
+
+                    <TextView
+                        android:id="@+id/tvGlovesDescription"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="+15% Spell Power"
+                        android:textSize="12sp"
+                        android:textColor="#5C4033" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tvMagicGlovesPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="200"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#5C4033" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💰 Coins"
+                        android:textSize="12sp"
+                        android:textColor="#5C4033" />
+
+                    <Button
+                        android:id="@+id/btnBuyMagicGloves"
+                        android:layout_width="80dp"
+                        android:layout_height="36dp"
+                        android:text="BUY"
+                        android:textSize="10sp"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Iron Shield -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp"
+                android:padding="16dp"
+                android:layout_margin="8dp"
+                android:background="@drawable/card_background"
+android:elevation="4dp">
+
+                <ImageView
+                    android:id="@+id/imgShield"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/shield"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvShieldName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Iron Shield"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#5C4033" />
+
+                    <TextView
+                        android:id="@+id/tvShieldDescription"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="+25% Defense"
+                        android:textSize="12sp"
+                        android:textColor="#5C4033" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tvIronShieldPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="300"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#5C4033" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💰 Coins"
+                        android:textSize="12sp"
+                        android:textColor="#5C4033" />
+
+                    <Button
+                        android:id="@+id/btnBuyIronShield"
+                        android:layout_width="80dp"
+                        android:layout_height="36dp"
+                        android:text="BUY"
+                        android:textSize="10sp"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Leather Boots -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp"
+                android:padding="16dp"
+                android:layout_margin="8dp"
+                android:background="@drawable/card_background"
+android:elevation="4dp">
+
+                <ImageView
+                    android:id="@+id/imgBoots"
+                    android:layout_width="60dp"
+                    android:layout_height="60dp"
+                    android:src="@drawable/boots"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginEnd="12dp" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvBootsName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Leather Boots"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="#5C4033" />
+
+                    <TextView
+                        android:id="@+id/tvBootsDescription"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="+20% Speed"
+                        android:textSize="12sp"
+                        android:textColor="#5C4033" />
+
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_gravity="center_vertical">
+
+                    <TextView
+                        android:id="@+id/tvLeatherBootsPrice"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="120"
+                        android:textSize="18sp"
+                        android:textStyle="bold"
+                        android:textColor="#5C4033" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="💰 Coins"
+                        android:textSize="12sp"
+                        android:textColor="#5C4033" />
+
+                    <Button
+                        android:id="@+id/btnBuyLeatherBoots"
+                        android:layout_width="80dp"
+                        android:layout_height="36dp"
+                        android:text="BUY"
+                        android:textSize="10sp"
+                        android:layout_marginTop="4dp" />
+
+                </LinearLayout>
+            </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- Exit Button Only -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="8dp"
+        android:layout_marginTop="8dp"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btnCloseShop"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="EXIT SHOP"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:minWidth="120dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

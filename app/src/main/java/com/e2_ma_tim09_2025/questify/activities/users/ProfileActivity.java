@@ -20,6 +20,8 @@ import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.activities.alliance.CreateAllianceActivity;
 import com.e2_ma_tim09_2025.questify.activities.alliance.MemberAllianceActivity;
 import com.e2_ma_tim09_2025.questify.activities.alliance.MyAllianceActivity;
+import com.e2_ma_tim09_2025.questify.activities.ShopActivity;
+import com.e2_ma_tim09_2025.questify.models.MyEquipment;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.viewmodels.UserViewModel;
 import com.google.firebase.auth.FirebaseAuth;
@@ -129,6 +131,9 @@ public class ProfileActivity extends AppCompatActivity {
                 } else if (id == R.id.menu_member_alliance) {
                     startActivity(new Intent(ProfileActivity.this, MemberAllianceActivity.class));
                     return true;
+                } else if (id == R.id.menu_shop) {
+                    startActivity(new Intent(ProfileActivity.this, ShopActivity.class));
+                    return true;
                 } else {
                     return false;
                 }
@@ -189,12 +194,12 @@ public class ProfileActivity extends AppCompatActivity {
         }
 
         // Placeholder equipment (for now just TextViews)
-        List<String> equipment = user.getEquipment();
+        List<MyEquipment> equipment = user.getEquipment();
         equipmentContainer.removeAllViews();
         if (equipment != null && !equipment.isEmpty()) {
-            for (String eq : equipment) {
+            for (MyEquipment eq : equipment) {
                 TextView eqView = new TextView(this);
-                eqView.setText(eq);
+                //eqView.setText(eq);
                 eqView.setTextColor(getResources().getColor(R.color.black));
                 eqView.setPadding(8, 8, 8, 8);
                 equipmentContainer.addView(eqView);
