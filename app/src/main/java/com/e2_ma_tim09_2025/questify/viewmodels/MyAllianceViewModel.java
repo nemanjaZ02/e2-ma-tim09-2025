@@ -5,8 +5,10 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.e2_ma_tim09_2025.questify.models.Alliance;
+import com.e2_ma_tim09_2025.questify.models.SpecialMission;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.services.AllianceService;
+import com.e2_ma_tim09_2025.questify.services.SpecialMissionService;
 import com.e2_ma_tim09_2025.questify.services.UserService;
 import com.google.android.gms.tasks.OnCompleteListener;
 
@@ -22,6 +24,7 @@ public class MyAllianceViewModel extends ViewModel {
     
     private final AllianceService allianceService;
     private final UserService userService;
+    private final SpecialMissionService specialMissionService;
     
     private final MutableLiveData<List<Alliance>> alliancesLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<User>> membersLiveData = new MutableLiveData<>();
@@ -30,11 +33,15 @@ public class MyAllianceViewModel extends ViewModel {
     private final MutableLiveData<Boolean> isLoadingLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> invitationSentLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> allianceDeletedLiveData = new MutableLiveData<>();
+    private final MutableLiveData<SpecialMission> specialMissionLiveData = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> specialMissionCreatedLiveData = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> canCreateSpecialMissionLiveData = new MutableLiveData<>();
     
     @Inject
-    public MyAllianceViewModel(AllianceService allianceService, UserService userService) {
+    public MyAllianceViewModel(AllianceService allianceService, UserService userService, SpecialMissionService specialMissionService) {
         this.allianceService = allianceService;
         this.userService = userService;
+        this.specialMissionService = specialMissionService;
     }
     
     public LiveData<List<Alliance>> getAlliances() {
@@ -63,6 +70,18 @@ public class MyAllianceViewModel extends ViewModel {
     
     public LiveData<Boolean> getAllianceDeleted() {
         return allianceDeletedLiveData;
+    }
+    
+    public LiveData<SpecialMission> getSpecialMission() {
+        return specialMissionLiveData;
+    }
+    
+    public LiveData<Boolean> getSpecialMissionCreated() {
+        return specialMissionCreatedLiveData;
+    }
+    
+    public LiveData<Boolean> getCanCreateSpecialMission() {
+        return canCreateSpecialMissionLiveData;
     }
     
     public void loadAlliances() {
@@ -184,5 +203,67 @@ public class MyAllianceViewModel extends ViewModel {
     
     public void clearAllianceDeleted() {
         allianceDeletedLiveData.postValue(false);
+    }
+    
+    public void loadSpecialMission(String allianceId) {
+        specialMissionService.getSpecialMission(allianceId, new OnCompleteListener<SpecialMission>() {
+            @Override
+            public void onComplete(com.google.android.gms.tasks.Task<SpecialMission> task) {
+                if (task.isSuccessful()) {
+                    specialMissionLiveData.postValue(task.getResult());
+                } else {
+                    specialMissionLiveData.postValue(null);
+                }
+            }
+        });
+    }
+    
+    public void checkCanCreateSpecialMission(String allianceId) {
+        String currentUserId = userService.getCurrentUserId();
+        if (currentUserId == null) {
+            canCreateSpecialMissionLiveData.postValue(false);
+            return;
+        }
+        
+        specialMissionService.canCreateSpecialMission(allianceId, currentUserId, new OnCompleteListener<Boolean>() {
+            @Override
+            public void onComplete(com.google.android.gms.tasks.Task<Boolean> task) {
+                if (task.isSuccessful()) {
+                    canCreateSpecialMissionLiveData.postValue(task.getResult());
+                } else {
+                    canCreateSpecialMissionLiveData.postValue(false);
+                }
+            }
+        });
+    }
+    
+    public void createSpecialMission(String allianceId) {
+        String currentUserId = userService.getCurrentUserId();
+        if (currentUserId == null) {
+            errorMessageLiveData.postValue("User not logged in");
+            return;
+        }
+        
+        isLoadingLiveData.postValue(true);
+        specialMissionService.createSpecialMission(allianceId, currentUserId, new OnCompleteListener<Boolean>() {
+            @Override
+            public void onComplete(com.google.android.gms.tasks.Task<Boolean> task) {
+                isLoadingLiveData.postValue(false);
+                if (task.isSuccessful() && task.getResult()) {
+                    specialMissionCreatedLiveData.postValue(true);
+                    // Reload special mission data
+                    loadSpecialMission(allianceId);
+                    // Update can create status
+                    checkCanCreateSpecialMission(allianceId);
+                } else {
+                    errorMessageLiveData.postValue("Failed to create special mission: " + 
+                        (task.getException() != null ? task.getException().getMessage() : "Unknown error"));
+                }
+            }
+        });
+    }
+    
+    public void clearSpecialMissionCreated() {
+        specialMissionCreatedLiveData.postValue(false);
     }
 }
