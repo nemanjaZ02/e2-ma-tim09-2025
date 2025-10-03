@@ -133,10 +133,7 @@ public class SpecialTasksListFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        // Refreshuj podatke kada se korisnik vrati na ekran
-        if (viewModel != null) {
-            viewModel.loadSpecialTasks();
-        }
+        // onResume je uklonjen jer se loadSpecialTasks() poziva u observer-u
     }
 
     @Override
