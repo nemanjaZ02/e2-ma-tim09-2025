@@ -131,6 +131,15 @@ public class SpecialTasksListFragment extends Fragment {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        // Refreshuj podatke kada se korisnik vrati na ekran
+        if (viewModel != null) {
+            viewModel.loadSpecialTasks();
+        }
+    }
+
+    @Override
     public void onDestroyView() {
         super.onDestroyView();
         // Zaustavi timer kada se fragment uništi

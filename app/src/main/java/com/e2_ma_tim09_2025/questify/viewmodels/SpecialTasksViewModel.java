@@ -149,8 +149,8 @@ public class SpecialTasksViewModel extends ViewModel {
                             }
                         });
                         
-                        // Load special tasks for this alliance
-                        specialTaskService.getUserSpecialTasks(userId, allianceId, new OnCompleteListener<List<SpecialTask>>() {
+                        // Load special tasks for this alliance with real-time listener
+                        specialTaskService.listenToUserSpecialTasks(userId, allianceId, new OnCompleteListener<List<SpecialTask>>() {
                         @Override
                         public void onComplete(com.google.android.gms.tasks.Task<List<SpecialTask>> specialTaskTask) {
                             isLoadingLiveData.postValue(false);
@@ -194,7 +194,7 @@ public class SpecialTasksViewModel extends ViewModel {
         isLoadingLiveData.postValue(true);
         currentAllianceIdLiveData.postValue(allianceId);
         
-        specialTaskService.getUserSpecialTasks(currentUserId, allianceId, new OnCompleteListener<List<SpecialTask>>() {
+        specialTaskService.listenToUserSpecialTasks(currentUserId, allianceId, new OnCompleteListener<List<SpecialTask>>() {
             @Override
             public void onComplete(com.google.android.gms.tasks.Task<List<SpecialTask>> task) {
                 isLoadingLiveData.postValue(false);

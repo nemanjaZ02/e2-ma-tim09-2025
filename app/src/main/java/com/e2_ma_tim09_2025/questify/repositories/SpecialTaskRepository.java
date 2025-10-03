@@ -8,6 +8,7 @@ import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -96,6 +97,30 @@ public class SpecialTaskRepository {
                         batch.commit().addOnCompleteListener(listener);
                     } else {
                         listener.onComplete(com.google.android.gms.tasks.Tasks.forException(task.getException()));
+                    }
+                });
+    }
+
+    public void listenToSpecialTasksByUserId(String userId, String allianceId, OnCompleteListener<List<SpecialTask>> listener) {
+        specialTasksRef.whereEqualTo("userId", userId)
+                .whereEqualTo("allianceId", allianceId)
+                .addSnapshotListener((querySnapshot, error) -> {
+                    if (error != null) {
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(error));
+                        return;
+                    }
+
+                    if (querySnapshot != null) {
+                        List<SpecialTask> tasks = new ArrayList<>();
+                        for (DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                            SpecialTask task = doc.toObject(SpecialTask.class);
+                            if (task != null) {
+                                tasks.add(task);
+                            }
+                        }
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(tasks));
+                    } else {
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(new ArrayList<>()));
                     }
                 });
     }

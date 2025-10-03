@@ -230,6 +230,17 @@ public class SpecialTaskService {
         });
     }
 
+    public void listenToUserSpecialTasks(String userId, String allianceId, OnCompleteListener<List<SpecialTask>> listener) {
+        specialTaskRepository.listenToSpecialTasksByUserId(userId, allianceId, task -> {
+            if (task.isSuccessful()) {
+                List<SpecialTask> tasks = task.getResult();
+                listener.onComplete(Tasks.forResult(tasks));
+            } else {
+                listener.onComplete(Tasks.forResult(new ArrayList<>()));
+            }
+        });
+    }
+
     public void getSpecialTaskByType(String userId, SpecialTaskType taskType, String allianceId, OnCompleteListener<SpecialTask> listener) {
         specialTaskRepository.getSpecialTasksByAllianceAndUser(allianceId, userId, task -> {
             if (task.isSuccessful()) {
