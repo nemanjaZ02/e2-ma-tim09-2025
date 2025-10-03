@@ -48,6 +48,9 @@
             android:name=".activities.tasks.TasksMainActivity"
             android:exported="false" />
         <activity
+            android:name=".activities.specialTasks.SpecialTasksMainActivity"
+            android:exported="false" />
+        <activity
             android:name=".activities.users.RegisterActivity"
             android:exported="false" />
         <activity

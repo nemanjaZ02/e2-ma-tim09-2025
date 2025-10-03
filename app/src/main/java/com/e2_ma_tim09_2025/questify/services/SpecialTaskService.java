@@ -192,17 +192,22 @@ public class SpecialTaskService {
     }
 
     public void getUserSpecialTasks(String userId, String allianceId, OnCompleteListener<List<SpecialTask>> listener) {
+        System.out.println("DEBUG SpecialTaskService: Getting special tasks for userId=" + userId + ", allianceId=" + allianceId);
         specialTaskRepository.getSpecialTasksByAllianceAndUser(allianceId, userId, task -> {
             if (task.isSuccessful()) {
                 List<SpecialTask> tasks = new ArrayList<>();
+                System.out.println("DEBUG SpecialTaskService: Query successful, found " + task.getResult().size() + " documents");
                 for (DocumentSnapshot doc : task.getResult()) {
                     SpecialTask specialTask = doc.toObject(SpecialTask.class);
                     if (specialTask != null) {
                         tasks.add(specialTask);
+                        System.out.println("DEBUG SpecialTaskService: Added task type=" + specialTask.getTaskType() + ", status=" + specialTask.getStatus());
                     }
                 }
+                System.out.println("DEBUG SpecialTaskService: Returning " + tasks.size() + " tasks");
                 listener.onComplete(Tasks.forResult(tasks));
             } else {
+                System.out.println("DEBUG SpecialTaskService: Query failed: " + (task.getException() != null ? task.getException().getMessage() : "Unknown error"));
                 listener.onComplete(Tasks.forResult(new ArrayList<>()));
             }
         });

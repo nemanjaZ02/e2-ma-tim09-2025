@@ -195,4 +195,63 @@ public class SpecialMissionService {
             });
         });
     }
+
+    /**
+     * Proveri da li je misija istekla ili boss pobeden i ažuriraj status
+     */
+    public void checkAndCompleteMission(String allianceId, OnCompleteListener<Boolean> listener) {
+        getSpecialMission(allianceId, missionTask -> {
+            if (!missionTask.isSuccessful() || missionTask.getResult() == null) {
+                listener.onComplete(Tasks.forResult(false));
+                return;
+            }
+
+            SpecialMission mission = missionTask.getResult();
+            if (mission.getStatus() != SpecialMissionStatus.ACTIVE) {
+                listener.onComplete(Tasks.forResult(false));
+                return;
+            }
+
+            // Proveri da li je misija istekla
+            if (mission.isExpired()) {
+                Log.d("SpecialMissionService", "Mission expired without defeating boss");
+                mission.setStatus(SpecialMissionStatus.EXPIRED);
+                specialMissionRepository.updateSpecialMission(mission, updateTask -> {
+                    if (updateTask.isSuccessful()) {
+                        Log.d("SpecialMissionService", "Mission status updated to EXPIRED");
+                        listener.onComplete(Tasks.forResult(true));
+                    } else {
+                        listener.onComplete(Tasks.forResult(false));
+                    }
+                });
+                return;
+            }
+
+            // Proveri da li je boss pobeden
+            getSpecialBoss(allianceId, bossTask -> {
+                if (!bossTask.isSuccessful() || bossTask.getResult() == null) {
+                    listener.onComplete(Tasks.forResult(false));
+                    return;
+                }
+
+                SpecialBoss boss = bossTask.getResult();
+                if (boss.isDefeated()) {
+                    Log.d("SpecialMissionService", "Boss defeated! Distributing rewards...");
+                    mission.setStatus(SpecialMissionStatus.DEFEATED);
+                    specialMissionRepository.updateSpecialMission(mission, updateTask -> {
+                        if (updateTask.isSuccessful()) {
+                            Log.d("SpecialMissionService", "Mission status updated to DEFEATED");
+                            // TODO: Implement reward distribution
+                            listener.onComplete(Tasks.forResult(true));
+                        } else {
+                            listener.onComplete(Tasks.forResult(false));
+                        }
+                    });
+                } else {
+                    // Misija je aktivna i boss nije pobeden
+                    listener.onComplete(Tasks.forResult(false));
+                }
+            });
+        });
+    }
 }

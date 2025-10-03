@@ -14,6 +14,7 @@ import androidx.lifecycle.ViewModelProvider;
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.activities.MainActivity;
 import com.e2_ma_tim09_2025.questify.activities.bosses.BossMainActivity;
+import com.e2_ma_tim09_2025.questify.activities.specialTasks.SpecialTasksMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.taskCategories.TaskCategoriesMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.users.ProfileActivity;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksCalendarFragment;
@@ -69,10 +70,19 @@ public class TasksMainActivity extends AppCompatActivity {
 
             popup.getMenu().clear();
             popup.getMenu().add("Categories");
+            popup.getMenu().add("Special Tasks");
 
             popup.setOnMenuItemClickListener(item -> {
-                Intent intent = new Intent(TasksMainActivity.this, TaskCategoriesMainActivity.class);
-                startActivity(intent);
+                String title = item.getTitle().toString();
+                if (title.equals("Categories")) {
+                    Intent intent = new Intent(TasksMainActivity.this, TaskCategoriesMainActivity.class);
+                    startActivity(intent);
+                    finish();
+                } else if (title.equals("Special Tasks")) {
+                    Intent intent = new Intent(TasksMainActivity.this, SpecialTasksMainActivity.class);
+                    startActivity(intent);
+                    finish();
+                }
                 return true;
             });
 
