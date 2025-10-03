@@ -98,6 +98,18 @@
             android:gravity="center"
             android:layout_marginTop="4dp" />
 
+        <!-- Special Mission Button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonStartSpecialMission"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Start Special Mission"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="#4CAF50"
+            app:icon="@drawable/ic_star"
+            app:iconGravity="textStart"
+            android:visibility="gone" />
+
     </LinearLayout>
 
     <!-- Members Section -->

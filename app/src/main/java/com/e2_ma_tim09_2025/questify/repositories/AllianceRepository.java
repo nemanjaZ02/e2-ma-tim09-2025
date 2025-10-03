@@ -110,5 +110,10 @@ public class AllianceRepository {
                     onComplete.run();
                 });
     }
+
+    // Get all alliances
+    public void getAllAlliances(OnCompleteListener<QuerySnapshot> listener) {
+        alliancesRef.get().addOnCompleteListener(listener);
+    }
 }
 

@@ -7,8 +7,10 @@ import android.util.Log;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.e2_ma_tim09_2025.questify.models.Alliance;
 import com.e2_ma_tim09_2025.questify.models.Boss;
 import com.e2_ma_tim09_2025.questify.models.enums.BossStatus;
+import com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskType;
 import com.e2_ma_tim09_2025.questify.repositories.BossRepository;
 import com.e2_ma_tim09_2025.questify.repositories.TaskRepository;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -25,13 +27,17 @@ public class BossService {
 
     private final BossRepository bossRepository;
     private final TaskRepository taskRepository;
+    private final SpecialTaskService specialTaskService;
+    private final AllianceService allianceService;
     private final Executor backgroundExecutor;
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
 
     @Inject
-    public BossService(BossRepository bossRepository, TaskRepository taskRepository) {
+    public BossService(BossRepository bossRepository, TaskRepository taskRepository, SpecialTaskService specialTaskService, AllianceService allianceService) {
         this.bossRepository = bossRepository;
         this.taskRepository = taskRepository;
+        this.specialTaskService = specialTaskService;
+        this.allianceService = allianceService;
         this.backgroundExecutor = Executors.newSingleThreadExecutor();
     }
 
@@ -104,12 +110,50 @@ public class BossService {
                         boss.setStatus(BossStatus.DEFEATED);
                     }
 
-                    bossRepository.updateBoss(boss, listener);
+                    bossRepository.updateBoss(boss, updateTask -> {
+                        if (updateTask.isSuccessful()) {
+                            // Pošto je damage > 0, znači da je napad uspešan - reši special task
+                            if (damage > 0) {
+                                Log.d("BossService", "Successful boss attack! Completing special task...");
+                                // Dobij allianceId za korisnika
+                                allianceService.getUserAlliance(userId, new OnCompleteListener<Alliance>() {
+                                    @Override
+                                    public void onComplete(com.google.android.gms.tasks.Task<Alliance> allianceTask) {
+                                        if (allianceTask.isSuccessful() && allianceTask.getResult() != null) {
+                                            String allianceId = allianceTask.getResult().getId();
+                                            specialTaskService.completeSpecialTask(userId, SpecialTaskType.BOSS_ATTACK, allianceId, new OnCompleteListener<Boolean>() {
+                                                @Override
+                                                public void onComplete(com.google.android.gms.tasks.Task<Boolean> specialTaskResult) {
+                                                    if (specialTaskResult.isSuccessful()) {
+                                                        Log.d("BossService", "Special task completed successfully");
+                                                    } else {
+                                                        Log.e("BossService", "Failed to complete special task", specialTaskResult.getException());
+                                                    }
+                                                }
+                                            });
+                                        } else {
+                                            Log.d("BossService", "User is not in any alliance, skipping special task");
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                        // Pozovi originalni listener
+                        if (listener != null) {
+                            listener.onComplete(updateTask);
+                        }
+                    });
                 } else {
                     Log.e("BossService", "Boss is null for user: " + userId);
+                    if (listener != null) {
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("Boss is null")));
+                    }
                 }
             } else {
                 Log.e("BossService", "Failed getting boss for: " + userId);
+                if (listener != null) {
+                    listener.onComplete(com.google.android.gms.tasks.Tasks.forException(new Exception("Failed to get boss")));
+                }
             }
         });
     }

@@ -42,6 +42,7 @@ public class MyAllianceActivity extends AppCompatActivity {
     private RecyclerView eligibleUsersRecyclerView;
     private Button inviteUsersButton;
     private Button deleteAllianceButton;
+    private Button startSpecialMissionButton;
     private ProgressBar progressBar;
     
     private Alliance currentAlliance;
@@ -69,6 +70,7 @@ public class MyAllianceActivity extends AppCompatActivity {
         eligibleUsersRecyclerView = findViewById(R.id.recyclerViewEligibleUsers);
         inviteUsersButton = findViewById(R.id.buttonInviteUsers);
         deleteAllianceButton = findViewById(R.id.buttonDeleteAlliance);
+        startSpecialMissionButton = findViewById(R.id.buttonStartSpecialMission);
         progressBar = findViewById(R.id.progressBar);
         
         // Back button
@@ -152,6 +154,38 @@ public class MyAllianceActivity extends AppCompatActivity {
                 viewModel.loadAlliances();
             }
         });
+        
+        // Observe special mission
+        viewModel.getSpecialMission().observe(this, specialMission -> {
+            if (specialMission != null) {
+                updateMissionStatus(true);
+                startSpecialMissionButton.setVisibility(View.GONE);
+            } else {
+                updateMissionStatus(false);
+                if (currentAlliance != null) {
+                    viewModel.checkCanCreateSpecialMission(currentAlliance.getId());
+                }
+            }
+        });
+        
+        // Observe can create special mission
+        viewModel.getCanCreateSpecialMission().observe(this, canCreate -> {
+            if (canCreate != null) {
+                startSpecialMissionButton.setVisibility(canCreate ? View.VISIBLE : View.GONE);
+            }
+        });
+        
+        // Observe special mission created
+        viewModel.getSpecialMissionCreated().observe(this, created -> {
+            if (created) {
+                Toast.makeText(this, "Special mission started successfully!", Toast.LENGTH_SHORT).show();
+                viewModel.clearSpecialMissionCreated();
+                // Reload special mission data
+                if (currentAlliance != null) {
+                    viewModel.loadSpecialMission(currentAlliance.getId());
+                }
+            }
+        });
     }
     
     private void setupClickListeners() {
@@ -167,6 +201,12 @@ public class MyAllianceActivity extends AppCompatActivity {
                 showDeleteAllianceConfirmationDialog();
             }
         });
+        
+        startSpecialMissionButton.setOnClickListener(v -> {
+            if (currentAlliance != null) {
+                showStartSpecialMissionConfirmationDialog();
+            }
+        });
     }
     
     private void displayAlliance(Alliance alliance) {
@@ -177,10 +217,14 @@ public class MyAllianceActivity extends AppCompatActivity {
         membersRecyclerView.setVisibility(View.VISIBLE);
         inviteUsersButton.setVisibility(View.VISIBLE);
         deleteAllianceButton.setVisibility(View.VISIBLE);
+        startSpecialMissionButton.setVisibility(View.VISIBLE);
         noAllianceText.setVisibility(View.GONE);
         
         // Update mission status
         updateMissionStatus(alliance.isMissionStarted());
+        
+        // Load special mission data
+        viewModel.loadSpecialMission(alliance.getId());
     }
     
     private void displayNoAlliance() {
@@ -245,6 +289,19 @@ public class MyAllianceActivity extends AppCompatActivity {
                 .setMessage("Are you sure you want to delete the alliance \"" + currentAlliance.getName() + "\"?\n\nThis will:\n• Remove all members from the alliance\n• Delete all pending invitations\n• This action cannot be undone")
                 .setPositiveButton("Delete", (dialog, which) -> {
                     viewModel.deleteAlliance(currentAlliance.getId());
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+    
+    private void showStartSpecialMissionConfirmationDialog() {
+        if (currentAlliance == null) return;
+        
+        new MaterialAlertDialogBuilder(this)
+                .setTitle("Start Special Mission")
+                .setMessage("Are you sure you want to start a special mission for alliance \"" + currentAlliance.getName() + "\"?\n\nThis will:\n• Create a special boss with " + (currentAlliance.getMemberIds().size() * 100) + " HP\n• Assign 6 special tasks to each member\n• Mission lasts for 2 weeks\n• Cannot be cancelled once started")
+                .setPositiveButton("Start Mission", (dialog, which) -> {
+                    viewModel.createSpecialMission(currentAlliance.getId());
                 })
                 .setNegativeButton("Cancel", null)
                 .show();

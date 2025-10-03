@@ -11,6 +11,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.activities.bosses.BossMainActivity;
+import com.e2_ma_tim09_2025.questify.activities.specialTasks.SpecialTasksMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.tasks.TasksMainActivity;
 import com.e2_ma_tim09_2025.questify.fragments.taskCategories.TaskCategoriesListFragment;
 import com.e2_ma_tim09_2025.questify.viewmodels.TaskCategoryViewModel;
@@ -47,10 +48,19 @@ public class TaskCategoriesMainActivity extends AppCompatActivity {
             PopupMenu popup = new PopupMenu(TaskCategoriesMainActivity.this, v);
 
             popup.getMenu().add("Quests");
+            popup.getMenu().add("Special Tasks");
 
             popup.setOnMenuItemClickListener(item -> {
-                Intent intent = new Intent(TaskCategoriesMainActivity.this, TasksMainActivity.class);
-                startActivity(intent);
+                String title = item.getTitle().toString();
+                if (title.equals("Quests")) {
+                    Intent intent = new Intent(TaskCategoriesMainActivity.this, TasksMainActivity.class);
+                    startActivity(intent);
+                    finish();
+                } else if (title.equals("Special Tasks")) {
+                    Intent intent = new Intent(TaskCategoriesMainActivity.this, SpecialTasksMainActivity.class);
+                    startActivity(intent);
+                    finish();
+                }
                 return true;
             });
 
