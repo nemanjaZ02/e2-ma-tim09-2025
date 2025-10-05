@@ -471,7 +471,7 @@ public class TaskService {
                         int times = isBothEasyAndNormal(completedTask) ? 2 : 1;
                         Log.d("TaskService", "Zadatak je lak ili normalan - pozivam TASK_COMPLETION_EASY_NORMAL " + times + " puta");
                         
-                        specialTaskService.completeSpecialTaskMultiple(userId, SpecialTaskType.TASK_COMPLETION_EASY_NORMAL, allianceId, times, new OnCompleteListener<Boolean>() {
+                        specialTaskService.completeSpecialTaskMultipleForAllAlliances(userId, SpecialTaskType.TASK_COMPLETION_EASY_NORMAL, times, new OnCompleteListener<Boolean>() {
                             @Override
                             public void onComplete(com.google.android.gms.tasks.Task<Boolean> specialTaskResult) {
                                 if (specialTaskResult.isSuccessful()) {
@@ -486,7 +486,7 @@ public class TaskService {
                     // Proveri da li je zadatak ostali tip (za TASK_COMPLETION_OTHER)
                     if (isOtherTask(completedTask)) {
                         Log.d("TaskService", "Zadatak je ostali tip - pozivam TASK_COMPLETION_OTHER");
-                        specialTaskService.completeSpecialTask(userId, SpecialTaskType.TASK_COMPLETION_OTHER, allianceId, new OnCompleteListener<Boolean>() {
+                        specialTaskService.completeSpecialTaskForAllAlliances(userId, SpecialTaskType.TASK_COMPLETION_OTHER, new OnCompleteListener<Boolean>() {
                             @Override
                             public void onComplete(com.google.android.gms.tasks.Task<Boolean> specialTaskResult) {
                                 if (specialTaskResult.isSuccessful()) {

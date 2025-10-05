@@ -121,7 +121,7 @@ public class BossService {
                                     public void onComplete(com.google.android.gms.tasks.Task<Alliance> allianceTask) {
                                         if (allianceTask.isSuccessful() && allianceTask.getResult() != null) {
                                             String allianceId = allianceTask.getResult().getId();
-                                            specialTaskService.completeSpecialTask(userId, SpecialTaskType.BOSS_ATTACK, allianceId, new OnCompleteListener<Boolean>() {
+                                            specialTaskService.completeSpecialTaskForAllAlliances(userId, SpecialTaskType.BOSS_ATTACK, new OnCompleteListener<Boolean>() {
                                                 @Override
                                                 public void onComplete(com.google.android.gms.tasks.Task<Boolean> specialTaskResult) {
                                                     if (specialTaskResult.isSuccessful()) {

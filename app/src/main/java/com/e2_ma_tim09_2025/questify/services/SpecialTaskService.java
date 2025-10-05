@@ -2,6 +2,7 @@ package com.e2_ma_tim09_2025.questify.services;
 
 import android.util.Log;
 
+import com.e2_ma_tim09_2025.questify.models.Alliance;
 import com.e2_ma_tim09_2025.questify.models.MemberProgress;
 import com.e2_ma_tim09_2025.questify.models.SpecialBoss;
 import com.e2_ma_tim09_2025.questify.models.SpecialMission;
@@ -28,19 +29,161 @@ public class SpecialTaskService {
     private final SpecialTaskRepository specialTaskRepository;
     private final SpecialMissionRepository specialMissionRepository;
     private final UserRepository userRepository;
+    private final AllianceService allianceService;
 
     @Inject
     public SpecialTaskService(
             SpecialTaskRepository specialTaskRepository,
             SpecialMissionRepository specialMissionRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            AllianceService allianceService) {
         this.specialTaskRepository = specialTaskRepository;
         this.specialMissionRepository = specialMissionRepository;
         this.userRepository = userRepository;
+        this.allianceService = allianceService;
     }
 
     public void completeSpecialTask(String userId, SpecialTaskType taskType, String allianceId, OnCompleteListener<Boolean> listener) {
         completeSpecialTaskMultiple(userId, taskType, allianceId, 1, listener);
+    }
+    
+    public void completeSpecialTaskMultipleForAllAlliances(String userId, SpecialTaskType taskType, int times, OnCompleteListener<Boolean> listener) {
+        Log.d("SpecialTaskService", "=== IZVRŠAVANJE SPECIAL TASK " + times + " PUTA ZA SVE ALIJANSE ===");
+        Log.d("SpecialTaskService", "User ID: " + userId);
+        Log.d("SpecialTaskService", "Task Type: " + taskType);
+        Log.d("SpecialTaskService", "Times: " + times);
+        
+        // Proveri da li je korisnik leader neke alijanse
+        allianceService.getAlliancesByLeader(userId, new OnCompleteListener<List<Alliance>>() {
+            @Override
+            public void onComplete(com.google.android.gms.tasks.Task<List<Alliance>> leaderTask) {
+                boolean hasLeaderAlliance = leaderTask.isSuccessful() && leaderTask.getResult() != null && !leaderTask.getResult().isEmpty();
+                
+                // Proveri da li je korisnik član neke alijanse
+                allianceService.getUserMemberAlliance(userId, new OnCompleteListener<Alliance>() {
+                    @Override
+                    public void onComplete(com.google.android.gms.tasks.Task<Alliance> memberTask) {
+                        boolean hasMemberAlliance = memberTask.isSuccessful() && memberTask.getResult() != null;
+                        
+                        if (!hasLeaderAlliance && !hasMemberAlliance) {
+                            Log.d("SpecialTaskService", "Korisnik nije član nijedne alijanse");
+                            listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(false));
+                            return;
+                        }
+                        
+                        // Broj alijansa za koje treba da se izvrši task
+                        int totalAlliances = (hasLeaderAlliance ? 1 : 0) + (hasMemberAlliance ? 1 : 0);
+                        final int[] completedAlliances = {0};
+                        final boolean[] success = {true};
+                        
+                        // Izvrši task za leader alijansu
+                        if (hasLeaderAlliance) {
+                            String leaderAllianceId = leaderTask.getResult().get(0).getId();
+                            completeSpecialTaskMultiple(userId, taskType, leaderAllianceId, times, new OnCompleteListener<Boolean>() {
+                                @Override
+                                public void onComplete(com.google.android.gms.tasks.Task<Boolean> task) {
+                                    completedAlliances[0]++;
+                                    if (!task.isSuccessful()) {
+                                        success[0] = false;
+                                    }
+                                    
+                                    if (completedAlliances[0] == totalAlliances) {
+                                        listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(success[0]));
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // Izvrši task za member alijansu
+                        if (hasMemberAlliance) {
+                            String memberAllianceId = memberTask.getResult().getId();
+                            completeSpecialTaskMultiple(userId, taskType, memberAllianceId, times, new OnCompleteListener<Boolean>() {
+                                @Override
+                                public void onComplete(com.google.android.gms.tasks.Task<Boolean> task) {
+                                    completedAlliances[0]++;
+                                    if (!task.isSuccessful()) {
+                                        success[0] = false;
+                                    }
+                                    
+                                    if (completedAlliances[0] == totalAlliances) {
+                                        listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(success[0]));
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        });
+    }
+    
+    public void completeSpecialTaskForAllAlliances(String userId, SpecialTaskType taskType, OnCompleteListener<Boolean> listener) {
+        Log.d("SpecialTaskService", "=== IZVRŠAVANJE SPECIAL TASK ZA SVE ALIJANSE ===");
+        Log.d("SpecialTaskService", "User ID: " + userId);
+        Log.d("SpecialTaskService", "Task Type: " + taskType);
+        
+        // Proveri da li je korisnik leader neke alijanse
+        allianceService.getAlliancesByLeader(userId, new OnCompleteListener<List<Alliance>>() {
+            @Override
+            public void onComplete(com.google.android.gms.tasks.Task<List<Alliance>> leaderTask) {
+                boolean hasLeaderAlliance = leaderTask.isSuccessful() && leaderTask.getResult() != null && !leaderTask.getResult().isEmpty();
+                
+                // Proveri da li je korisnik član neke alijanse
+                allianceService.getUserMemberAlliance(userId, new OnCompleteListener<Alliance>() {
+                    @Override
+                    public void onComplete(com.google.android.gms.tasks.Task<Alliance> memberTask) {
+                        boolean hasMemberAlliance = memberTask.isSuccessful() && memberTask.getResult() != null;
+                        
+                        if (!hasLeaderAlliance && !hasMemberAlliance) {
+                            Log.d("SpecialTaskService", "Korisnik nije član nijedne alijanse");
+                            listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(false));
+                            return;
+                        }
+                        
+                        // Broj alijansa za koje treba da se izvrši task
+                        int totalAlliances = (hasLeaderAlliance ? 1 : 0) + (hasMemberAlliance ? 1 : 0);
+                        final int[] completedAlliances = {0};
+                        final boolean[] success = {true};
+                        
+                        // Izvrši task za leader alijansu
+                        if (hasLeaderAlliance) {
+                            String leaderAllianceId = leaderTask.getResult().get(0).getId();
+                            completeSpecialTask(userId, taskType, leaderAllianceId, new OnCompleteListener<Boolean>() {
+                                @Override
+                                public void onComplete(com.google.android.gms.tasks.Task<Boolean> task) {
+                                    completedAlliances[0]++;
+                                    if (!task.isSuccessful()) {
+                                        success[0] = false;
+                                    }
+                                    
+                                    if (completedAlliances[0] == totalAlliances) {
+                                        listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(success[0]));
+                                    }
+                                }
+                            });
+                        }
+                        
+                        // Izvrši task za member alijansu
+                        if (hasMemberAlliance) {
+                            String memberAllianceId = memberTask.getResult().getId();
+                            completeSpecialTask(userId, taskType, memberAllianceId, new OnCompleteListener<Boolean>() {
+                                @Override
+                                public void onComplete(com.google.android.gms.tasks.Task<Boolean> task) {
+                                    completedAlliances[0]++;
+                                    if (!task.isSuccessful()) {
+                                        success[0] = false;
+                                    }
+                                    
+                                    if (completedAlliances[0] == totalAlliances) {
+                                        listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(success[0]));
+                                    }
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        });
     }
     
     public void completeSpecialTaskMultiple(String userId, SpecialTaskType taskType, String allianceId, int times, OnCompleteListener<Boolean> listener) {

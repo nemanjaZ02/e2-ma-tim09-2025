@@ -36,11 +36,15 @@ public class SpecialTasksViewModel extends ViewModel {
     private final SpecialMissionService specialMissionService;
     
     private final MutableLiveData<List<SpecialTask>> specialTasksLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<SpecialTask>> myAllianceTasksLiveData = new MutableLiveData<>();
+    private final MutableLiveData<List<SpecialTask>> memberAllianceTasksLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> errorMessageLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoadingLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> currentAllianceIdLiveData = new MutableLiveData<>();
     private final MutableLiveData<User> currentUser = new MutableLiveData<>();
     private final MutableLiveData<SpecialMission> specialMissionLiveData = new MutableLiveData<>();
+    private final MutableLiveData<SpecialMission> myAllianceSpecialMissionLiveData = new MutableLiveData<>();
+    private final MutableLiveData<SpecialMission> memberAllianceSpecialMissionLiveData = new MutableLiveData<>();
     private final MutableLiveData<Alliance> currentAlliance = new MutableLiveData<>();
     private final LiveData<Boss> boss;
     
@@ -71,6 +75,14 @@ public class SpecialTasksViewModel extends ViewModel {
         return specialTasksLiveData;
     }
     
+    public LiveData<List<SpecialTask>> getMyAllianceTasks() {
+        return myAllianceTasksLiveData;
+    }
+    
+    public LiveData<List<SpecialTask>> getMemberAllianceTasks() {
+        return memberAllianceTasksLiveData;
+    }
+    
     public LiveData<String> getErrorMessage() {
         return errorMessageLiveData;
     }
@@ -96,6 +108,14 @@ public class SpecialTasksViewModel extends ViewModel {
     
     public LiveData<SpecialMission> getSpecialMission() {
         return specialMissionLiveData;
+    }
+    
+    public LiveData<SpecialMission> getMyAllianceSpecialMission() {
+        return myAllianceSpecialMissionLiveData;
+    }
+    
+    public LiveData<SpecialMission> getMemberAllianceSpecialMission() {
+        return memberAllianceSpecialMissionLiveData;
     }
     
     public LiveData<Alliance> getCurrentAlliance() {
@@ -211,6 +231,97 @@ public class SpecialTasksViewModel extends ViewModel {
                     errorMessageLiveData.postValue("Failed to load special tasks: " + 
                         (task.getException() != null ? task.getException().getMessage() : "Unknown error"));
                     specialTasksLiveData.postValue(new ArrayList<>());
+                }
+            }
+        });
+    }
+    
+    public void loadAllSpecialTasks() {
+        String currentUserId = userService.getCurrentUserId();
+        if (currentUserId == null) {
+            errorMessageLiveData.postValue("User not logged in");
+            return;
+        }
+        
+        isLoadingLiveData.postValue(true);
+        
+        // Load My Alliance tasks (where user is leader)
+        allianceService.getAlliancesByLeader(currentUserId, new OnCompleteListener<List<Alliance>>() {
+            @Override
+            public void onComplete(com.google.android.gms.tasks.Task<List<Alliance>> task) {
+                if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
+                    // User has an alliance they lead
+                    Alliance myAlliance = task.getResult().get(0);
+                    loadTasksForAlliance(currentUserId, myAlliance.getId(), myAllianceTasksLiveData);
+                    // Load special mission for My Alliance
+                    loadMyAllianceSpecialMission(myAlliance.getId());
+                } else {
+                    // No alliance where user is leader
+                    myAllianceTasksLiveData.postValue(new ArrayList<>());
+                }
+            }
+        });
+        
+        // Load Member Alliance tasks (where user is member but not leader)
+        allianceService.getUserMemberAlliance(currentUserId, new OnCompleteListener<Alliance>() {
+            @Override
+            public void onComplete(com.google.android.gms.tasks.Task<Alliance> task) {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    // User is a member of an alliance
+                    Alliance memberAlliance = task.getResult();
+                    loadTasksForAlliance(currentUserId, memberAlliance.getId(), memberAllianceTasksLiveData);
+                    // Load special mission for Member Alliance
+                    loadMemberAllianceSpecialMission(memberAlliance.getId());
+                } else {
+                    // No alliance where user is member
+                    memberAllianceTasksLiveData.postValue(new ArrayList<>());
+                }
+                isLoadingLiveData.postValue(false);
+            }
+        });
+    }
+    
+    private void loadTasksForAlliance(String userId, String allianceId, MutableLiveData<List<SpecialTask>> targetLiveData) {
+        specialTaskService.listenToUserSpecialTasks(userId, allianceId, new OnCompleteListener<List<SpecialTask>>() {
+            @Override
+            public void onComplete(com.google.android.gms.tasks.Task<List<SpecialTask>> task) {
+                if (task.isSuccessful()) {
+                    targetLiveData.postValue(task.getResult());
+                } else {
+                    targetLiveData.postValue(new ArrayList<>());
+                }
+            }
+        });
+    }
+    
+    private void loadSpecialMissionForAlliance(String allianceId) {
+        specialMissionService.getSpecialMission(allianceId, new OnCompleteListener<SpecialMission>() {
+            @Override
+            public void onComplete(com.google.android.gms.tasks.Task<SpecialMission> task) {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    specialMissionLiveData.postValue(task.getResult());
+                }
+            }
+        });
+    }
+    
+    private void loadMyAllianceSpecialMission(String allianceId) {
+        specialMissionService.getSpecialMission(allianceId, new OnCompleteListener<SpecialMission>() {
+            @Override
+            public void onComplete(com.google.android.gms.tasks.Task<SpecialMission> task) {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    myAllianceSpecialMissionLiveData.postValue(task.getResult());
+                }
+            }
+        });
+    }
+    
+    private void loadMemberAllianceSpecialMission(String allianceId) {
+        specialMissionService.getSpecialMission(allianceId, new OnCompleteListener<SpecialMission>() {
+            @Override
+            public void onComplete(com.google.android.gms.tasks.Task<SpecialMission> task) {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    memberAllianceSpecialMissionLiveData.postValue(task.getResult());
                 }
             }
         });

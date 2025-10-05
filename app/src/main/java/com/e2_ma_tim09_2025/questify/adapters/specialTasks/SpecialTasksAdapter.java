@@ -180,6 +180,7 @@ public class SpecialTasksAdapter extends RecyclerView.Adapter<SpecialTasksAdapte
             }
         }
 
+
         private long calculateTimeRemaining(SpecialMission specialMission) {
             long currentTime = System.currentTimeMillis();
             long endTime = specialMission.getEndTime();
