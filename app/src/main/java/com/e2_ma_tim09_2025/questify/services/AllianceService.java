@@ -404,5 +404,30 @@ public class AllianceService {
         });
     }
 
+    /**
+     * Get alliance where user is a member but NOT a leader
+     */
+    public void getUserMemberAlliance(String userId, OnCompleteListener<Alliance> listener) {
+        // Get all alliances and find one where user is a member but not a leader
+        allianceRepository.getAllAlliances(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                for (DocumentSnapshot doc : task.getResult()) {
+                    Alliance alliance = doc.toObject(Alliance.class);
+                    if (alliance != null && alliance.getMemberIds() != null && 
+                        alliance.getMemberIds().contains(userId) && 
+                        !userId.equals(alliance.getLeaderId())) {
+                        // User is a member but not a leader
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(alliance));
+                        return;
+                    }
+                }
+                // User is not a member of any alliance (as non-leader)
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(null));
+            } else {
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                    task.getException() != null ? task.getException() : new Exception("Failed to get alliances")));
+            }
+        });
+    }
 
 }

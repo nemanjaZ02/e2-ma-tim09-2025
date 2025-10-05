@@ -10,16 +10,18 @@ public class SpecialMission {
     private int totalDamageDealt;
     private boolean rewardsDistributed;
     private SpecialBoss boss; // Boss je direktno u misiji
+    private int missionNumber; // Broj misije (1, 2, 3...)
 
     public SpecialMission() {}
 
     public SpecialMission(String allianceId) {
         this.allianceId = allianceId;
-        this.status = SpecialMissionStatus.ACTIVE;
-        this.startTime = System.currentTimeMillis();
-        this.endTime = startTime + (14 * 24 * 60 * 60 * 1000L); // 2 nedelje
+        this.status = SpecialMissionStatus.INACTIVE; // Neaktivna na početku
+        this.startTime = 0; // Nije pokrenuta
+        this.endTime = 0; // Nije pokrenuta
         this.totalDamageDealt = 0;
         this.rewardsDistributed = false;
+        this.missionNumber = 0; // Početni broj - nije pokrenuta
     }
 
     public String getAllianceId() {
@@ -116,5 +118,13 @@ public class SpecialMission {
         if (boss != null) {
             boss.takeDamage(damage);
         }
+    }
+    
+    public int getMissionNumber() {
+        return missionNumber;
+    }
+    
+    public void setMissionNumber(int missionNumber) {
+        this.missionNumber = missionNumber;
     }
 }

@@ -2,12 +2,15 @@ package com.e2_ma_tim09_2025.questify.services;
 
 import android.util.Log;
 
+import com.e2_ma_tim09_2025.questify.models.MemberProgress;
 import com.e2_ma_tim09_2025.questify.models.SpecialBoss;
 import com.e2_ma_tim09_2025.questify.models.SpecialMission;
 import com.e2_ma_tim09_2025.questify.models.SpecialTask;
+import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskType;
 import com.e2_ma_tim09_2025.questify.repositories.SpecialMissionRepository;
 import com.e2_ma_tim09_2025.questify.repositories.SpecialTaskRepository;
+import com.e2_ma_tim09_2025.questify.repositories.UserRepository;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -24,13 +27,16 @@ import javax.inject.Singleton;
 public class SpecialTaskService {
     private final SpecialTaskRepository specialTaskRepository;
     private final SpecialMissionRepository specialMissionRepository;
+    private final UserRepository userRepository;
 
     @Inject
     public SpecialTaskService(
             SpecialTaskRepository specialTaskRepository,
-            SpecialMissionRepository specialMissionRepository) {
+            SpecialMissionRepository specialMissionRepository,
+            UserRepository userRepository) {
         this.specialTaskRepository = specialTaskRepository;
         this.specialMissionRepository = specialMissionRepository;
+        this.userRepository = userRepository;
     }
 
     public void completeSpecialTask(String userId, SpecialTaskType taskType, String allianceId, OnCompleteListener<Boolean> listener) {
@@ -266,5 +272,114 @@ public class SpecialTaskService {
             }
             listener.onComplete(Tasks.forResult(null));
         });
+    }
+    
+    /**
+     * Dohvata napredak svih članova alijanse za trenutnu aktivnu misiju
+     */
+    public void getMembersProgress(String allianceId, OnCompleteListener<List<MemberProgress>> listener) {
+        Log.d("SpecialTaskService", "=== DOHVATANJE NAPRETKA ČLANOVA ===");
+        Log.d("SpecialTaskService", "Alliance ID: " + allianceId);
+        
+        // 1. Dohvati trenutnu misiju
+        specialMissionRepository.getSpecialMissionByAllianceId(allianceId, missionTask -> {
+            if (!missionTask.isSuccessful() || missionTask.getResult() == null || !missionTask.getResult().exists()) {
+                Log.e("SpecialTaskService", "Misija nije pronađena");
+                listener.onComplete(Tasks.forResult(new ArrayList<>()));
+                return;
+            }
+            
+            SpecialMission mission = missionTask.getResult().toObject(SpecialMission.class);
+            if (mission == null || !mission.isActive()) {
+                Log.d("SpecialTaskService", "Misija nije aktivna");
+                listener.onComplete(Tasks.forResult(new ArrayList<>()));
+                return;
+            }
+            
+            // 2. Dohvati sve taskove za tu misiju
+            specialTaskRepository.getSpecialTasksByAllianceId(allianceId, tasksTask -> {
+                if (!tasksTask.isSuccessful()) {
+                    Log.e("SpecialTaskService", "Greška pri dohvatanju taskova");
+                    listener.onComplete(Tasks.forResult(new ArrayList<>()));
+                    return;
+                }
+                
+                List<SpecialTask> allTasks = new ArrayList<>();
+                for (DocumentSnapshot doc : tasksTask.getResult()) {
+                    SpecialTask task = doc.toObject(SpecialTask.class);
+                    if (task != null && task.getMissionNumber() == mission.getMissionNumber()) {
+                        allTasks.add(task);
+                    }
+                }
+                
+                Log.d("SpecialTaskService", "Pronađeno " + allTasks.size() + " taskova za misiju #" + mission.getMissionNumber());
+                
+                // 3. Grupiši taskove po korisnicima i izračunaj napredak
+                calculateMembersProgress(allTasks, listener);
+            });
+        });
+    }
+    
+    private void calculateMembersProgress(List<SpecialTask> allTasks, OnCompleteListener<List<MemberProgress>> listener) {
+        if (allTasks.isEmpty()) {
+            listener.onComplete(Tasks.forResult(new ArrayList<>()));
+            return;
+        }
+        
+        // Grupiši taskove po userId
+        java.util.Map<String, List<SpecialTask>> tasksByUser = new java.util.HashMap<>();
+        for (SpecialTask task : allTasks) {
+            String userId = task.getUserId();
+            if (!tasksByUser.containsKey(userId)) {
+                tasksByUser.put(userId, new ArrayList<>());
+            }
+            tasksByUser.get(userId).add(task);
+        }
+        
+        List<MemberProgress> memberProgressList = new ArrayList<>();
+        final int[] completedUsers = {0};
+        final int totalUsers = tasksByUser.size();
+        
+        for (String userId : tasksByUser.keySet()) {
+            List<SpecialTask> userTasks = tasksByUser.get(userId);
+            
+            // Izračunaj ukupan napredak za korisnika
+            int completedTasks = 0;
+            int totalDamage = 0;
+            int maxTasks = userTasks.size();
+            
+            for (SpecialTask task : userTasks) {
+                // Broj završenih taskova (ne suma currentCount, već broj taskova koji su COMPLETED)
+                if (task.getStatus().toString().equals("COMPLETED")) {
+                    completedTasks++;
+                }
+                totalDamage += task.getTotalDamageDealt();
+            }
+            
+            // Sačuvaj u final varijable za lambda
+            final int finalCompletedTasks = completedTasks;
+            final int finalTotalDamage = totalDamage;
+            final int finalMaxTasks = maxTasks;
+            
+            // Dohvati korisničko ime iz UserRepository
+            userRepository.getUser(userId, userTask -> {
+                String username = "User " + userId.substring(0, 8); // Default
+                if (userTask.isSuccessful() && userTask.getResult() != null && userTask.getResult().exists()) {
+                    User user = userTask.getResult().toObject(User.class);
+                    if (user != null && user.getUsername() != null) {
+                        username = user.getUsername();
+                    }
+                }
+                
+                MemberProgress progress = new MemberProgress(userId, username, finalCompletedTasks, finalTotalDamage, finalMaxTasks);
+                memberProgressList.add(progress);
+                
+                completedUsers[0]++;
+                if (completedUsers[0] == totalUsers) {
+                    Log.d("SpecialTaskService", "Napredak izračunat za " + memberProgressList.size() + " članova");
+                    listener.onComplete(Tasks.forResult(memberProgressList));
+                }
+            });
+        }
     }
 }

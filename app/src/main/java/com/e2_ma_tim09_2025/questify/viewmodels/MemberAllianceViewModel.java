@@ -5,8 +5,10 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.e2_ma_tim09_2025.questify.models.Alliance;
+import com.e2_ma_tim09_2025.questify.models.SpecialMission;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.services.AllianceService;
+import com.e2_ma_tim09_2025.questify.services.SpecialMissionService;
 import com.e2_ma_tim09_2025.questify.services.UserService;
 import com.google.android.gms.tasks.OnCompleteListener;
 
@@ -22,17 +24,20 @@ public class MemberAllianceViewModel extends ViewModel {
     
     private final AllianceService allianceService;
     private final UserService userService;
+    private final SpecialMissionService specialMissionService;
     
     private final MutableLiveData<Alliance> allianceLiveData = new MutableLiveData<>();
     private final MutableLiveData<List<User>> membersLiveData = new MutableLiveData<>();
     private final MutableLiveData<User> leaderLiveData = new MutableLiveData<>();
+    private final MutableLiveData<SpecialMission> specialMissionLiveData = new MutableLiveData<>();
     private final MutableLiveData<String> errorMessageLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> isLoadingLiveData = new MutableLiveData<>();
     
     @Inject
-    public MemberAllianceViewModel(AllianceService allianceService, UserService userService) {
+    public MemberAllianceViewModel(AllianceService allianceService, UserService userService, SpecialMissionService specialMissionService) {
         this.allianceService = allianceService;
         this.userService = userService;
+        this.specialMissionService = specialMissionService;
     }
     
     public LiveData<Alliance> getAlliance() {
@@ -55,6 +60,10 @@ public class MemberAllianceViewModel extends ViewModel {
         return isLoadingLiveData;
     }
     
+    public LiveData<SpecialMission> getSpecialMission() {
+        return specialMissionLiveData;
+    }
+    
     public void loadUserAlliance() {
         String currentUserId = userService.getCurrentUserId();
         if (currentUserId == null) {
@@ -64,61 +73,58 @@ public class MemberAllianceViewModel extends ViewModel {
         
         isLoadingLiveData.postValue(true);
         
-        // First get user's alliance ID
-        userService.getUser(currentUserId, userTask -> {
-            if (!userTask.isSuccessful() || userTask.getResult() == null || !userTask.getResult().exists()) {
-                isLoadingLiveData.postValue(false);
-                errorMessageLiveData.postValue("Failed to get user data");
-                return;
-            }
-            
-            User user = userTask.getResult().toObject(User.class);
-            if (user == null || user.getAllianceId() == null || user.getAllianceId().isEmpty()) {
+        // Use AllianceService.getUserMemberAlliance which finds alliance where user is a member but NOT a leader
+        allianceService.getUserMemberAlliance(currentUserId, allianceTask -> {
+            if (!allianceTask.isSuccessful() || allianceTask.getResult() == null) {
                 isLoadingLiveData.postValue(false);
                 errorMessageLiveData.postValue("You are not a member of any alliance");
                 return;
             }
             
-            // Get alliance details
-            allianceService.getAlliance(user.getAllianceId(), allianceTask -> {
-                if (!allianceTask.isSuccessful() || allianceTask.getResult() == null) {
-                    isLoadingLiveData.postValue(false);
-                    errorMessageLiveData.postValue("Alliance not found");
-                    return;
-                }
+            Alliance alliance = allianceTask.getResult();
+            if (alliance != null) {
+                allianceLiveData.postValue(alliance);
                 
-                Alliance alliance = allianceTask.getResult();
-                if (alliance != null) {
-                    allianceLiveData.postValue(alliance);
-                    
-                    // Load alliance members
-                    allianceService.getAllianceMembers(alliance.getId(), membersTask -> {
-                        if (membersTask.isSuccessful()) {
-                            membersLiveData.postValue(membersTask.getResult());
-                        } else {
-                            errorMessageLiveData.postValue("Failed to load alliance members");
-                        }
-                    });
-                    
-                    // Load alliance leader
-                    userService.getUser(alliance.getLeaderId(), leaderTask -> {
-                        if (leaderTask.isSuccessful() && leaderTask.getResult() != null && leaderTask.getResult().exists()) {
-                            User leader = leaderTask.getResult().toObject(User.class);
-                            leaderLiveData.postValue(leader);
-                        } else {
-                            errorMessageLiveData.postValue("Failed to load alliance leader");
-                        }
-                    });
-                } else {
-                    errorMessageLiveData.postValue("Failed to parse alliance data");
-                }
+                // Load alliance members
+                allianceService.getAllianceMembers(alliance.getId(), membersTask -> {
+                    if (membersTask.isSuccessful()) {
+                        membersLiveData.postValue(membersTask.getResult());
+                    } else {
+                        errorMessageLiveData.postValue("Failed to load alliance members");
+                    }
+                });
                 
-                isLoadingLiveData.postValue(false);
-            });
+                // Load alliance leader
+                userService.getUser(alliance.getLeaderId(), leaderTask -> {
+                    if (leaderTask.isSuccessful() && leaderTask.getResult() != null && leaderTask.getResult().exists()) {
+                        User leader = leaderTask.getResult().toObject(User.class);
+                        leaderLiveData.postValue(leader);
+                    } else {
+                        errorMessageLiveData.postValue("Failed to load alliance leader");
+                    }
+                });
+            } else {
+                errorMessageLiveData.postValue("Failed to parse alliance data");
+            }
+            
+            isLoadingLiveData.postValue(false);
         });
     }
     
     public void clearError() {
         errorMessageLiveData.postValue(null);
+    }
+    
+    public void loadSpecialMission(String allianceId) {
+        specialMissionService.getSpecialMission(allianceId, new OnCompleteListener<SpecialMission>() {
+            @Override
+            public void onComplete(com.google.android.gms.tasks.Task<SpecialMission> task) {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    specialMissionLiveData.postValue(task.getResult());
+                } else {
+                    specialMissionLiveData.postValue(null);
+                }
+            }
+        });
     }
 }

@@ -8,6 +8,7 @@ public class SpecialTask {
     private String userId;
     private String specialMissionId; // ID specijalne misije
     private String allianceId; // Za svaki slucaj
+    private int missionNumber; // Broj misije (1, 2, 3...)
     private SpecialTaskType taskType;
     private SpecialTaskStatus status;
     private int currentCount; // Trenutni napredak
@@ -17,10 +18,11 @@ public class SpecialTask {
 
     public SpecialTask() {}
 
-    public SpecialTask(String userId, String specialMissionId, String allianceId, SpecialTaskType taskType) {
+    public SpecialTask(String userId, String specialMissionId, String allianceId, int missionNumber, SpecialTaskType taskType) {
         this.userId = userId;
         this.specialMissionId = specialMissionId;
         this.allianceId = allianceId;
+        this.missionNumber = missionNumber;
         this.taskType = taskType;
         this.status = SpecialTaskStatus.ACTIVE;
         this.currentCount = 0;
@@ -164,5 +166,13 @@ public class SpecialTask {
 
     public int getTotalDamageDealt() {
         return currentCount * damagePerCompletion;
+    }
+    
+    public int getMissionNumber() {
+        return missionNumber;
+    }
+    
+    public void setMissionNumber(int missionNumber) {
+        this.missionNumber = missionNumber;
     }
 }

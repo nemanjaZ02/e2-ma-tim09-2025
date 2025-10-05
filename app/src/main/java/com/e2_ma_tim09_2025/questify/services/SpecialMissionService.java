@@ -90,6 +90,11 @@ public class SpecialMissionService {
         // 1. Kreiraj SpecialMission
         SpecialMission specialMission = new SpecialMission(alliance.getId());
         specialMission.setStatus(SpecialMissionStatus.ACTIVE); // Aktivna odmah
+        specialMission.setStartTime(System.currentTimeMillis());
+        specialMission.setEndTime(specialMission.getStartTime() + (14 * 24 * 60 * 60 * 1000L)); // 2 nedelje
+        
+        // Povećaj mission number za 1 (prva aktivna misija)
+        specialMission.setMissionNumber(specialMission.getMissionNumber() + 1);
         
         // 2. Kreiraj SpecialBoss i dodaj u misiju
         String bossId = UUID.randomUUID().toString();
@@ -98,13 +103,13 @@ public class SpecialMissionService {
         specialMission.setBoss(specialBoss); // Dodaj boss u misiju
 
         // 3. Kreiraj SpecialTask-ove za sve članove (6 tipova × broj članova)
-        List<SpecialTask> specialTasks = createSpecialTasksForAlliance(alliance);
+        List<SpecialTask> specialTasks = createSpecialTasksForAlliance(alliance, specialMission.getMissionNumber());
 
         // 4. Sačuvaj sve u Firebase (bez zasebnog boss-a)
         saveMissionData(specialMission, specialTasks, listener);
     }
 
-    private List<SpecialTask> createSpecialTasksForAlliance(Alliance alliance) {
+    private List<SpecialTask> createSpecialTasksForAlliance(Alliance alliance, int missionNumber) {
         List<SpecialTask> tasks = new ArrayList<>();
         String specialMissionId = alliance.getId(); // allianceId = specialMissionId
 
@@ -112,7 +117,7 @@ public class SpecialMissionService {
             // Kreiraj svih 6 tipova zadataka za svakog člana
             for (SpecialTaskType taskType : SpecialTaskType.values()) {
                 String taskId = UUID.randomUUID().toString();
-                SpecialTask task = new SpecialTask(memberId, specialMissionId, alliance.getId(), taskType);
+                SpecialTask task = new SpecialTask(memberId, specialMissionId, alliance.getId(), missionNumber, taskType);
                 task.setId(taskId);
                 tasks.add(task);
             }
@@ -307,6 +312,9 @@ public class SpecialMissionService {
         mission.setStartTime(System.currentTimeMillis());
         mission.setEndTime(mission.getStartTime() + (14 * 24 * 60 * 60 * 1000L)); // 2 nedelje
         
+        // Povećaj mission number za 1
+        mission.setMissionNumber(mission.getMissionNumber() + 1);
+        
         // 2. Ažuriraj misiju u bazi
         specialMissionRepository.updateSpecialMission(mission, task -> {
             if (!task.isSuccessful()) {
@@ -316,7 +324,7 @@ public class SpecialMissionService {
             }
             
             // 3. Kreiraj nove zadatke za sve članove
-            List<SpecialTask> newTasks = createSpecialTasksForAlliance(alliance);
+            List<SpecialTask> newTasks = createSpecialTasksForAlliance(alliance, mission.getMissionNumber());
             specialTaskRepository.createSpecialTasksForAlliance(newTasks, task2 -> {
                 if (!task2.isSuccessful()) {
                     Log.e("SpecialMissionService", "Greška pri kreiranju zadataka");
