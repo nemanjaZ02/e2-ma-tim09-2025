@@ -15,9 +15,12 @@ import androidx.work.ExistingWorkPolicy;
 import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 import com.e2_ma_tim09_2025.questify.models.TaskRecurrence;
+import com.e2_ma_tim09_2025.questify.models.Alliance;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskStatus;
+import com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskType;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.e2_ma_tim09_2025.questify.repositories.TaskCategoryRepository;
 import com.e2_ma_tim09_2025.questify.repositories.TaskRepository;
 import com.e2_ma_tim09_2025.questify.repositories.UserRepository;
@@ -44,14 +47,18 @@ public class TaskService {
     private final WorkManager workManager; // DODANO
     private final UserService userService;
     private final UserRepository userRepository;
+    private final AllianceService allianceService;
+    private final SpecialTaskService specialTaskService;
 
     @Inject
     public TaskService(@ApplicationContext Context context, TaskRepository taskRepository, TaskCategoryRepository categoryRepository, UserService userService,
-                       UserRepository userRepository) {
+                       UserRepository userRepository, AllianceService allianceService, SpecialTaskService specialTaskService) {
         this.taskRepository = taskRepository;
         this.categoryRepository = categoryRepository;
         this.userService = userService;
         this.userRepository = userRepository;
+        this.allianceService = allianceService;
+        this.specialTaskService = specialTaskService;
         this.workManager = WorkManager.getInstance(context);
         statusCheckRunnable = new Runnable() {
             @Override
@@ -164,6 +171,9 @@ public class TaskService {
                         });
 
                         Log.d(TAG, "Total XP awarded for task: " + totalXp);
+                        
+                        // 3. Proveri specijalne zadatke
+                        checkSpecialTasksForCompletedTask(userId, task);
 
                     } else {
                         Log.e(TAG, "Failed to fetch user for XP calculation");
@@ -440,5 +450,77 @@ public class TaskService {
 
         long nextTime = lastCompletionTime + intervalMillis;
         return nextTime;
+    }
+    
+    private void checkSpecialTasksForCompletedTask(String userId, Task completedTask) {
+        Log.d("TaskService", "=== PROVERA SPECIJALNIH ZADATAKA ZA ZAVRŠENI TASK ===");
+        Log.d("TaskService", "User ID: " + userId);
+        Log.d("TaskService", "Task difficulty: " + completedTask.getDifficulty());
+        Log.d("TaskService", "Task priority: " + completedTask.getPriority());
+
+        // Proveri da li je korisnik u savezu
+        allianceService.getUserAlliance(userId, new OnCompleteListener<Alliance>() {
+            @Override
+            public void onComplete(com.google.android.gms.tasks.Task<Alliance> allianceTask) {
+                if (allianceTask.isSuccessful() && allianceTask.getResult() != null) {
+                    String allianceId = allianceTask.getResult().getId();
+                    Log.d("TaskService", "Korisnik je u savezu: " + allianceId);
+
+                    // Proveri da li je zadatak lak ili normalan (za TASK_COMPLETION_EASY_NORMAL)
+                    if (isEasyOrNormalTask(completedTask)) {
+                        int times = isBothEasyAndNormal(completedTask) ? 2 : 1;
+                        Log.d("TaskService", "Zadatak je lak ili normalan - pozivam TASK_COMPLETION_EASY_NORMAL " + times + " puta");
+                        
+                        specialTaskService.completeSpecialTaskMultiple(userId, SpecialTaskType.TASK_COMPLETION_EASY_NORMAL, allianceId, times, new OnCompleteListener<Boolean>() {
+                            @Override
+                            public void onComplete(com.google.android.gms.tasks.Task<Boolean> specialTaskResult) {
+                                if (specialTaskResult.isSuccessful()) {
+                                    Log.d("TaskService", "TASK_COMPLETION_EASY_NORMAL uspešno izvršen " + times + " puta");
+                                } else {
+                                    Log.e("TaskService", "Greška pri izvršavanju TASK_COMPLETION_EASY_NORMAL", specialTaskResult.getException());
+                                }
+                            }
+                        });
+                    }
+
+                    // Proveri da li je zadatak ostali tip (za TASK_COMPLETION_OTHER)
+                    if (isOtherTask(completedTask)) {
+                        Log.d("TaskService", "Zadatak je ostali tip - pozivam TASK_COMPLETION_OTHER");
+                        specialTaskService.completeSpecialTask(userId, SpecialTaskType.TASK_COMPLETION_OTHER, allianceId, new OnCompleteListener<Boolean>() {
+                            @Override
+                            public void onComplete(com.google.android.gms.tasks.Task<Boolean> specialTaskResult) {
+                                if (specialTaskResult.isSuccessful()) {
+                                    Log.d("TaskService", "TASK_COMPLETION_OTHER uspešno izvršen");
+                                } else {
+                                    Log.e("TaskService", "Greška pri izvršavanju TASK_COMPLETION_OTHER", specialTaskResult.getException());
+                                }
+                            }
+                        });
+                    }
+
+                } else {
+                    Log.d("TaskService", "Korisnik " + userId + " nije u savezu, preskačem specijalne zadatke");
+                }
+            }
+        });
+    }
+    
+    private boolean isEasyOrNormalTask(Task task) {
+        // Veoma lak, lak, normalan ili važan zadatak
+        return (task.getDifficulty() == TaskDifficulty.VERY_EASY || 
+                task.getDifficulty() == TaskDifficulty.EASY || 
+                task.getPriority() == TaskPriority.NORMAL || 
+                task.getPriority() == TaskPriority.IMPORTANT);
+    }
+    
+    private boolean isBothEasyAndNormal(Task task) {
+        // Proveri da li je i EASY difficulty i NORMAL priority
+        return (task.getDifficulty() == TaskDifficulty.EASY && 
+                task.getPriority() == TaskPriority.NORMAL);
+    }
+    
+    private boolean isOtherTask(Task task) {
+        // Ostali zadaci - svi koji nisu lak ili normalan
+        return !isEasyOrNormalTask(task);
     }
 }

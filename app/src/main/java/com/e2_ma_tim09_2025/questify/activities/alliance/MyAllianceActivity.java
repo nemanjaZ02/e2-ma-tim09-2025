@@ -158,10 +158,9 @@ public class MyAllianceActivity extends AppCompatActivity {
         // Observe special mission
         viewModel.getSpecialMission().observe(this, specialMission -> {
             if (specialMission != null) {
-                updateMissionStatus(true);
+                // Ne menjaj mission status ovde - koristi alliance.isMissionStarted()
                 startSpecialMissionButton.setVisibility(View.GONE);
             } else {
-                updateMissionStatus(false);
                 if (currentAlliance != null) {
                     viewModel.checkCanCreateSpecialMission(currentAlliance.getId());
                 }
@@ -225,6 +224,9 @@ public class MyAllianceActivity extends AppCompatActivity {
         
         // Load special mission data
         viewModel.loadSpecialMission(alliance.getId());
+        
+        // Check if can create special mission
+        viewModel.checkCanCreateSpecialMission(alliance.getId());
     }
     
     private void displayNoAlliance() {

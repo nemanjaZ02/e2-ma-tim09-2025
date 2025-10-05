@@ -1,14 +1,11 @@
 package com.e2_ma_tim09_2025.questify.models;
 
-import com.e2_ma_tim09_2025.questify.models.enums.SpecialBossStatus;
-
 public class SpecialBoss {
     private String id;
     private String specialMissionId; // ID specijalne misije
     private String allianceId; // Za svaki slučaj
     private int currentHealth;
     private int maxHealth;
-    private SpecialBossStatus status;
     private int coinsDrop; // 50% od sledećeg regularnog boss-a
     private boolean isDefeated;
 
@@ -19,7 +16,6 @@ public class SpecialBoss {
         this.allianceId = allianceId;
         this.maxHealth = 100 * memberCount; // HP = 100 * broj članova
         this.currentHealth = this.maxHealth;
-        this.status = SpecialBossStatus.ACTIVE;
         this.coinsDrop = 0; // Postaviće se kada se misija završi
         this.isDefeated = false;
     }
@@ -64,13 +60,6 @@ public class SpecialBoss {
         this.maxHealth = maxHealth;
     }
 
-    public SpecialBossStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(SpecialBossStatus status) {
-        this.status = status;
-    }
 
     public int getCoinsDrop() {
         return coinsDrop;
@@ -97,7 +86,6 @@ public class SpecialBoss {
         this.currentHealth = Math.max(0, this.currentHealth - damage);
         
         if (this.currentHealth <= 0) {
-            this.status = SpecialBossStatus.DEFEATED;
             this.isDefeated = true;
         }
     }

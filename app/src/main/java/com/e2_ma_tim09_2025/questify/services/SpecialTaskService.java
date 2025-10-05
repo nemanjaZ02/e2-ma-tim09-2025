@@ -6,7 +6,6 @@ import com.e2_ma_tim09_2025.questify.models.SpecialBoss;
 import com.e2_ma_tim09_2025.questify.models.SpecialMission;
 import com.e2_ma_tim09_2025.questify.models.SpecialTask;
 import com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskType;
-import com.e2_ma_tim09_2025.questify.repositories.SpecialBossRepository;
 import com.e2_ma_tim09_2025.questify.repositories.SpecialMissionRepository;
 import com.e2_ma_tim09_2025.questify.repositories.SpecialTaskRepository;
 import com.google.android.gms.tasks.OnCompleteListener;
@@ -24,24 +23,26 @@ import javax.inject.Singleton;
 @Singleton
 public class SpecialTaskService {
     private final SpecialTaskRepository specialTaskRepository;
-    private final SpecialBossRepository specialBossRepository;
     private final SpecialMissionRepository specialMissionRepository;
 
     @Inject
     public SpecialTaskService(
             SpecialTaskRepository specialTaskRepository,
-            SpecialBossRepository specialBossRepository,
             SpecialMissionRepository specialMissionRepository) {
         this.specialTaskRepository = specialTaskRepository;
-        this.specialBossRepository = specialBossRepository;
         this.specialMissionRepository = specialMissionRepository;
     }
 
     public void completeSpecialTask(String userId, SpecialTaskType taskType, String allianceId, OnCompleteListener<Boolean> listener) {
-        Log.d("SpecialTaskService", "=== IZVRŠAVANJE SPECIAL TASK ===");
+        completeSpecialTaskMultiple(userId, taskType, allianceId, 1, listener);
+    }
+    
+    public void completeSpecialTaskMultiple(String userId, SpecialTaskType taskType, String allianceId, int times, OnCompleteListener<Boolean> listener) {
+        Log.d("SpecialTaskService", "=== IZVRŠAVANJE SPECIAL TASK " + times + " PUTA ===");
         Log.d("SpecialTaskService", "User ID: " + userId);
         Log.d("SpecialTaskService", "Task Type: " + taskType);
         Log.d("SpecialTaskService", "Alliance ID: " + allianceId);
+        Log.d("SpecialTaskService", "Times: " + times);
 
         // 1. Pronađi task za korisnika i tip
         specialTaskRepository.getSpecialTasksByAllianceAndUser(allianceId, userId, task -> {
@@ -72,10 +73,21 @@ public class SpecialTaskService {
                 return;
             }
 
-            // 2. Izvrši task
-            specialTask.complete();
-            int damageToDeal = specialTask.getDamagePerCompletion(); // Sačuvaj vrednost pre lambda
-            Log.d("SpecialTaskService", "Task izvršen. Trenutni broj: " + specialTask.getCurrentCount() + "/" + specialTask.getMaxCount());
+            // 2. Izvrši task više puta
+            int totalDamage = 0;
+            for (int i = 0; i < times; i++) {
+                if (specialTask.canComplete()) {
+                    specialTask.complete();
+                    totalDamage += specialTask.getDamagePerCompletion();
+                    Log.d("SpecialTaskService", "Task izvršen " + (i + 1) + "/" + times + ". Trenutni broj: " + specialTask.getCurrentCount() + "/" + specialTask.getMaxCount());
+                } else {
+                    Log.d("SpecialTaskService", "Task ne može biti izvršen više puta (dostigao max)");
+                    break;
+                }
+            }
+
+            // Sačuvaj totalDamage u final varijablu za lambda
+            final int finalTotalDamage = totalDamage;
 
             // 3. Ažuriraj task u bazi
             specialTaskRepository.updateSpecialTask(specialTask, task1 -> {
@@ -85,35 +97,35 @@ public class SpecialTaskService {
                     return;
                 }
 
-                // 4. Nanesei štetu boss-u
-                dealDamageToBoss(allianceId, damageToDeal, listener);
+                // 4. Nanesei ukupnu štetu boss-u
+                dealDamageToBoss(allianceId, finalTotalDamage, listener);
             });
         });
     }
 
     private void dealDamageToBoss(String allianceId, int damage, OnCompleteListener<Boolean> listener) {
-        specialBossRepository.getSpecialBossByAllianceId(allianceId, task -> {
+        specialMissionRepository.getSpecialMissionByAllianceId(allianceId, task -> {
             if (!task.isSuccessful() || task.getResult() == null || !task.getResult().exists()) {
-                Log.e("SpecialTaskService", "Greška pri dohvatanju boss-a");
+                Log.e("SpecialTaskService", "Greška pri dohvatanju misije");
                 listener.onComplete(Tasks.forResult(false));
                 return;
             }
 
-            SpecialBoss boss = task.getResult().toObject(SpecialBoss.class);
-            if (boss == null) {
-                Log.e("SpecialTaskService", "Boss je null");
+            SpecialMission mission = task.getResult().toObject(SpecialMission.class);
+            if (mission == null || mission.getBoss() == null) {
+                Log.e("SpecialTaskService", "Misija ili boss je null");
                 listener.onComplete(Tasks.forResult(false));
                 return;
             }
 
-            // Nanesei štetu
-            boss.takeDamage(damage);
-            Log.d("SpecialTaskService", "Naneta šteta: " + damage + " HP. Boss HP: " + boss.getCurrentHealth() + "/" + boss.getMaxHealth());
+            // Nanesei štetu koristeći convenience metodu
+            mission.dealDamageToBoss(damage);
+            Log.d("SpecialTaskService", "Naneta šteta: " + damage + " HP. Boss HP: " + mission.getBossCurrentHealth() + "/" + mission.getBossMaxHealth());
 
-            // Ažuriraj boss
-            specialBossRepository.updateSpecialBoss(boss, task1 -> {
+            // Ažuriraj misiju (sa boss-om unutar nje)
+            specialMissionRepository.updateSpecialMission(mission, task1 -> {
                 if (!task1.isSuccessful()) {
-                    Log.e("SpecialTaskService", "Greška pri ažuriranju boss-a");
+                    Log.e("SpecialTaskService", "Greška pri ažuriranju misije");
                     listener.onComplete(Tasks.forResult(false));
                     return;
                 }

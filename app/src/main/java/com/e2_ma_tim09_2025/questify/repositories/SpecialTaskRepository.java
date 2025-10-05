@@ -124,4 +124,14 @@ public class SpecialTaskRepository {
                     }
                 });
     }
+    
+    public void updateSpecialTasks(List<SpecialTask> specialTasks, OnCompleteListener<Void> listener) {
+        com.google.firebase.firestore.WriteBatch batch = db.batch();
+        
+        for (SpecialTask task : specialTasks) {
+            batch.set(specialTasksRef.document(task.getId()), task);
+        }
+        
+        batch.commit().addOnCompleteListener(listener);
+    }
 }

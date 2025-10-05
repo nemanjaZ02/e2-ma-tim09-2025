@@ -41,6 +41,7 @@ public class SpecialTasksViewModel extends ViewModel {
     private final MutableLiveData<String> currentAllianceIdLiveData = new MutableLiveData<>();
     private final MutableLiveData<User> currentUser = new MutableLiveData<>();
     private final MutableLiveData<SpecialMission> specialMissionLiveData = new MutableLiveData<>();
+    private final MutableLiveData<Alliance> currentAlliance = new MutableLiveData<>();
     private final LiveData<Boss> boss;
     
     @Inject
@@ -85,7 +86,7 @@ public class SpecialTasksViewModel extends ViewModel {
     public LiveData<Boolean> isBossActive() {
         return Transformations.map(boss, bossVal -> {
             if (bossVal == null) return false;
-            return bossVal.getStatus() == BossStatus.ACTIVE;
+            return bossVal.getStatus() == com.e2_ma_tim09_2025.questify.models.enums.BossStatus.ACTIVE;
         });
     }
     
@@ -95,6 +96,10 @@ public class SpecialTasksViewModel extends ViewModel {
     
     public LiveData<SpecialMission> getSpecialMission() {
         return specialMissionLiveData;
+    }
+    
+    public LiveData<Alliance> getCurrentAlliance() {
+        return currentAlliance;
     }
     
     public void fetchCurrentUser() {
@@ -138,6 +143,7 @@ public class SpecialTasksViewModel extends ViewModel {
                     
                     // User is in an alliance
                     currentAllianceIdLiveData.postValue(allianceId);
+                    currentAlliance.postValue(alliance); // Postavi alliance za boss status
                     System.out.println("DEBUG: Loading special tasks for userId=" + userId + ", allianceId=" + allianceId);
                     
                     // First check if mission is expired or completed
@@ -174,6 +180,7 @@ public class SpecialTasksViewModel extends ViewModel {
                     isLoadingLiveData.postValue(false);
                     specialTasksLiveData.postValue(new ArrayList<>());
                     currentAllianceIdLiveData.postValue(null);
+                    currentAlliance.postValue(null); // Reset alliance
                 }
             }
         });

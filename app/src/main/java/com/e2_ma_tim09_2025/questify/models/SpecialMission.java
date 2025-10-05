@@ -9,6 +9,7 @@ public class SpecialMission {
     private long endTime; // 2 nedelje od startTime
     private int totalDamageDealt;
     private boolean rewardsDistributed;
+    private SpecialBoss boss; // Boss je direktno u misiji
 
     public SpecialMission() {}
 
@@ -83,5 +84,37 @@ public class SpecialMission {
 
     public void addDamage(int damage) {
         this.totalDamageDealt += damage;
+    }
+    
+    // Boss getter i setter
+    public SpecialBoss getBoss() {
+        return boss;
+    }
+    
+    public void setBoss(SpecialBoss boss) {
+        this.boss = boss;
+    }
+    
+    // Convenience metode za boss
+    public boolean isBossDefeated() {
+        return boss != null && boss.isDefeated();
+    }
+    
+    public int getBossCurrentHealth() {
+        return boss != null ? boss.getCurrentHealth() : 0;
+    }
+    
+    public int getBossMaxHealth() {
+        return boss != null ? boss.getMaxHealth() : 0;
+    }
+    
+    public double getBossHealthPercentage() {
+        return boss != null ? boss.getHealthPercentage() : 0.0;
+    }
+    
+    public void dealDamageToBoss(int damage) {
+        if (boss != null) {
+            boss.takeDamage(damage);
+        }
     }
 }

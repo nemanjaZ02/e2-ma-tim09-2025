@@ -10,11 +10,14 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
+import com.e2_ma_tim09_2025.questify.activities.MainActivity;
 import com.e2_ma_tim09_2025.questify.activities.bosses.BossMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.specialTasks.SpecialTasksMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.tasks.TasksMainActivity;
+import com.e2_ma_tim09_2025.questify.activities.users.ProfileActivity;
 import com.e2_ma_tim09_2025.questify.fragments.taskCategories.TaskCategoriesListFragment;
 import com.e2_ma_tim09_2025.questify.viewmodels.TaskCategoryViewModel;
+import com.e2_ma_tim09_2025.questify.viewmodels.UserViewModel;
 import com.google.android.material.button.MaterialButton;
 
 import dagger.hilt.android.AndroidEntryPoint;
@@ -23,6 +26,7 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class TaskCategoriesMainActivity extends AppCompatActivity {
 
     private TaskCategoryViewModel categoryViewModel;
+    private UserViewModel userViewModel;
     private MaterialButton addCategoryButton;
     private MaterialButton logoutButton;
     private MaterialButton profileButton;
@@ -35,6 +39,7 @@ public class TaskCategoriesMainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_task_categories_main);
 
         categoryViewModel = new ViewModelProvider(this).get(TaskCategoryViewModel.class);
+        userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
 
         categoriesTitle = findViewById(R.id.categoriesTitle);
         addCategoryButton = findViewById(R.id.add_category_button);
@@ -72,8 +77,19 @@ public class TaskCategoriesMainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        logoutButton.setOnClickListener(v -> {});
-        profileButton.setOnClickListener(v -> {});
+        logoutButton.setOnClickListener(v -> {
+            userViewModel.logout();
+
+            Intent intent = new Intent(TaskCategoriesMainActivity.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // prevent back navigation
+            startActivity(intent);
+            finish();
+        });
+
+        profileButton.setOnClickListener(v -> {
+            Intent intent = new Intent(TaskCategoriesMainActivity.this, ProfileActivity.class);
+            startActivity(intent);
+        });
 
         categoryViewModel.isBossActive().observe(this, isActive -> {
             if (isActive != null && isActive) {
