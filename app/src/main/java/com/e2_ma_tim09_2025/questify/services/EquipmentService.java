@@ -217,47 +217,57 @@ public class EquipmentService {
                     return;
                 }
 
-                // Business logic validations
-                double equipmentPrice = equipment.getPrice();
-                int userCoins = user.getCoins();
-
-                // Check if user has enough coins
-                if (userCoins < (int) equipmentPrice) {
-                    listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
-                            new Exception("Insufficient Coins. Required: " + (int) equipmentPrice + ", Available: " + userCoins)));
-                    return;
-                }
-
-                // Create new MyEquipment instance
-                String myEquipmentId = UUID.randomUUID().toString();
-                MyEquipment newMyEquipment = new MyEquipment(
-                        myEquipmentId,
-                        equipmentId,
-                        0, // timesUpgraded = 0
-                        equipment.getLasting() // leftAmount = equipment lasting
-                );
-                newMyEquipment.setActivated(false); // Initially not activated
-
-                // Update user: reduce coins and add equipment
-                user.setCoins(userCoins - (int) equipmentPrice);
-
-                if (user.getEquipment() == null) {
-                    user.setEquipment(new ArrayList<>());
-                }
-                user.getEquipment().add(newMyEquipment);
-
-                // Save updated user
-                userService.updateUser(user, updateTask -> {
-                    if (updateTask.isSuccessful()) {
-                        listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(true));
-                    } else {
-                        // Rollback coins on failure
-                        user.setCoins(userCoins);
-                        user.getEquipment().remove(newMyEquipment);
+                // Get calculated price for this user
+                getEquipmentPrice(userId, equipmentId, priceTask -> {
+                    if (!priceTask.isSuccessful()) {
                         listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
-                                new Exception("Failed to save purchase: " +
-                                        (updateTask.getException() != null ? updateTask.getException().getMessage() : "Unknown error"))));
+                                priceTask.getException() != null ? priceTask.getException() : new Exception("Failed to calculate equipment price")));
+                        return;
                     }
+
+                    double calculatedPrice = priceTask.getResult();
+                    int userCoins = user.getCoins();
+                    int priceToPay = (int) calculatedPrice;
+
+                    // Check if user has enough coins using calculated price
+                    if (userCoins < priceToPay) {
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                                new Exception("Insufficient Coins. Required: " + priceToPay + ", Available: " + userCoins)));
+                        return;
+                    }
+
+                    // Create new MyEquipment instance
+                    String myEquipmentId = UUID.randomUUID().toString();
+                    MyEquipment newMyEquipment = new MyEquipment(
+                            myEquipmentId,
+                            equipmentId,
+                            0, // timesUpgraded = 0
+                            equipment.getLasting() // leftAmount = equipment lasting
+                    );
+                    newMyEquipment.setActivated(false); // Initially not activated
+
+                    // Update user: reduce coins and add equipment using calculated price
+                    user.setCoins(userCoins - priceToPay);
+
+                    if (user.getEquipment() == null) {
+                        user.setEquipment(new ArrayList<>());
+                    }
+                    user.getEquipment().add(newMyEquipment);
+
+                    // Save updated user
+                    userService.updateUser(user, updateTask -> {
+                        if (updateTask.isSuccessful()) {
+                            System.out.println("Purchase successful: User " + userId + " bought " + equipment.getName() + " for " + priceToPay + " coins");
+                            listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(true));
+                        } else {
+                            // Rollback coins on failure
+                            user.setCoins(userCoins);
+                            user.getEquipment().remove(newMyEquipment);
+                            listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                                    new Exception("Failed to save purchase: " +
+                                            (updateTask.getException() != null ? updateTask.getException().getMessage() : "Unknown error"))));
+                        }
+                    });
                 });
             });
         });

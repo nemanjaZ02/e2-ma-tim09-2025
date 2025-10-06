@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
@@ -24,10 +25,10 @@ import dagger.hilt.android.AndroidEntryPoint;
 @AndroidEntryPoint
 public class ShopActivity extends AppCompatActivity {
 
-    // Tab buttons
     private TextView tabPotions;
     private TextView tabClothes;
     private Button btnCloseShop;
+    private TextView tvUserCoins;
 
     // Potions UI
     private ImageView imgPotion1, imgPotion2, imgPotion3, imgPotion4;
@@ -51,13 +52,15 @@ public class ShopActivity extends AppCompatActivity {
     private TextView tvLeatherBootsPrice;
     private Button btnGloves, btnShield, btnBoots;
 
-    // Data
     private ShopViewModel shopViewModel;
     
     @Inject
     EquipmentService equipmentService;
     
     private String currentUserId;
+    
+    // Equipment data storage for purchase operations
+    private List<Equipment> currentEquipmentList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,6 +79,7 @@ public class ShopActivity extends AppCompatActivity {
         tabPotions = findViewById(R.id.tabPotions);
         tabClothes = findViewById(R.id.tabClothes);
         btnCloseShop = findViewById(R.id.btnCloseShop);
+        tvUserCoins = findViewById(R.id.tvUserCoins);
 
         // Potions UI
         imgPotion1 = findViewById(R.id.imgPotion1);
@@ -116,7 +120,40 @@ public class ShopActivity extends AppCompatActivity {
         // Observe equipment data
         shopViewModel.getEquipmentList().observe(this, equipmentList -> {
             if (equipmentList != null) {
+                this.currentEquipmentList = equipmentList;
                 updateEquipmentDisplay(equipmentList);
+            }
+        });
+        
+        // Observe purchase results
+        shopViewModel.getPurchaseResult().observe(this, purchaseSuccess -> {
+            if (purchaseSuccess != null) {
+                // Purchase result is handled by the message observer
+            }
+        });
+        
+        // Observe purchase messages
+        shopViewModel.getPurchaseMessage().observe(this, message -> {
+            if (message != null) {
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+            }
+        });
+        
+        // Observe loading state
+        shopViewModel.getIsLoading().observe(this, isLoading -> {
+            // You can show/hide a loading indicator here if needed
+            if (isLoading != null && isLoading) {
+                // Show loading state
+            } else {
+                // Hide loading state
+            }
+        });
+        
+        // Observe user coins balance
+        shopViewModel.getUserCoins().observe(this, coins -> {
+            if (coins != null) {
+                System.out.println("User coins updated: " + coins);
+                tvUserCoins.setText(String.valueOf(coins));
             }
         });
     }
@@ -134,18 +171,54 @@ public class ShopActivity extends AppCompatActivity {
         tabClothes.setOnClickListener(v -> switchToClothes());
         btnCloseShop.setOnClickListener(v -> finish());
 
-        // Buy buttons (no purchase logic for now)
-        btnPotion1.setOnClickListener(v -> {});
-        btnPotion2.setOnClickListener(v -> {});
-        btnPotion3.setOnClickListener(v -> {});
-        btnPotion4.setOnClickListener(v -> {});
-        btnGloves.setOnClickListener(v -> {});
-        btnShield.setOnClickListener(v -> {});
-        btnBoots.setOnClickListener(v -> {});
+        // Buy buttons with purchase logic
+        btnPotion1.setOnClickListener(v -> handleEquipmentPurchase(0, "POTION"));
+        btnPotion2.setOnClickListener(v -> handleEquipmentPurchase(1, "POTION"));
+        btnPotion3.setOnClickListener(v -> handleEquipmentPurchase(2, "POTION"));
+        btnPotion4.setOnClickListener(v -> handleEquipmentPurchase(3, "POTION"));
+        btnGloves.setOnClickListener(v -> handleEquipmentPurchase(0, "CLOTHES"));
+        btnShield.setOnClickListener(v -> handleEquipmentPurchase(1, "CLOTHES"));
+        btnBoots.setOnClickListener(v -> handleEquipmentPurchase(2, "CLOTHES"));
     }
 
     private void loadEquipment() {
         shopViewModel.loadEquipment();
+        // Also load user coins when loading equipment
+        if (currentUserId != null) {
+            shopViewModel.loadUserCoins(currentUserId);
+        }
+    }
+    
+    /**
+     * Handle equipment purchase based on index and type
+     * @param index Index of equipment in the filtered list
+     * @param type Equipment type (POTION or CLOTHES)
+     */
+    private void handleEquipmentPurchase(int index, String type) {
+        if (currentUserId == null) {
+            Toast.makeText(this, "User not authenticated", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        if (currentEquipmentList == null) {
+            Toast.makeText(this, "Equipment data not loaded", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Filter equipment by type
+        List<Equipment> filteredEquipment = filterEquipmentByType(currentEquipmentList, type);
+        
+        // Check if we have equipment at the specified index
+        if (index >= 0 && index < filteredEquipment.size()) {
+            Equipment equipment = filteredEquipment.get(index);
+            if (equipment != null) {
+                shopViewModel.buyEquipment(currentUserId, equipment.getId());
+            } else {
+                Toast.makeText(this, "Equipment not available", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(this, "Equipment not available", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void updateEquipmentDisplay(List<Equipment> equipmentList) {
@@ -159,10 +232,8 @@ public class ShopActivity extends AppCompatActivity {
         System.out.println("Potions found: " + potions.size());
         System.out.println("Clothes found: " + clothes.size());
 
-        // Update potions display
         updatePotionsDisplay(potions);
 
-        // Update clothes display
         updateClothesDisplay(clothes);
     }
 
@@ -226,8 +297,8 @@ public class ShopActivity extends AppCompatActivity {
             // Set equipment image based on ID
             setEquipmentImage(imageView, equipment.getId());
             
-            // Calculate and set price using EquipmentService
-            equipmentService.getEquipmentPrice(currentUserId, equipment.getId(), priceTask -> {
+            // Calculate and set price using ViewModel
+            shopViewModel.getEquipmentPrice(currentUserId, equipment.getId(), priceTask -> {
                 if (priceTask.isSuccessful()) {
                     double calculatedPrice = priceTask.getResult();
                     priceView.setText(String.valueOf((int)calculatedPrice));

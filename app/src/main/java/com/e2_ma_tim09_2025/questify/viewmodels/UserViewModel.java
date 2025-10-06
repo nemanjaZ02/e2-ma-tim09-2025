@@ -111,6 +111,16 @@ public class UserViewModel extends ViewModel {
             }
         });
     }
+    
+    /**
+     * Refresh current user data
+     */
+    public void refreshCurrentUser() {
+        String currentUserId = userService.getCurrentUserId();
+        if (currentUserId != null) {
+            fetchUser(currentUserId);
+        }
+    }
 
     public void updateUser(User user) {
         userService.updateUser(user, task -> {
