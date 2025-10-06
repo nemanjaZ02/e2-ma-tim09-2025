@@ -144,31 +144,104 @@
 
             </LinearLayout>
 
-            <!-- Equipment reward (placeholder for future) -->
+            <!-- Equipment reward for killing boss -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="@drawable/card_background"
                 android:padding="16dp"
-                android:visibility="gone">
+                android:layout_marginBottom="16dp">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Equipment you can win:"
+                    android:text="Equipment you can win (if you kill boss):"
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="#5C4033"
                     android:layout_marginBottom="8dp" />
 
+                <!-- Clothes section -->
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Equipment rewards coming soon..."
-                    android:textSize="14sp"
+                    android:text="Clothes (95% chance):"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
                     android:textColor="#8B4513"
-                    android:textStyle="italic" />
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewKillBossClothes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Weapons section -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Weapons (5% chance):"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#8B4513"
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewKillBossWeapons"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
+
+            </LinearLayout>
+
+            <!-- Equipment reward for weakening boss -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/card_background"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Equipment you can win (if you weaken boss enough):"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#5C4033"
+                    android:layout_marginBottom="8dp" />
+
+                <!-- Clothes section -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Clothes (45% chance):"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#8B4513"
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewWeakenBossClothes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp" />
+
+                <!-- Weapons section -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Weapons (2.5% chance):"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#8B4513"
+                    android:layout_marginBottom="8dp" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerViewWeakenBossWeapons"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
 
             </LinearLayout>
 
