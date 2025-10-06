@@ -52,7 +52,28 @@ public class SpecialTasksAdapter extends RecyclerView.Adapter<SpecialTasksAdapte
 
     public void setSpecialTasks(List<SpecialTask> specialTasks) {
         this.specialTasks = specialTasks != null ? specialTasks : new ArrayList<>();
+        // Sortiraj taskove - INACTIVE na dno
+        sortTasks();
         notifyDataSetChanged();
+    }
+    
+    private void sortTasks() {
+        if (specialTasks == null) return;
+        
+        specialTasks.sort((task1, task2) -> {
+            // INACTIVE taskovi idu na dno
+            boolean task1Inactive = task1.getStatus().toString().equals("INACTIVE");
+            boolean task2Inactive = task2.getStatus().toString().equals("INACTIVE");
+            
+            if (task1Inactive && !task2Inactive) {
+                return 1; // task1 ide na dno
+            } else if (!task1Inactive && task2Inactive) {
+                return -1; // task2 ide na dno
+            } else {
+                // Ako su oba INACTIVE ili oba nisu INACTIVE, sortiraj po tipu
+                return task1.getTaskType().toString().compareTo(task2.getTaskType().toString());
+            }
+        });
     }
 
     static class SpecialTaskViewHolder extends RecyclerView.ViewHolder {
@@ -158,6 +179,7 @@ public class SpecialTasksAdapter extends RecyclerView.Adapter<SpecialTasksAdapte
                     return "Complete this special task";
             }
         }
+
 
         private long calculateTimeRemaining(SpecialMission specialMission) {
             long currentTime = System.currentTimeMillis();

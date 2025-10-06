@@ -9,16 +9,19 @@ public class SpecialMission {
     private long endTime; // 2 nedelje od startTime
     private int totalDamageDealt;
     private boolean rewardsDistributed;
+    private SpecialBoss boss; // Boss je direktno u misiji
+    private int missionNumber; // Broj misije (1, 2, 3...)
 
     public SpecialMission() {}
 
     public SpecialMission(String allianceId) {
         this.allianceId = allianceId;
-        this.status = SpecialMissionStatus.ACTIVE;
-        this.startTime = System.currentTimeMillis();
-        this.endTime = startTime + (14 * 24 * 60 * 60 * 1000L); // 2 nedelje
+        this.status = SpecialMissionStatus.INACTIVE; // Neaktivna na početku
+        this.startTime = 0; // Nije pokrenuta
+        this.endTime = 0; // Nije pokrenuta
         this.totalDamageDealt = 0;
         this.rewardsDistributed = false;
+        this.missionNumber = 0; // Početni broj - nije pokrenuta
     }
 
     public String getAllianceId() {
@@ -83,5 +86,45 @@ public class SpecialMission {
 
     public void addDamage(int damage) {
         this.totalDamageDealt += damage;
+    }
+    
+    // Boss getter i setter
+    public SpecialBoss getBoss() {
+        return boss;
+    }
+    
+    public void setBoss(SpecialBoss boss) {
+        this.boss = boss;
+    }
+    
+    // Convenience metode za boss
+    public boolean isBossDefeated() {
+        return boss != null && boss.isDefeated();
+    }
+    
+    public int getBossCurrentHealth() {
+        return boss != null ? boss.getCurrentHealth() : 0;
+    }
+    
+    public int getBossMaxHealth() {
+        return boss != null ? boss.getMaxHealth() : 0;
+    }
+    
+    public double getBossHealthPercentage() {
+        return boss != null ? boss.getHealthPercentage() : 0.0;
+    }
+    
+    public void dealDamageToBoss(int damage) {
+        if (boss != null) {
+            boss.takeDamage(damage);
+        }
+    }
+    
+    public int getMissionNumber() {
+        return missionNumber;
+    }
+    
+    public void setMissionNumber(int missionNumber) {
+        this.missionNumber = missionNumber;
     }
 }

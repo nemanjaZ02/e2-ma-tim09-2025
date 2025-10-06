@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginStart="8dp"
+    android:layout_marginEnd="8dp"
+    android:layout_marginTop="4dp"
+    android:layout_marginBottom="4dp"
+    card_view:cardCornerRadius="8dp"
+    card_view:cardElevation="2dp"
+    card_view:cardBackgroundColor="#F5DEB3">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical">
+
+        <!-- Equipment Icon -->
+        <ImageView
+            android:id="@+id/ivEquipmentIcon"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_equipment_default"
+            android:contentDescription="Equipment icon"
+            android:layout_marginEnd="12dp" />
+
+        <!-- Equipment Info -->
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvEquipmentName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Equipment Name"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#5C4033" />
+
+        </LinearLayout>
+
+        <!-- Chance percentage -->
+        <TextView
+            android:id="@+id/tvChance"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="95%"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#5C4033"
+            android:background="@drawable/status_background"
+            android:padding="4dp" />
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>

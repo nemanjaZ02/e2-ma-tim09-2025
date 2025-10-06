@@ -173,4 +173,48 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginBottom="32dp" />
 
+    <!-- Equipment Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnEquipment"
+        android:layout_width="48dp"
+        android:layout_height="60dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="80dp"
+        android:backgroundTint="#5C4033"
+        app:cornerRadius="30dp"
+        app:elevation="8dp"
+        app:icon="@drawable/ic_sword"
+        app:iconTint="#D2B48C"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        style="@style/Widget.MaterialComponents.Button.Icon" />
+
+    <!-- Rewards Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnRewards"
+        android:layout_width="48dp"
+        android:layout_height="60dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="16dp"
+        android:backgroundTint="#5C4033"
+        app:cornerRadius="30dp"
+        app:elevation="8dp"
+        app:icon="@drawable/ic_gift"
+        app:iconTint="#D2B48C"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/btnEquipment"
+        app:layout_constraintEnd_toEndOf="parent"
+        style="@style/Widget.MaterialComponents.Button.Icon" />
+
+    <!-- Rewards Overlay -->
+    <include
+        android:id="@+id/overlayRewards"
+        layout="@layout/overlay_rewards" />
+
+    <!-- Failure Overlay -->
+    <include
+        android:id="@+id/overlayFailure"
+        layout="@layout/overlay_failure" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

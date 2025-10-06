@@ -42,6 +42,9 @@ public class SpecialTasksMainActivity extends AppCompatActivity {
         bossButton = findViewById(R.id.boss_button);
 
         replaceFragment(new SpecialTasksListFragment());
+        
+        // Load special tasks to initialize alliance data
+        specialTasksViewModel.loadSpecialTasks();
 
         specialTasksTitle.setOnClickListener(v -> {
             PopupMenu popup = new PopupMenu(SpecialTasksMainActivity.this, v);

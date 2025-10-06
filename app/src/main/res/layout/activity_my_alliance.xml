@@ -112,6 +112,102 @@
 
     </LinearLayout>
 
+    <!-- Special Mission Progress Section -->
+    <LinearLayout
+        android:id="@+id/specialMissionProgressSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/card_background"
+        android:padding="16dp"
+        android:layout_marginBottom="16dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Special Mission Progress"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#5C4033"
+            android:gravity="center"
+            android:layout_marginBottom="12dp" />
+
+        <!-- Boss Health Bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp">
+
+            <TextView
+                android:id="@+id/textViewBossHealth"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Boss Health: 1000/1000"
+                android:textSize="14sp"
+                android:textColor="#8B4513"
+                android:gravity="center"
+                android:layout_marginBottom="4dp" />
+
+            <ProgressBar
+                android:id="@+id/progressBarBossHealth"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="20dp"
+                android:max="100"
+                android:progress="100"
+                android:progressTint="#4CAF50" />
+
+        </LinearLayout>
+
+        <!-- Mission Info -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <TextView
+                android:id="@+id/textViewMissionNumber"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Mission #1"
+                android:textSize="12sp"
+                android:textColor="#8B4513"
+                android:gravity="start" />
+
+            <TextView
+                android:id="@+id/textViewTimeRemaining"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Time: 13d 23h 59m"
+                android:textSize="12sp"
+                android:textColor="#8B4513"
+                android:gravity="end" />
+
+        </LinearLayout>
+
+        <!-- Members Progress -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Members Progress"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#5C4033"
+            android:layout_marginBottom="8dp" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerViewMembersProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxHeight="200dp" />
+
+    </LinearLayout>
+
     <!-- Members Section -->
     <TextView
         android:layout_width="match_parent"

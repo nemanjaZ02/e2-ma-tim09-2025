@@ -32,10 +32,14 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class SpecialTasksListFragment extends Fragment {
 
     private SpecialTasksViewModel viewModel;
-    private RecyclerView recyclerView;
+    private RecyclerView recyclerViewMyAlliance;
+    private RecyclerView recyclerViewMemberAlliance;
     private ProgressBar progressBar;
     private TextView noTasksText;
-    private SpecialTasksAdapter adapter;
+    private TextView myAllianceTitle;
+    private TextView memberAllianceTitle;
+    private SpecialTasksAdapter myAllianceAdapter;
+    private SpecialTasksAdapter memberAllianceAdapter;
     private Handler timeUpdateHandler;
     private Runnable timeUpdateRunnable;
 
@@ -52,32 +56,56 @@ public class SpecialTasksListFragment extends Fragment {
     }
 
     private void initViews(View view) {
-        recyclerView = view.findViewById(R.id.recyclerViewSpecialTasks);
+        recyclerViewMyAlliance = view.findViewById(R.id.recyclerViewMyAllianceTasks);
+        recyclerViewMemberAlliance = view.findViewById(R.id.recyclerViewMemberAllianceTasks);
         progressBar = view.findViewById(R.id.progressBar);
         noTasksText = view.findViewById(R.id.textViewNoTasks);
+        myAllianceTitle = view.findViewById(R.id.textViewMyAllianceTitle);
+        memberAllianceTitle = view.findViewById(R.id.textViewMemberAllianceTitle);
     }
 
     private void setupRecyclerView() {
-        adapter = new SpecialTasksAdapter(new ArrayList<>());
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerView.setAdapter(adapter);
+        // My Alliance RecyclerView
+        myAllianceAdapter = new SpecialTasksAdapter(new ArrayList<>());
+        recyclerViewMyAlliance.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerViewMyAlliance.setAdapter(myAllianceAdapter);
+        
+        // Member Alliance RecyclerView
+        memberAllianceAdapter = new SpecialTasksAdapter(new ArrayList<>());
+        recyclerViewMemberAlliance.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerViewMemberAlliance.setAdapter(memberAllianceAdapter);
     }
 
     private void setupViewModel() {
         viewModel = new ViewModelProvider(this).get(SpecialTasksViewModel.class);
         
-        // Observe special tasks
-        viewModel.getSpecialTasks().observe(getViewLifecycleOwner(), tasks -> {
+        // Observe My Alliance tasks
+        viewModel.getMyAllianceTasks().observe(getViewLifecycleOwner(), tasks -> {
             if (tasks != null) {
-                adapter.setSpecialTasks(tasks);
-                updateUI(tasks);
+                myAllianceAdapter.setSpecialTasks(tasks);
+                updateMyAllianceUI(tasks);
             }
         });
         
-        // Observe special mission
-        viewModel.getSpecialMission().observe(getViewLifecycleOwner(), mission -> {
+        // Observe Member Alliance tasks
+        viewModel.getMemberAllianceTasks().observe(getViewLifecycleOwner(), tasks -> {
+            if (tasks != null) {
+                memberAllianceAdapter.setSpecialTasks(tasks);
+                updateMemberAllianceUI(tasks);
+            }
+        });
+        
+        // Observe My Alliance special mission
+        viewModel.getMyAllianceSpecialMission().observe(getViewLifecycleOwner(), mission -> {
             if (mission != null) {
-                adapter.setSpecialMission(mission);
+                myAllianceAdapter.setSpecialMission(mission);
+            }
+        });
+        
+        // Observe Member Alliance special mission
+        viewModel.getMemberAllianceSpecialMission().observe(getViewLifecycleOwner(), mission -> {
+            if (mission != null) {
+                memberAllianceAdapter.setSpecialMission(mission);
             }
         });
         
@@ -97,18 +125,39 @@ public class SpecialTasksListFragment extends Fragment {
         // Observe current user and load special tasks when user is loaded
         viewModel.getCurrentUser().observe(getViewLifecycleOwner(), user -> {
             if (user != null) {
-                viewModel.loadSpecialTasks();
+                viewModel.loadAllSpecialTasks();
             }
         });
     }
 
+    private void updateMyAllianceUI(List<SpecialTask> tasks) {
+        if (tasks.isEmpty()) {
+            recyclerViewMyAlliance.setVisibility(View.GONE);
+            myAllianceTitle.setVisibility(View.GONE);
+        } else {
+            recyclerViewMyAlliance.setVisibility(View.VISIBLE);
+            myAllianceTitle.setVisibility(View.VISIBLE);
+        }
+    }
+    
+    private void updateMemberAllianceUI(List<SpecialTask> tasks) {
+        if (tasks.isEmpty()) {
+            recyclerViewMemberAlliance.setVisibility(View.GONE);
+            memberAllianceTitle.setVisibility(View.GONE);
+        } else {
+            recyclerViewMemberAlliance.setVisibility(View.VISIBLE);
+            memberAllianceTitle.setVisibility(View.VISIBLE);
+        }
+    }
+    
     private void updateUI(List<SpecialTask> tasks) {
         if (tasks.isEmpty()) {
-            recyclerView.setVisibility(View.GONE);
+            recyclerViewMyAlliance.setVisibility(View.GONE);
+            recyclerViewMemberAlliance.setVisibility(View.GONE);
+            myAllianceTitle.setVisibility(View.GONE);
+            memberAllianceTitle.setVisibility(View.GONE);
             noTasksText.setVisibility(View.VISIBLE);
-            noTasksText.setText("No special tasks available.\nJoin an alliance and wait for a special mission to start!");
         } else {
-            recyclerView.setVisibility(View.VISIBLE);
             noTasksText.setVisibility(View.GONE);
         }
     }
@@ -118,9 +167,12 @@ public class SpecialTasksListFragment extends Fragment {
         timeUpdateRunnable = new Runnable() {
             @Override
             public void run() {
-                // Ažuriraj adapter da refreshuje vreme
-                if (adapter != null) {
-                    adapter.notifyDataSetChanged();
+                // Ažuriraj adaptere da refreshuju vreme
+                if (myAllianceAdapter != null) {
+                    myAllianceAdapter.notifyDataSetChanged();
+                }
+                if (memberAllianceAdapter != null) {
+                    memberAllianceAdapter.notifyDataSetChanged();
                 }
                 // Ponovi za 30 sekundi
                 timeUpdateHandler.postDelayed(this, 30000); // 30 sekundi

@@ -7,7 +7,9 @@ import androidx.annotation.NonNull;
 import com.e2_ma_tim09_2025.questify.models.Boss;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.models.MyEquipment;
+import com.e2_ma_tim09_2025.questify.models.Equipment;
 import com.e2_ma_tim09_2025.questify.models.enums.BossStatus;
+import com.e2_ma_tim09_2025.questify.models.enums.EquipmentType;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskPriority;
 import com.e2_ma_tim09_2025.questify.repositories.BossRepository;
@@ -443,5 +445,38 @@ public class UserService {
         userRepository.getUserActivatedEquipment(userId, listener);
     }
     
+    /**
+     * Add equipment to user's inventory
+     * Business logic: Adds new equipment to user's equipment list
+     */
+    public void addEquipmentToUser(String userId, Equipment equipment, OnCompleteListener<Void> listener) {
+        getUser(userId, task -> {
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                User user = task.getResult().toObject(User.class);
+                if (user != null) {
+                    // Create MyEquipment from Equipment
+                    MyEquipment myEquipment = new MyEquipment();
+                    myEquipment.setId(equipment.getId());
+                    myEquipment.setEquipmentId(equipment.getId());
+                    myEquipment.setLeftAmount(equipment.getLasting() == 3 ? -1 : equipment.getLasting()); // -1 for permanent
+                    myEquipment.setTimesUpgraded(0);
+                    myEquipment.setActivated(false);
+                    
+                    // Add to user's equipment list
+                    if (user.getEquipment() == null) {
+                        user.setEquipment(new ArrayList<>());
+                    }
+                    user.getEquipment().add(myEquipment);
+                    
+                    // Update user in database
+                    updateUser(user, listener);
+                } else {
+                    listener.onComplete(Tasks.forException(new Exception("User not found")));
+                }
+            } else {
+                listener.onComplete(Tasks.forException(new Exception("Failed to get user")));
+            }
+        });
+    }
 }
 

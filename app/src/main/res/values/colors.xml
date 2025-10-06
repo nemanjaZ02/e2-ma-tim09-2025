@@ -3,4 +3,8 @@
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="brown_dark">#3E2723</color>
+    <color name="primary">#5C4033</color>
+    <color name="text_primary">#FF000000</color>
+    <color name="text_secondary">#FF666666</color>
+    <color name="gold">#FFD700</color>
 </resources>

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#D2B48C"
+    android:padding="16dp">
+
+    <!-- Header -->
+    <LinearLayout
+        android:id="@+id/layoutHeader"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:background="@drawable/card_background"
+        android:padding="16dp"
+        android:layout_marginBottom="16dp"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Activated Equipment"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#5C4033"
+            android:gravity="center" />
+
+        <ImageButton
+            android:id="@+id/btnClose"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/ic_close"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Close" />
+
+    </LinearLayout>
+
+    <!-- Equipment List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewActivatedEquipment"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/card_background"
+        android:padding="8dp"
+        android:clipToPadding="false"
+        app:layout_constraintTop_toBottomOf="@id/layoutHeader"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- No Equipment Message -->
+    <TextView
+        android:id="@+id/tvNoEquipment"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="No equipment activated"
+        android:textSize="16sp"
+        android:textColor="#8B4513"
+        android:gravity="center"
+        android:background="@drawable/card_background"
+        android:padding="16dp"
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="@id/recyclerViewActivatedEquipment"
+        app:layout_constraintBottom_toBottomOf="@id/recyclerViewActivatedEquipment"
+        app:layout_constraintStart_toStartOf="@id/recyclerViewActivatedEquipment"
+        app:layout_constraintEnd_toEndOf="@id/recyclerViewActivatedEquipment" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
