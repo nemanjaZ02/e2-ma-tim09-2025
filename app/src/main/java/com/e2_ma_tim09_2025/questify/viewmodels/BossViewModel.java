@@ -221,7 +221,6 @@ public class BossViewModel extends ViewModel {
         } else if(currentHealthValue != null && currentHealthValue > (maxHealth / 2) && currentHealthValue <= maxHealth) {
             // Not weakened enough: no reward, no equipment
             reward = 0;
-            rewardMessage.postValue("Boss not weakened enough - no equipment reward");
             lastRewardedEquipment.postValue(null);
 
             Boss currentBoss = boss.getValue();
@@ -254,7 +253,6 @@ public class BossViewModel extends ViewModel {
                     Equipment equipment = task.getResult();
                     userService.addEquipmentToUser(userId, equipment, addTask -> {
                         if (addTask.isSuccessful()) {
-                            rewardMessage.postValue("You received: " + equipment.getName() + " (Clothes)");
                             lastRewardedEquipment.postValue(equipment);
                             addToRewardedEquipment(equipment);
                         }
@@ -268,7 +266,6 @@ public class BossViewModel extends ViewModel {
                     Equipment equipment = task.getResult();
                     userService.addEquipmentToUser(userId, equipment, addTask -> {
                         if (addTask.isSuccessful()) {
-                            rewardMessage.postValue("You received: " + equipment.getName() + " (Weapon)");
                             lastRewardedEquipment.postValue(equipment);
                             addToRewardedEquipment(equipment);
                         }
@@ -277,7 +274,6 @@ public class BossViewModel extends ViewModel {
             });
         } else {
             // No equipment reward
-            rewardMessage.postValue("No equipment reward this time");
             lastRewardedEquipment.postValue(null);
         }
     }

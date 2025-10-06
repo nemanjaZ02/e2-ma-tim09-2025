@@ -89,6 +89,14 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
     private TextView tvNoEquipment;
     private MaterialButton btnContinue;
     private int coinsEarned = 0;
+    
+    // Failure overlay
+    private View overlayFailure;
+    private TextView tvFailureTitle;
+    private TextView tvFailureMessage;
+    private LinearLayout layoutCoinsEarned;
+    private TextView tvCoinsEarned;
+    private MaterialButton btnFailureContinue;
 
     private final Runnable bossAttackRunnable = new Runnable() {
         @Override
@@ -139,6 +147,20 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
             hideRewardsOverlay();
             navigateToTasksMain();
         });
+        
+        // Initialize failure overlay
+        overlayFailure = findViewById(R.id.overlayFailure);
+        tvFailureTitle = overlayFailure.findViewById(R.id.tvFailureTitle);
+        tvFailureMessage = overlayFailure.findViewById(R.id.tvFailureMessage);
+        layoutCoinsEarned = overlayFailure.findViewById(R.id.layoutCoinsEarned);
+        tvCoinsEarned = overlayFailure.findViewById(R.id.tvCoinsEarned);
+        btnFailureContinue = overlayFailure.findViewById(R.id.btnContinue);
+        
+        // Setup failure continue button
+        btnFailureContinue.setOnClickListener(v -> {
+            hideFailureOverlay();
+            navigateToTasksMain();
+        });
 
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -154,12 +176,7 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
             }
         });
 
-        // Observe equipment reward results
-        bossViewModel.getRewardMessage().observe(this, message -> {
-            if (message != null) {
-                showRewardMessage(message);
-            }
-        });
+        // Equipment reward results are now handled in the rewards overlay
         
         // Observe rewarded equipment
         bossViewModel.getRewardedEquipment().observe(this, equipmentList -> {
@@ -478,7 +495,12 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
             if (!isOpen) {
                 playChestAnimation(false);
             } else {
-                showRewardsOverlay();
+                // Check if there are any rewards
+                if (coinsEarned > 0) {
+                    showRewardsOverlay();
+                } else {
+                    showFailureOverlay();
+                }
             }
         });
         
@@ -509,7 +531,11 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
         if (currentHealth != null && maxHealth > 0) {
             if (currentHealth <= maxHealth / 2) {
                 showChest();
-            } 
+            } else {
+                // Boss above 50% health - show failure immediately
+                coinsEarned = 0;
+                showFailureOverlay();
+            }
         } else {
             navigateToTasksMain();
         }
@@ -654,25 +680,9 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
         }
     }
 
-    private void showRewardMessage(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-        Log.d("BossMainActivity", "Reward message: " + message);
-    }
     
     private void showRewardsOverlay() {
-        // Calculate coins earned based on boss health
-        Integer currentHealth = bossViewModel.getCurrentHealth().getValue();
-        Integer maxHealth = bossViewModel.getMaxHealth();
-        
-        if (currentHealth != null && maxHealth > 0) {
-            if (currentHealth <= 0) {
-                coinsEarned = bossViewModel.getCoinsDrop();
-            } else if (currentHealth <= maxHealth / 2) {
-                coinsEarned = bossViewModel.getCoinsDrop() / 2;
-            } else {
-                coinsEarned = 0;
-            }
-        }
+        // coinsEarned is already set in showChest() method
         
         // Update coins display
         tvCoinsReward.setText(coinsEarned + " coins");
@@ -683,6 +693,15 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
     
     private void hideRewardsOverlay() {
         overlayRewards.setVisibility(View.GONE);
+    }
+    
+    private void showFailureOverlay() {
+        // Show failure overlay
+        overlayFailure.setVisibility(View.VISIBLE);
+    }
+    
+    private void hideFailureOverlay() {
+        overlayFailure.setVisibility(View.GONE);
     }
     
     private void updateRewardsOverlay(List<Equipment> equipmentList) {

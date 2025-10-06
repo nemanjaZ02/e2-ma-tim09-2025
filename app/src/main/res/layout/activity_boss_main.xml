@@ -212,4 +212,9 @@
         android:id="@+id/overlayRewards"
         layout="@layout/overlay_rewards" />
 
+    <!-- Failure Overlay -->
+    <include
+        android:id="@+id/overlayFailure"
+        layout="@layout/overlay_failure" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>
