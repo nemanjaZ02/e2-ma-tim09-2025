@@ -84,6 +84,7 @@
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:src="@drawable/ic_coin"
+                        app:tint="@color/gold"
                         android:contentDescription="Coins"
                         android:layout_marginEnd="12dp" />
 
@@ -128,6 +129,7 @@
                         android:layout_width="32dp"
                         android:layout_height="32dp"
                         android:src="@drawable/ic_coin"
+                        app:tint="@color/gold"
                         android:contentDescription="Coins"
                         android:layout_marginEnd="12dp" />
 
@@ -216,7 +218,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Clothes (45% chance):"
+                    android:text="Clothes (47.5% chance):"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     android:textColor="#8B4513"

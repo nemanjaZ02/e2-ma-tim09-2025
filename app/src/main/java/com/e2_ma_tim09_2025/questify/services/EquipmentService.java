@@ -5,6 +5,7 @@ import com.e2_ma_tim09_2025.questify.models.Equipment;
 import com.e2_ma_tim09_2025.questify.models.MyEquipment;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.models.enums.BossStatus;
+import com.e2_ma_tim09_2025.questify.models.enums.EquipmentType;
 import com.e2_ma_tim09_2025.questify.repositories.EquipmentRepository;
 import com.e2_ma_tim09_2025.questify.repositories.MyEquipmentRepository;
 import com.e2_ma_tim09_2025.questify.repositories.UserRepository;
@@ -408,6 +409,35 @@ public class EquipmentService {
                     }
                 });
             });
+        });
+    }
+
+    /**
+     * Get random equipment by type
+     * Business logic: Returns random equipment of specified type
+     */
+    public void getRandomEquipmentByType(EquipmentType type, OnCompleteListener<Equipment> listener) {
+        equipmentRepository.getAllEquipment(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                List<Equipment> allEquipment = task.getResult();
+                List<Equipment> filteredEquipment = new ArrayList<>();
+                
+                for (Equipment equipment : allEquipment) {
+                    if (equipment.getType() == type) {
+                        filteredEquipment.add(equipment);
+                    }
+                }
+                
+                if (!filteredEquipment.isEmpty()) {
+                    // Return random equipment
+                    Equipment randomEquipment = filteredEquipment.get((int) (Math.random() * filteredEquipment.size()));
+                    listener.onComplete(Tasks.forResult(randomEquipment));
+                } else {
+                    listener.onComplete(Tasks.forException(new Exception("No equipment of type " + type + " found")));
+                }
+            } else {
+                listener.onComplete(Tasks.forException(new Exception("Failed to get equipment")));
+            }
         });
     }
 

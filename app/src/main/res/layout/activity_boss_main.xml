@@ -207,4 +207,9 @@
         app:layout_constraintEnd_toEndOf="parent"
         style="@style/Widget.MaterialComponents.Button.Icon" />
 
+    <!-- Rewards Overlay -->
+    <include
+        android:id="@+id/overlayRewards"
+        layout="@layout/overlay_rewards" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -7,10 +7,15 @@ import androidx.lifecycle.ViewModel;
 
 import com.e2_ma_tim09_2025.questify.models.Boss;
 import com.e2_ma_tim09_2025.questify.models.User;
+import com.e2_ma_tim09_2025.questify.models.Equipment;
 import com.e2_ma_tim09_2025.questify.models.enums.BossStatus;
+import com.e2_ma_tim09_2025.questify.models.enums.EquipmentType;
 import com.e2_ma_tim09_2025.questify.services.BossService;
 import com.e2_ma_tim09_2025.questify.services.UserService;
+import com.e2_ma_tim09_2025.questify.services.EquipmentService;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 import javax.inject.Inject;
@@ -21,20 +26,25 @@ import dagger.hilt.android.lifecycle.HiltViewModel;
 public class BossViewModel extends ViewModel {
     private final UserService userService;
     private final BossService bossService;
+    private final EquipmentService equipmentService;
     private final MutableLiveData<User> currentUser = new MutableLiveData<>();
     private final MediatorLiveData<Boss> boss = new MediatorLiveData<>();
     private final MediatorLiveData<Integer> currentHealth = new MediatorLiveData<>();
     private final MediatorLiveData<Integer> attacksLeft = new MediatorLiveData<>();
     private final MediatorLiveData<BossStatus> bossStatus = new MediatorLiveData<>();
+    private final MutableLiveData<String> rewardMessage = new MutableLiveData<>();
+    private final MutableLiveData<Equipment> lastRewardedEquipment = new MutableLiveData<>();
+    private final MutableLiveData<List<Equipment>> rewardedEquipment = new MutableLiveData<>();
     private int maxHealth = 0;
     private int coinsDrop = 0;
     private double hitChance = 0.0;
     private boolean staticDataLoaded = false;
 
     @Inject
-    public BossViewModel(BossService bossService, UserService userService) {
+    public BossViewModel(BossService bossService, UserService userService, EquipmentService equipmentService) {
         this.bossService = bossService;
         this.userService = userService;
+        this.equipmentService = equipmentService;
 
         fetchCurrentUser();
 
@@ -177,10 +187,14 @@ public class BossViewModel extends ViewModel {
         if (user == null) return;
 
         int reward = coinsDrop;
-
         Integer currentHealthValue = currentHealth.getValue();
+        String userId = userService.getCurrentUserId();
+
         if (currentHealthValue != null && currentHealthValue <= 0) {
             // Defeated: full reward and respawn with difficulty scaling
+            reward = coinsDrop;
+            giveEquipmentReward(userId, 95.0, 5.0); // 95% clothes, 5% weapons
+            
             Boss currentBoss = boss.getValue();
             if (currentBoss != null) {
                 Boss newBoss = bossService.setNewBoss(currentBoss, true);
@@ -191,9 +205,10 @@ public class BossViewModel extends ViewModel {
                 });
             }
         } else if (currentHealthValue != null && currentHealthValue <= (maxHealth / 2) && currentHealthValue > 0) {
+            // Weakened: half reward and equipment chance
             reward = coinsDrop / 2;
+            giveEquipmentReward(userId, 47.5, 2.5); // 47.5% clothes, 2.5% weapons, 50% nothing
 
-            // Ovo ako nije pobedio bossa da mu da pola nagrada a iskoristio je sve napade
             Boss currentBoss = boss.getValue();
             if (currentBoss != null) {
                 Boss newBoss = bossService.setNewBoss(currentBoss, false);
@@ -203,11 +218,11 @@ public class BossViewModel extends ViewModel {
                     }
                 });
             }
-            // Ovo znaci da niti je pobedio bossa niti mu je spustio health ispod pola (currentHealthValue < maxHealth gledam
-            // jer nakon pobede se currentHealth odma azurira na maxHealth koji je veci od sadasnjeg pa ako je manje od toga
-            // znaci da se nije azuriralo tj nije ga pobedio pa nema nagrade
         } else if(currentHealthValue != null && currentHealthValue > (maxHealth / 2) && currentHealthValue <= maxHealth) {
+            // Not weakened enough: no reward, no equipment
             reward = 0;
+            rewardMessage.postValue("Boss not weakened enough - no equipment reward");
+            lastRewardedEquipment.postValue(null);
 
             Boss currentBoss = boss.getValue();
             if (currentBoss != null) {
@@ -229,6 +244,57 @@ public class BossViewModel extends ViewModel {
         });
     }
 
+    private void giveEquipmentReward(String userId, double clothesChance, double weaponsChance) {
+        double random = Math.random() * 100;
+        
+        if (random <= clothesChance) {
+            // Give clothes
+            equipmentService.getRandomEquipmentByType(EquipmentType.CLOTHES, task -> {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    Equipment equipment = task.getResult();
+                    userService.addEquipmentToUser(userId, equipment, addTask -> {
+                        if (addTask.isSuccessful()) {
+                            rewardMessage.postValue("You received: " + equipment.getName() + " (Clothes)");
+                            lastRewardedEquipment.postValue(equipment);
+                            addToRewardedEquipment(equipment);
+                        }
+                    });
+                }
+            });
+        } else if (random <= clothesChance + weaponsChance) {
+            // Give weapon
+            equipmentService.getRandomEquipmentByType(EquipmentType.WEAPON, task -> {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    Equipment equipment = task.getResult();
+                    userService.addEquipmentToUser(userId, equipment, addTask -> {
+                        if (addTask.isSuccessful()) {
+                            rewardMessage.postValue("You received: " + equipment.getName() + " (Weapon)");
+                            lastRewardedEquipment.postValue(equipment);
+                            addToRewardedEquipment(equipment);
+                        }
+                    });
+                }
+            });
+        } else {
+            // No equipment reward
+            rewardMessage.postValue("No equipment reward this time");
+            lastRewardedEquipment.postValue(null);
+        }
+    }
+
+    private void addToRewardedEquipment(Equipment equipment) {
+        List<Equipment> currentList = rewardedEquipment.getValue();
+        if (currentList == null) {
+            currentList = new ArrayList<>();
+        }
+        currentList.add(equipment);
+        rewardedEquipment.postValue(currentList);
+    }
+    
+    public void clearRewardedEquipment() {
+        rewardedEquipment.postValue(new ArrayList<>());
+    }
+
     public void refreshBoss() {
         User user = currentUser.getValue();
         if (user != null) {
@@ -246,6 +312,18 @@ public class BossViewModel extends ViewModel {
 
     public LiveData<User> getCurrentUserLiveData() {
         return currentUser;
+    }
+
+    public LiveData<String> getRewardMessage() {
+        return rewardMessage;
+    }
+    
+    public LiveData<Equipment> getLastRewardedEquipment() {
+        return lastRewardedEquipment;
+    }
+    
+    public LiveData<List<Equipment>> getRewardedEquipment() {
+        return rewardedEquipment;
     }
 
     public interface OnDamageCompleteListener {

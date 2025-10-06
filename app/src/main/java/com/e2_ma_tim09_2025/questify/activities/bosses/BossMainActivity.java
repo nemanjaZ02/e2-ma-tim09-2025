@@ -14,7 +14,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 import android.widget.VideoView;
+import android.widget.LinearLayout;
+import android.widget.ImageView;
+import android.view.LayoutInflater;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -31,11 +35,13 @@ import com.e2_ma_tim09_2025.questify.fragments.boss.EquipmentSelectionFragment;
 import com.e2_ma_tim09_2025.questify.fragments.boss.PotentialRewardsFragment;
 import com.e2_ma_tim09_2025.questify.models.MyEquipment;
 import com.e2_ma_tim09_2025.questify.models.User;
+import com.e2_ma_tim09_2025.questify.models.Equipment;
 import com.e2_ma_tim09_2025.questify.models.enums.BossStatus;
 import com.e2_ma_tim09_2025.questify.viewmodels.BossViewModel;
 import com.google.android.material.button.MaterialButton;
 
 import java.util.Random;
+import java.util.List;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -73,6 +79,16 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
     // Equipment selection
     private boolean hasShownEquipmentSelection = false;
     private MyEquipment selectedEquipment = null;
+    
+    // Rewards overlay
+    private View overlayRewards;
+    private TextView tvRewardsTitle;
+    private TextView tvCoinsReward;
+    private LinearLayout layoutEquipmentRewards;
+    private LinearLayout layoutEquipmentList;
+    private TextView tvNoEquipment;
+    private MaterialButton btnContinue;
+    private int coinsEarned = 0;
 
     private final Runnable bossAttackRunnable = new Runnable() {
         @Override
@@ -108,6 +124,21 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
         rewardText = findViewById(R.id.rewardText);
         btnEquipment = findViewById(R.id.btnEquipment);
         btnRewards = findViewById(R.id.btnRewards);
+        
+        // Initialize rewards overlay
+        overlayRewards = findViewById(R.id.overlayRewards);
+        tvRewardsTitle = overlayRewards.findViewById(R.id.tvRewardsTitle);
+        tvCoinsReward = overlayRewards.findViewById(R.id.tvCoinsReward);
+        layoutEquipmentRewards = overlayRewards.findViewById(R.id.layoutEquipmentRewards);
+        layoutEquipmentList = overlayRewards.findViewById(R.id.layoutEquipmentList);
+        tvNoEquipment = overlayRewards.findViewById(R.id.tvNoEquipment);
+        btnContinue = overlayRewards.findViewById(R.id.btnContinue);
+        
+        // Setup continue button
+        btnContinue.setOnClickListener(v -> {
+            hideRewardsOverlay();
+            navigateToTasksMain();
+        });
 
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -120,6 +151,20 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
                 ppBar.setMax(currentUser.getPowerPoints());
                 ppBar.setProgress(currentUser.getPowerPoints());
                 ppText.setText(currentUser.getPowerPoints() + " / " + currentUser.getPowerPoints());
+            }
+        });
+
+        // Observe equipment reward results
+        bossViewModel.getRewardMessage().observe(this, message -> {
+            if (message != null) {
+                showRewardMessage(message);
+            }
+        });
+        
+        // Observe rewarded equipment
+        bossViewModel.getRewardedEquipment().observe(this, equipmentList -> {
+            if (equipmentList != null && !equipmentList.isEmpty()) {
+                updateRewardsOverlay(equipmentList);
             }
         });
 
@@ -392,10 +437,13 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
         if (currentHealth != null && maxHealth > 0) {
             if (currentHealth <= 0) {
                 rewardType = "FULL REWARD :)";
+                coinsEarned = bossViewModel.getCoinsDrop();
             } else if (currentHealth <= maxHealth / 2) {
                 rewardType = "HALF REWARD :/";
+                coinsEarned = bossViewModel.getCoinsDrop() / 2;
             } else {
                 rewardType = "NO REWARD :(";
+                coinsEarned = 0;
             }
         }
 
@@ -430,7 +478,7 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
             if (!isOpen) {
                 playChestAnimation(false);
             } else {
-                navigateToTasksMain();
+                showRewardsOverlay();
             }
         });
         
@@ -529,6 +577,9 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
     }
     
     private void startBossBattle() {
+        // Clear previous rewards
+        bossViewModel.clearRewardedEquipment();
+        
         // Show boss UI elements and enable battle
         attackButton.setEnabled(true);
         attackButton.setVisibility(View.VISIBLE);
@@ -600,6 +651,84 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
                     .beginTransaction()
                     .remove(currentFragment)
                     .commit();
+        }
+    }
+
+    private void showRewardMessage(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+        Log.d("BossMainActivity", "Reward message: " + message);
+    }
+    
+    private void showRewardsOverlay() {
+        // Calculate coins earned based on boss health
+        Integer currentHealth = bossViewModel.getCurrentHealth().getValue();
+        Integer maxHealth = bossViewModel.getMaxHealth();
+        
+        if (currentHealth != null && maxHealth > 0) {
+            if (currentHealth <= 0) {
+                coinsEarned = bossViewModel.getCoinsDrop();
+            } else if (currentHealth <= maxHealth / 2) {
+                coinsEarned = bossViewModel.getCoinsDrop() / 2;
+            } else {
+                coinsEarned = 0;
+            }
+        }
+        
+        // Update coins display
+        tvCoinsReward.setText(coinsEarned + " coins");
+        
+        // Show overlay
+        overlayRewards.setVisibility(View.VISIBLE);
+    }
+    
+    private void hideRewardsOverlay() {
+        overlayRewards.setVisibility(View.GONE);
+    }
+    
+    private void updateRewardsOverlay(List<Equipment> equipmentList) {
+        if (equipmentList == null || equipmentList.isEmpty()) {
+            layoutEquipmentRewards.setVisibility(View.GONE);
+            tvNoEquipment.setVisibility(View.VISIBLE);
+            return;
+        }
+        
+        layoutEquipmentRewards.setVisibility(View.VISIBLE);
+        tvNoEquipment.setVisibility(View.GONE);
+        
+        // Clear existing equipment views
+        layoutEquipmentList.removeAllViews();
+        
+        // Add equipment views
+        for (Equipment equipment : equipmentList) {
+            View equipmentView = LayoutInflater.from(this).inflate(R.layout.item_reward_equipment, layoutEquipmentList, false);
+            
+            ImageView ivEquipmentIcon = equipmentView.findViewById(R.id.ivEquipmentIcon);
+            TextView tvEquipmentName = equipmentView.findViewById(R.id.tvEquipmentName);
+            TextView tvEquipmentType = equipmentView.findViewById(R.id.tvEquipmentType);
+            
+            // Set equipment icon
+            setEquipmentIcon(ivEquipmentIcon, equipment.getId());
+            
+            // Set equipment name
+            tvEquipmentName.setText(equipment.getName());
+            
+            // Set equipment type
+            String typeText = equipment.getType().toString();
+            tvEquipmentType.setText(typeText);
+            
+            layoutEquipmentList.addView(equipmentView);
+        }
+    }
+    
+    private void setEquipmentIcon(ImageView imageView, String equipmentId) {
+        String resourceName = equipmentId.toLowerCase();
+        int resourceId = getResources().getIdentifier(resourceName, "drawable", getPackageName());
+        
+        if (resourceId != 0) {
+            imageView.setImageResource(resourceId);
+        } else {
+            // Fallback to default icon
+            imageView.setImageResource(R.drawable.ic_equipment_default);
         }
     }
 }
