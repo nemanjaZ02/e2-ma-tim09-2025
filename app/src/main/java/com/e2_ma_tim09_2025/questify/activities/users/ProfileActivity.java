@@ -79,6 +79,13 @@ public class ProfileActivity extends AppCompatActivity {
 
         viewModel = new ViewModelProvider(this).get(UserViewModel.class);
 
+        // Observe user data from ViewModel
+        viewModel.getUserLiveData().observe(this, user -> {
+            if (user != null) {
+                bindUserData(user);
+            }
+        });
+
         btnChangePassword.setOnClickListener(v -> {
             if (changePasswordContainer.getVisibility() == View.GONE) {
                 changePasswordContainer.setVisibility(View.VISIBLE);
@@ -146,24 +153,16 @@ public class ProfileActivity extends AppCompatActivity {
         loadUserData();
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh user data when returning from other activities (like Shop)
+        loadUserData();
+    }
+
     private void loadUserData() {
-        FirebaseUser currentUser = auth.getCurrentUser();
-        if (currentUser == null) return;
-
-        String uid = currentUser.getUid();
-
-        db.collection("users")
-                .document(uid)
-                .get()
-                .addOnSuccessListener(documentSnapshot -> {
-                    if (documentSnapshot.exists()) {
-                        User user = documentSnapshot.toObject(User.class);
-                        if (user != null) bindUserData(user);
-                    }
-                })
-                .addOnFailureListener(e -> {
-                    // Handle errors
-                });
+        // Use ViewModel to refresh current user data
+        viewModel.refreshCurrentUser();
     }
 
     private void bindUserData(User user) {
