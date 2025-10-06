@@ -21,13 +21,19 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.activities.tasks.TasksMainActivity;
+import com.e2_ma_tim09_2025.questify.fragments.boss.ActivatedEquipmentFragment;
+import com.e2_ma_tim09_2025.questify.fragments.boss.EquipmentSelectionFragment;
+import com.e2_ma_tim09_2025.questify.fragments.boss.PotentialRewardsFragment;
+import com.e2_ma_tim09_2025.questify.models.MyEquipment;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.models.enums.BossStatus;
 import com.e2_ma_tim09_2025.questify.viewmodels.BossViewModel;
+import com.google.android.material.button.MaterialButton;
 
 import java.util.Random;
 
@@ -42,6 +48,8 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
     private TextView healthTextView, ppText, attacksLeftText;
     TextView hitChanceText;
     private TextView rewardText;
+    private MaterialButton btnEquipment;
+    private MaterialButton btnRewards;
     private boolean isPlayingAction = false;
     private Random random = new Random();
     private BossViewModel bossViewModel;
@@ -61,6 +69,10 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
     private boolean isChestActive = false;
     private boolean isChestOpen = false;
     private String rewardType = "";
+    
+    // Equipment selection
+    private boolean hasShownEquipmentSelection = false;
+    private MyEquipment selectedEquipment = null;
 
     private final Runnable bossAttackRunnable = new Runnable() {
         @Override
@@ -94,6 +106,8 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
         hitResultText = findViewById(R.id.hitResultText);
         hitChanceText = findViewById(R.id.hitChanceText);
         rewardText = findViewById(R.id.rewardText);
+        btnEquipment = findViewById(R.id.btnEquipment);
+        btnRewards = findViewById(R.id.btnRewards);
 
         sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -163,12 +177,17 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
             }
             else
             {
-                attackButton.setEnabled(true);
-                healthBar.setVisibility(View.VISIBLE);
-                ppBar.setVisibility(View.VISIBLE);
-                healthTextView.setVisibility(View.VISIBLE);
-                attacksLeftText.setVisibility(View.VISIBLE);
-                ppText.setVisibility(View.VISIBLE);
+                // Show equipment selection before starting battle
+                if (!hasShownEquipmentSelection) {
+                    showEquipmentSelection();
+                } else {
+                    attackButton.setEnabled(true);
+                    healthBar.setVisibility(View.VISIBLE);
+                    ppBar.setVisibility(View.VISIBLE);
+                    healthTextView.setVisibility(View.VISIBLE);
+                    attacksLeftText.setVisibility(View.VISIBLE);
+                    ppText.setVisibility(View.VISIBLE);
+                }
             }
         });
 
@@ -206,6 +225,14 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
                     }
                 });
             }
+        });
+
+        btnEquipment.setOnClickListener(v -> {
+            showActivatedEquipment();
+        });
+
+        btnRewards.setOnClickListener(v -> {
+            showPotentialRewards();
         });
 
         playIdleAnimation();
@@ -445,5 +472,134 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
         intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(intent);
         finish();
+    }
+    
+    private void showEquipmentSelection() {
+        hasShownEquipmentSelection = true;
+        
+        // Hide boss UI elements
+        attackButton.setVisibility(View.GONE);
+        healthBar.setVisibility(View.GONE);
+        ppBar.setVisibility(View.GONE);
+        healthTextView.setVisibility(View.GONE);
+        attacksLeftText.setVisibility(View.GONE);
+        ppText.setVisibility(View.GONE);
+        hitChanceText.setVisibility(View.GONE);
+        
+        // Create and show equipment selection fragment
+        EquipmentSelectionFragment fragment = EquipmentSelectionFragment.newInstance();
+        fragment.setOnEquipmentSelectionCompleteListener(new EquipmentSelectionFragment.OnEquipmentSelectionCompleteListener() {
+            @Override
+            public void onEquipmentSelected(MyEquipment equipment) {
+                selectedEquipment = equipment;
+                hideEquipmentSelection();
+                startBossBattle();
+            }
+
+            @Override
+            public void onEquipmentSkipped() {
+                selectedEquipment = null;
+                hideEquipmentSelection();
+                startBossBattle();
+            }
+
+            @Override
+            public void onFragmentClosed() {
+                // User closed the fragment, go back to previous activity
+                finish();
+            }
+        });
+        
+        // Replace the current content with equipment selection fragment
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(android.R.id.content, fragment)
+                .commit();
+    }
+    
+    private void hideEquipmentSelection() {
+        // Remove the equipment selection fragment
+        Fragment currentFragment = getSupportFragmentManager().findFragmentById(android.R.id.content);
+        if (currentFragment instanceof EquipmentSelectionFragment) {
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .remove(currentFragment)
+                    .commit();
+        }
+    }
+    
+    private void startBossBattle() {
+        // Show boss UI elements and enable battle
+        attackButton.setEnabled(true);
+        attackButton.setVisibility(View.VISIBLE);
+        healthBar.setVisibility(View.VISIBLE);
+        ppBar.setVisibility(View.VISIBLE);
+        healthTextView.setVisibility(View.VISIBLE);
+        attacksLeftText.setVisibility(View.VISIBLE);
+        ppText.setVisibility(View.VISIBLE);
+        hitChanceText.setVisibility(View.VISIBLE);
+        btnEquipment.setVisibility(View.VISIBLE);
+        btnRewards.setVisibility(View.VISIBLE);
+        
+        // Start boss attack timer
+        startBossAttackTimer();
+        
+        // Log selected equipment for debugging
+        if (selectedEquipment != null) {
+            Log.d("BossMainActivity", "Selected equipment: " + selectedEquipment.getEquipmentId() + 
+                  " (Amount left: " + selectedEquipment.getLeftAmount() + ")");
+        } else {
+            Log.d("BossMainActivity", "No equipment selected");
+        }
+    }
+    
+    private void showActivatedEquipment() {
+        // Create and show activated equipment fragment
+        ActivatedEquipmentFragment fragment = ActivatedEquipmentFragment.newInstance();
+        fragment.setOnFragmentClosedListener(() -> {
+            hideActivatedEquipment();
+        });
+        
+        // Replace the current content with activated equipment fragment
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(android.R.id.content, fragment)
+                .commit();
+    }
+    
+    private void hideActivatedEquipment() {
+        // Remove the activated equipment fragment
+        Fragment currentFragment = getSupportFragmentManager().findFragmentById(android.R.id.content);
+        if (currentFragment instanceof ActivatedEquipmentFragment) {
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .remove(currentFragment)
+                    .commit();
+        }
+    }
+    
+    private void showPotentialRewards() {
+        // Create and show potential rewards fragment
+        PotentialRewardsFragment fragment = PotentialRewardsFragment.newInstance();
+        fragment.setOnFragmentClosedListener(() -> {
+            hidePotentialRewards();
+        });
+        
+        // Replace the current content with potential rewards fragment
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(android.R.id.content, fragment)
+                .commit();
+    }
+    
+    private void hidePotentialRewards() {
+        // Remove the potential rewards fragment
+        Fragment currentFragment = getSupportFragmentManager().findFragmentById(android.R.id.content);
+        if (currentFragment instanceof PotentialRewardsFragment) {
+            getSupportFragmentManager()
+                    .beginTransaction()
+                    .remove(currentFragment)
+                    .commit();
+        }
     }
 }
