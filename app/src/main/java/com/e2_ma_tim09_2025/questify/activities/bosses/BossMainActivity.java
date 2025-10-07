@@ -171,6 +171,7 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
             if (user != null) {
                 currentUser = user;
                 ppBar.setMax(currentUser.getPowerPoints());
+                Log.d("USER PP IN BOSS", String.valueOf(currentUser.getPowerPoints()));
                 ppBar.setProgress(currentUser.getPowerPoints());
                 ppText.setText(currentUser.getPowerPoints() + " / " + currentUser.getPowerPoints());
             }
@@ -189,6 +190,15 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
             attacksLeftText.setText("Attacks left: " + (attacks != null ? attacks : 0));
         });
 
+        bossViewModel.getHitChance().observe(this, hitChance -> {
+            System.out.println("DEBUG: UI Hit chance observer triggered - Value: " + hitChance);
+            if (hitChance != null) {
+                String hitChanceTextValue = "Hit chance: " + (int) Math.round(hitChance) + "%";
+                hitChanceText.setText(hitChanceTextValue);
+                System.out.println("DEBUG: UI Hit chance text set to: " + hitChanceTextValue);
+            }
+        });
+
         bossViewModel.getBoss().observe(this, boss -> {
             if (boss != null) {
                 int maxHealth = boss.getMaxHealth();
@@ -200,7 +210,7 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
                     healthTextView.setText(currentHealth + " / " + maxHealth);
                 }
 
-                hitChanceText.setText("Hit chance: " + (int) boss.getHitChance() + "%");
+
             }
         });
 
@@ -454,10 +464,10 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
         if (currentHealth != null && maxHealth > 0) {
             if (currentHealth <= 0) {
                 rewardType = "FULL REWARD :)";
-                coinsEarned = bossViewModel.getCoinsDrop();
+                coinsEarned = bossViewModel.getCoinsDrop().getValue();
             } else if (currentHealth <= maxHealth / 2) {
                 rewardType = "HALF REWARD :/";
-                coinsEarned = bossViewModel.getCoinsDrop() / 2;
+                coinsEarned = bossViewModel.getCoinsDrop().getValue() / 2;
             } else {
                 rewardType = "NO REWARD :(";
                 coinsEarned = 0;
@@ -559,33 +569,11 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
         attacksLeftText.setVisibility(View.GONE);
         ppText.setVisibility(View.GONE);
         hitChanceText.setVisibility(View.GONE);
+        btnEquipment.setVisibility(View.GONE);
+        btnRewards.setVisibility(View.GONE);
         
         // Create and show equipment selection fragment
         EquipmentSelectionFragment fragment = EquipmentSelectionFragment.newInstance();
-        fragment.setOnEquipmentSelectionCompleteListener(new EquipmentSelectionFragment.OnEquipmentSelectionCompleteListener() {
-            @Override
-            public void onEquipmentSelected(MyEquipment equipment) {
-                selectedEquipment = equipment;
-                hideEquipmentSelection();
-                startBossBattle();
-                // pozovem metodu iz boss view modela da se trenutnom korisniku na osnovu aktivne opreme
-                // preracuna pp i ostali atributi
-                // to radim tako sto pozovem servis metodu u boss view modelu
-            }
-
-            @Override
-            public void onEquipmentSkipped() {
-                selectedEquipment = null;
-                hideEquipmentSelection();
-                startBossBattle();
-            }
-
-            @Override
-            public void onFragmentClosed() {
-                // User closed the fragment, go back to previous activity
-                finish();
-            }
-        });
         
         // Replace the current content with equipment selection fragment
         getSupportFragmentManager()
@@ -594,15 +582,33 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
                 .commit();
     }
     
-    private void hideEquipmentSelection() {
+    public void hideEquipmentSelection() {
         // Remove the equipment selection fragment
-        Fragment currentFragment = getSupportFragmentManager().findFragmentById(android.R.id.content);
-        if (currentFragment instanceof EquipmentSelectionFragment) {
+        EquipmentSelectionFragment fragment = (EquipmentSelectionFragment) 
+                getSupportFragmentManager().findFragmentById(android.R.id.content);
+        if (fragment != null) {
             getSupportFragmentManager()
                     .beginTransaction()
-                    .remove(currentFragment)
+                    .remove(fragment)
                     .commit();
         }
+        
+        // Recalculate user stats based on active equipment
+        bossViewModel.recalculateUserStatsWithActiveEquipment();
+        
+        // Show boss UI elements again
+        attackButton.setVisibility(View.VISIBLE);
+        healthBar.setVisibility(View.VISIBLE);
+        ppBar.setVisibility(View.VISIBLE);
+        healthTextView.setVisibility(View.VISIBLE);
+        attacksLeftText.setVisibility(View.VISIBLE);
+        ppText.setVisibility(View.VISIBLE);
+        hitChanceText.setVisibility(View.VISIBLE);
+        btnEquipment.setVisibility(View.VISIBLE);
+        btnRewards.setVisibility(View.VISIBLE);
+        
+        // Start boss battle
+        startBossBattle();
     }
     
     private void startBossBattle() {

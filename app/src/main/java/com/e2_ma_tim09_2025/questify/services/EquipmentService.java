@@ -13,8 +13,11 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Tasks;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -306,7 +309,7 @@ public class EquipmentService {
                         listener.onComplete(Tasks.forException(bossTask.getException()));
                         return;
                     }
-                    
+
                     Boss userBoss = bossTask.getResult();
                     if (userBoss == null) {
                         // If no boss found for this user, cannot purchase
@@ -368,6 +371,162 @@ public class EquipmentService {
             }
         });
     }
+
+    /**
+     * Recalculate user stats based on active equipment
+     * This method handles all calculations and updates user stats
+     */
+    @FunctionalInterface
+    public interface BonusesCallback {
+        void onComplete(List<Double> bonuses);
+    }
+    public void recalculateUserStatsWithActiveEquipment(String userId, BonusesCallback callback) {
+        // Step 1: Get user's activated equipment
+        getUserActivatedEquipment(userId, activatedEquipmentTask -> {
+            if (!activatedEquipmentTask.isSuccessful() || activatedEquipmentTask.getResult() == null) {
+                callback.onComplete(null);
+                return;
+            }
+
+            List<MyEquipment> activatedEquipment = activatedEquipmentTask.getResult();
+
+            if (activatedEquipment.isEmpty()) {
+                // No activated equipment → return zero bonuses
+                callback.onComplete(Arrays.asList(0.0, 0.0, 0.0, 0.0));
+                return;
+            }
+
+            // Step 2: Initialize counters
+            AtomicInteger loadedCount = new AtomicInteger(0);
+            int totalItems = activatedEquipment.size();
+
+            AtomicReference<Double> totalPPBonus = new AtomicReference<>(0.0);
+            AtomicReference<Double> totalSuccessBonus = new AtomicReference<>(0.0);
+            AtomicReference<Double> totalNumberOfAttacksBonus = new AtomicReference<>(0.0);
+            AtomicReference<Double> totalMoneyBonus = new AtomicReference<>(0.0);
+
+            // Step 3: Fetch each equipment and sum bonuses
+            for (MyEquipment myEquipment : activatedEquipment) {
+                equipmentRepository.getEquipmentCallback(myEquipment.getEquipmentId(), eq -> {
+                        if (eq != null && eq.getRefersTo() != null) {
+                            double amount = eq.getReferingAmount(); // assuming this returns double
+                            switch (eq.getRefersTo()) {
+                                case "PP":
+                                    totalPPBonus.updateAndGet(v -> v + amount);
+                                    break;
+                                case "success":
+                                    totalSuccessBonus.updateAndGet(v -> v + amount);
+                                    break;
+                                case "numberOfAttacks":
+                                    totalNumberOfAttacksBonus.updateAndGet(v -> v + amount);
+                                    break;
+                                case "money":
+                                    totalMoneyBonus.updateAndGet(v -> v + amount);
+                                    break;
+                            }
+                        }
+
+                        // Check if all async calls finished
+                        if (loadedCount.incrementAndGet() == totalItems) {
+                            callback.onComplete(Arrays.asList(
+                                    totalPPBonus.get(),
+                                    totalSuccessBonus.get(),
+                                    totalNumberOfAttacksBonus.get(),
+                                    totalMoneyBonus.get()
+                            ));
+                        }
+
+                });
+            }
+        });
+    }
+
+    /**
+     * Damage user's activated equipment after boss fight
+     * Decrements leftAmount for equipment with 1-2 uses, removes if becomes 0
+     */
+    public void damageEquipment(String userId, OnCompleteListener<Void> listener) {
+        System.out.println("DEBUG: damageEquipment called for userId: " + userId);
+        
+        // Get user data
+        userService.getUser(userId, userTask -> {
+            if (!userTask.isSuccessful() || userTask.getResult() == null) {
+                System.out.println("DEBUG: Failed to get user data");
+                listener.onComplete(Tasks.forException(
+                    userTask.getException() != null ? 
+                    userTask.getException() : 
+                    new Exception("Failed to get user data")));
+                return;
+            }
+
+            User user = userTask.getResult().toObject(User.class);
+            if (user == null || user.getEquipment() == null) {
+                System.out.println("DEBUG: User or equipment list is null");
+                listener.onComplete(Tasks.forException(new Exception("User or equipment list not found")));
+                return;
+            }
+
+            System.out.println("DEBUG: User has " + user.getEquipment().size() + " equipment items");
+            
+            // Go through all active equipment for this user
+            List<MyEquipment> equipmentToRemove = new ArrayList<>();
+            boolean equipmentUpdated = false;
+
+            for (MyEquipment equipment : user.getEquipment()) {
+                if (equipment.isActivated()) {
+                    int leftAmount = equipment.getLeftAmount();
+                    System.out.println("DEBUG: Processing active equipment " + equipment.getEquipmentId() + 
+                                     " with leftAmount: " + leftAmount);
+
+                    if (leftAmount == 1 || leftAmount == 2) {
+                        // Decrement leftAmount
+                        equipment.setLeftAmount(leftAmount - 1);
+                        equipmentUpdated = true;
+                        
+                        System.out.println("DEBUG: Decremented " + equipment.getEquipmentId() + 
+                                         " to leftAmount: " + equipment.getLeftAmount());
+
+                        // If after decrement amount is 0, remove that equipment item from user's list
+                        if (equipment.getLeftAmount() == 0) {
+                            equipmentToRemove.add(equipment);
+                            System.out.println("DEBUG: Equipment " + equipment.getEquipmentId() + " exhausted, marking for removal");
+                        }
+                    } else if (leftAmount == 3) {
+                        // Don't decrement
+                        System.out.println("DEBUG: Equipment " + equipment.getEquipmentId() + " has 3 uses, not decrementing");
+                    }
+                }
+            }
+
+            // Remove exhausted equipment
+            if (!equipmentToRemove.isEmpty()) {
+                System.out.println("DEBUG: Removing " + equipmentToRemove.size() + " exhausted equipment items");
+                user.getEquipment().removeAll(equipmentToRemove);
+                equipmentUpdated = true;
+            }
+
+            // Update user if any changes were made
+            if (equipmentUpdated) {
+                System.out.println("DEBUG: Updating user with modified equipment");
+                userService.updateUser(user, updateTask -> {
+                    if (updateTask.isSuccessful()) {
+                        System.out.println("DEBUG: Equipment damage completed successfully");
+                        listener.onComplete(Tasks.forResult(null));
+                    } else {
+                        System.out.println("DEBUG: Failed to update user equipment");
+                        listener.onComplete(Tasks.forException(
+                            updateTask.getException() != null ? 
+                            updateTask.getException() : 
+                            new Exception("Failed to update user equipment")));
+                    }
+                });
+            } else {
+                System.out.println("DEBUG: No equipment changes made");
+                listener.onComplete(Tasks.forResult(null));
+            }
+        });
+    }
+
 
     /**
      * Purchase equipment for user

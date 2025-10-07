@@ -16,16 +16,25 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.adapters.EquipmentRewardAdapter;
-import com.e2_ma_tim09_2025.questify.viewmodels.PotentialRewardsViewModel;
+import com.e2_ma_tim09_2025.questify.models.Equipment;
+import com.e2_ma_tim09_2025.questify.models.enums.EquipmentType;
+import com.e2_ma_tim09_2025.questify.services.EquipmentService;
+import com.e2_ma_tim09_2025.questify.viewmodels.BossViewModel;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
 @AndroidEntryPoint
 public class PotentialRewardsFragment extends Fragment {
 
-    private PotentialRewardsViewModel viewModel;
+    private BossViewModel bossViewModel;
+    
+    @Inject
+    EquipmentService equipmentService;
     private TextView tvKillBossReward;
     private TextView tvWeakenBossReward;
     private ImageButton btnClose;
@@ -55,7 +64,7 @@ public class PotentialRewardsFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        viewModel = new ViewModelProvider(this).get(PotentialRewardsViewModel.class);
+        bossViewModel = new ViewModelProvider(requireActivity()).get(BossViewModel.class);
     }
 
     @Nullable
@@ -71,8 +80,8 @@ public class PotentialRewardsFragment extends Fragment {
         initViews(view);
         setupRecyclerViews();
         setupClickListeners();
-        observeViewModel();
-        loadRewards();
+        observeBossViewModel();
+        loadEquipment();
     }
 
     private void initViews(View view) {
@@ -115,46 +124,54 @@ public class PotentialRewardsFragment extends Fragment {
         });
     }
 
-    private void observeViewModel() {
-        viewModel.getKillBossReward().observe(getViewLifecycleOwner(), reward -> {
-            if (reward != null) {
-                tvKillBossReward.setText(reward + " coins");
-            }
-        });
-
-        viewModel.getWeakenBossReward().observe(getViewLifecycleOwner(), reward -> {
-            if (reward != null) {
-                tvWeakenBossReward.setText(reward + " coins");
-            }
-        });
-        
-        viewModel.getKillBossClothes().observe(getViewLifecycleOwner(), clothes -> {
-            if (clothes != null) {
-                killBossClothesAdapter.updateEquipmentList(clothes);
-            }
-        });
-        
-        viewModel.getKillBossWeapons().observe(getViewLifecycleOwner(), weapons -> {
-            if (weapons != null) {
-                killBossWeaponsAdapter.updateEquipmentList(weapons);
-            }
-        });
-        
-        viewModel.getWeakenBossClothes().observe(getViewLifecycleOwner(), clothes -> {
-            if (clothes != null) {
-                weakenBossClothesAdapter.updateEquipmentList(clothes);
-            }
-        });
-        
-        viewModel.getWeakenBossWeapons().observe(getViewLifecycleOwner(), weapons -> {
-            if (weapons != null) {
-                weakenBossWeaponsAdapter.updateEquipmentList(weapons);
+    private void observeBossViewModel() {
+        // Observe coins drop from BossViewModel
+        bossViewModel.getCoinsDrop().observe(getViewLifecycleOwner(), coinsDrop -> {
+            if (coinsDrop != null) {
+                // Kill boss reward = full coins drop
+                tvKillBossReward.setText("Kill Boss: " + coinsDrop + " coins");
+                
+                // Weaken boss reward = half coins drop
+                int weakenReward = coinsDrop / 2;
+                tvWeakenBossReward.setText("Weaken Boss: " + weakenReward + " coins");
+                
+                System.out.println("DEBUG: PotentialRewards - CoinsDrop: " + coinsDrop + 
+                                 ", KillReward: " + coinsDrop + ", WeakenReward: " + weakenReward);
             }
         });
     }
 
-    private void loadRewards() {
-        viewModel.loadRewards();
+    private void loadEquipment() {
+        // Load equipment for potential rewards
+        equipmentService.getAllEquipment(task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                List<Equipment> equipmentList = task.getResult();
+                
+                // Filter clothes and weapons
+                List<Equipment> clothes = new ArrayList<>();
+                List<Equipment> weapons = new ArrayList<>();
+                
+                for (Equipment equipment : equipmentList) {
+                    if (equipment.getType() == EquipmentType.CLOTHES) {
+                        clothes.add(equipment);
+                    } else if (equipment.getType() == EquipmentType.WEAPON) {
+                        weapons.add(equipment);
+                    }
+                }
+                
+                // Set the equipment lists (same for both kill and weaken scenarios)
+                killBossClothesAdapter.updateEquipmentList(clothes);
+                killBossWeaponsAdapter.updateEquipmentList(weapons);
+                weakenBossClothesAdapter.updateEquipmentList(clothes);
+                weakenBossWeaponsAdapter.updateEquipmentList(weapons);
+            } else {
+                // Set empty lists if equipment loading fails
+                killBossClothesAdapter.updateEquipmentList(new ArrayList<>());
+                killBossWeaponsAdapter.updateEquipmentList(new ArrayList<>());
+                weakenBossClothesAdapter.updateEquipmentList(new ArrayList<>());
+                weakenBossWeaponsAdapter.updateEquipmentList(new ArrayList<>());
+            }
+        });
     }
 
     public void setOnFragmentClosedListener(OnFragmentClosedListener listener) {

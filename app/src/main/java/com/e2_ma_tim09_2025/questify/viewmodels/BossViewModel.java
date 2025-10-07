@@ -1,11 +1,14 @@
 package com.e2_ma_tim09_2025.questify.viewmodels;
 
+import android.util.Log;
+
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.e2_ma_tim09_2025.questify.models.Boss;
+import com.e2_ma_tim09_2025.questify.models.MyEquipment;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.models.Equipment;
 import com.e2_ma_tim09_2025.questify.models.enums.BossStatus;
@@ -35,10 +38,11 @@ public class BossViewModel extends ViewModel {
     private final MutableLiveData<String> rewardMessage = new MutableLiveData<>();
     private final MutableLiveData<Equipment> lastRewardedEquipment = new MutableLiveData<>();
     private final MutableLiveData<List<Equipment>> rewardedEquipment = new MutableLiveData<>();
+    private final MutableLiveData<Integer> coinsDrop = new MutableLiveData<>();
+    private final MutableLiveData<Double> hitChance = new MutableLiveData<>();
     private int maxHealth = 0;
-    private int coinsDrop = 0;
-    private double hitChance = 0.0;
     private boolean staticDataLoaded = false;
+    private boolean equipmentBonusesApplied = false;
 
     @Inject
     public BossViewModel(BossService bossService, UserService userService, EquipmentService equipmentService) {
@@ -62,11 +66,14 @@ public class BossViewModel extends ViewModel {
                 currentHealth.setValue(bossVal.getCurrentHealth());
                 if (!staticDataLoaded
                         || maxHealth != bossVal.getMaxHealth()
-                        || coinsDrop != bossVal.getCoinsDrop()
-                        || hitChance != bossVal.getHitChance()) {
+                        || (!equipmentBonusesApplied && (coinsDrop.getValue() == null || !coinsDrop.getValue().equals(bossVal.getCoinsDrop())))
+                        || (!equipmentBonusesApplied && (hitChance.getValue() == null || !hitChance.getValue().equals(bossVal.getHitChance())))) {
                     maxHealth = bossVal.getMaxHealth();
-                    coinsDrop = bossVal.getCoinsDrop();
-                    hitChance = bossVal.getHitChance();
+                    // Only set coinsDrop and hitChance if equipment bonuses haven't been applied yet
+                    if (!equipmentBonusesApplied) {
+                        coinsDrop.setValue(bossVal.getCoinsDrop());
+                        hitChance.setValue(bossVal.getHitChance());
+                    }
                     staticDataLoaded = true;
                 }
             }
@@ -101,8 +108,50 @@ public class BossViewModel extends ViewModel {
         }
     }
 
-    // metoda koja uzima svu aktivnu opremu i currentUseru povecava atribute na osnovu te opreme
-    // mogu da koristim servis za to!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    /**
+     * Recalculate user stats based on active equipment
+     * This method should be called when equipment selection is closed
+     */
+    public void recalculateUserStatsWithActiveEquipment() {
+        equipmentService.recalculateUserStatsWithActiveEquipment(currentUser.getValue().getId(), bonuses -> {
+            User user = currentUser.getValue();
+            if (user == null || bonuses == null || bonuses.isEmpty()) return;
+
+            int pp = user.getPowerPoints();
+            pp += pp * bonuses.get(0);
+
+            // Create a *new* User instance (so LiveData detects change)
+            User updatedUser = user; // assuming you have a copy constructor
+            updatedUser.setPowerPoints(pp);
+
+            Log.d("USER PP", String.valueOf(updatedUser.getPowerPoints()));
+
+            // Trigger LiveData update
+            currentUser.setValue(updatedUser);
+
+            // Update other LiveData values
+            Double currentHitChance = hitChance.getValue();
+            System.out.println("DEBUG: Before hit chance update - Current: " + currentHitChance + ", Bonus: " + bonuses.get(1));
+            if (currentHitChance != null) {
+                Double newHitChance = currentHitChance + currentHitChance * bonuses.get(1);
+                hitChance.setValue(newHitChance);
+                equipmentBonusesApplied = true; // Mark that equipment bonuses have been applied
+                System.out.println("DEBUG: After hit chance update - New: " + newHitChance);
+            } else {
+                System.out.println("DEBUG: Hit chance is null, cannot update");
+            }
+            Integer currentCoinsDrop = coinsDrop.getValue();
+            System.out.println("DEBUG: Before coinsDrop update - Current: " + currentCoinsDrop + ", Bonus: " + bonuses.get(3));
+            if (currentCoinsDrop != null) {
+                Integer newCoinsDrop = (int) (currentCoinsDrop + currentCoinsDrop * bonuses.get(3));
+                coinsDrop.setValue(newCoinsDrop);
+                System.out.println("DEBUG: After coinsDrop update - New: " + newCoinsDrop);
+            } else {
+                System.out.println("DEBUG: CoinsDrop is null, cannot update");
+            }
+        });
+    }
+
 
     public LiveData<Integer> getCurrentHealth() {
         return currentHealth;
@@ -116,7 +165,7 @@ public class BossViewModel extends ViewModel {
         return maxHealth;
     }
 
-    public int getCoinsDrop() {
+    public LiveData<Integer> getCoinsDrop() {
         return coinsDrop;
     }
 
@@ -124,7 +173,7 @@ public class BossViewModel extends ViewModel {
         return bossStatus;
     }
 
-    public double getHitChance() {
+    public LiveData<Double> getHitChance() {
         return hitChance;
     }
 
@@ -160,9 +209,12 @@ public class BossViewModel extends ViewModel {
 
         Random random = new Random();
         int roll = random.nextInt(100) + 1;
+        
+        Double currentHitChance = hitChance.getValue();
+        System.out.println("DEBUG: Hit chance calculation - Roll: " + roll + ", HitChance: " + currentHitChance);
 
         // Normalize hit chance: treat hitChance as percentage (0-100)
-        if (roll > hitChance) {
+        if (currentHitChance == null || roll > currentHitChance) {
             // Miss: decrement attacks on server side to avoid local desync
             bossService.damageBoss(user.getId(), 0, task -> {
                 if (task.isSuccessful()) {
@@ -189,13 +241,13 @@ public class BossViewModel extends ViewModel {
         User user = currentUser.getValue();
         if (user == null) return;
 
-        int reward = coinsDrop;
+        int reward = coinsDrop.getValue();
         Integer currentHealthValue = currentHealth.getValue();
         String userId = userService.getCurrentUserId();
 
         if (currentHealthValue != null && currentHealthValue <= 0) {
             // Defeated: full reward and respawn with difficulty scaling
-            reward = coinsDrop;
+            reward = coinsDrop.getValue();
             giveEquipmentReward(userId, 95.0, 5.0); // 95% clothes, 5% weapons
             
             Boss currentBoss = boss.getValue();
@@ -209,7 +261,7 @@ public class BossViewModel extends ViewModel {
             }
         } else if (currentHealthValue != null && currentHealthValue <= (maxHealth / 2) && currentHealthValue > 0) {
             // Weakened: half reward and equipment chance
-            reward = coinsDrop / 2;
+            reward = coinsDrop.getValue() / 2;
             giveEquipmentReward(userId, 47.5, 2.5); // 47.5% clothes, 2.5% weapons, 50% nothing
 
             Boss currentBoss = boss.getValue();
@@ -239,9 +291,60 @@ public class BossViewModel extends ViewModel {
 
         user.setCoins(user.getCoins() + reward);
 
+        // Damage activated equipment directly before updating user
+        System.out.println("DEBUG: Starting equipment damage in BossViewModel");
+        List<MyEquipment> equipmentToRemove = new ArrayList<>();
+        boolean equipmentUpdated = false;
+
+        if (user.getEquipment() != null) {
+            for (MyEquipment equipment : user.getEquipment()) {
+                if (equipment.isActivated()) {
+                    int leftAmount = equipment.getLeftAmount();
+                    System.out.println("DEBUG: Processing active equipment " + equipment.getEquipmentId() + 
+                                     " with leftAmount: " + leftAmount);
+
+                    if (leftAmount == 1 || leftAmount == 2) {
+                        // Decrement leftAmount
+                        equipment.setLeftAmount(leftAmount - 1);
+                        equipmentUpdated = true;
+                        
+                        System.out.println("DEBUG: Decremented " + equipment.getEquipmentId() + 
+                                         " to leftAmount: " + equipment.getLeftAmount());
+
+                        // If after decrement amount is 0, remove that equipment item from user's list
+                        if (equipment.getLeftAmount() == 0) {
+                            equipmentToRemove.add(equipment);
+                            System.out.println("DEBUG: Equipment " + equipment.getEquipmentId() + " exhausted, marking for removal");
+                        }
+                    } else if (leftAmount == 3) {
+                        // Don't decrement
+                        System.out.println("DEBUG: Equipment " + equipment.getEquipmentId() + " has 3 uses, not decrementing");
+                    }
+                }
+            }
+        }
+
+        // Remove exhausted equipment
+        if (!equipmentToRemove.isEmpty()) {
+            System.out.println("DEBUG: Removing " + equipmentToRemove.size() + " exhausted equipment items");
+            user.getEquipment().removeAll(equipmentToRemove);
+            equipmentUpdated = true;
+        }
+
+        if (equipmentUpdated) {
+            System.out.println("DEBUG: Equipment damage completed, updating user");
+        } else {
+            System.out.println("DEBUG: No equipment damage needed");
+        }
+
+        // Update user with modified equipment
         userService.updateUser(user, task -> {
             if (task.isSuccessful()) {
                 currentUser.postValue(user);
+                System.out.println("DEBUG: User updated successfully with equipment changes");
+            } else {
+                System.out.println("DEBUG: Failed to update user: " + 
+                                 (task.getException() != null ? task.getException().getMessage() : "Unknown error"));
             }
         });
     }

@@ -59,6 +59,40 @@ public class EquipmentRepository {
                 });
     }
 
+    @FunctionalInterface
+    public interface EquipmentCallback {
+        void onComplete(Equipment e);
+    }
+
+
+    public void getEquipmentCallback(String equipmentId, EquipmentCallback callback) {
+        // Try fetching by document ID first
+        equipmentRef.document(equipmentId)
+                .get()
+                .addOnSuccessListener(document -> {
+                    if (document.exists()) {
+                        Equipment equipment = document.toObject(Equipment.class);
+                        callback.onComplete(equipment);
+                    } else {
+                        // Fallback: query by 'id' field if not found by document ID
+                        equipmentRef.whereEqualTo("id", equipmentId)
+                                .get()
+                                .addOnSuccessListener(querySnapshot -> {
+                                    if (querySnapshot != null && !querySnapshot.isEmpty()) {
+                                        Equipment equipment = querySnapshot
+                                                .getDocuments()
+                                                .get(0)
+                                                .toObject(Equipment.class);
+                                        callback.onComplete(equipment);
+                                    } else {
+                                        callback.onComplete(null);
+                                    }
+                                });
+                    }
+                });
+    }
+
+
     /**
      * Get all equipment
      */
