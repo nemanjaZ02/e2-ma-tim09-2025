@@ -462,20 +462,30 @@ public class SpecialMissionService {
             
             // 4. Prvo dohvati broj NOT_COMPLETED taskova za sve članove, pa tek onda kreiraj taskove
             getNotCompletedTasksCountForAllMembers(alliance.getMemberIds(), (notCompletedCounts) -> {
+                if (!notCompletedCounts.isSuccessful()) {
+                    Log.e("SpecialMissionService", "Failed to get NOT_COMPLETED counts");
+                    listener.onComplete(Tasks.forResult(false));
+                    return;
+                }
+                
                 // 5. Kreiraj taskove za sve članove (kada se aktivira misija)
                 List<SpecialTask> newTasks = createSpecialTasksForAlliance(alliance, mission.getMissionNumber());
                 
                 // 6. Postavi notCompletedTasksBeforeActivation za NO_UNRESOLVED_TASKS taskove
                 Map<String, Integer> counts = notCompletedCounts.getResult();
+                Log.d("SpecialMissionService", "=== SETTING NOT_COMPLETED_TASKS_BEFORE_ACTIVATION ===");
+                Log.d("SpecialMissionService", "Counts map: " + counts);
+                Log.d("SpecialMissionService", "New tasks count: " + newTasks.size());
+                
                 for (SpecialTask specialTask : newTasks) {
                     if (specialTask.getTaskType() == SpecialTaskType.NO_UNRESOLVED_TASKS) {
                         String userId = specialTask.getUserId();
                         int count = counts.getOrDefault(userId, 0);
                         specialTask.setNotCompletedTasksBeforeActivation(count);
-                        Log.d("SpecialMissionService", "=== SETTING NOT_COMPLETED_TASKS_BEFORE_ACTIVATION ===");
                         Log.d("SpecialMissionService", "User: " + userId);
                         Log.d("SpecialMissionService", "Task ID: " + specialTask.getId());
                         Log.d("SpecialMissionService", "NOT_COMPLETED tasks before activation: " + count);
+                        Log.d("SpecialMissionService", "Task set to: " + specialTask.getNotCompletedTasksBeforeActivation());
                     }
                 }
                 
@@ -487,16 +497,56 @@ public class SpecialMissionService {
                         return;
                     }
                     
-                    // 8. Postavi alliance.isMissionStarted = true
-                    updateAllianceMissionStatus(alliance.getId(), true, () -> {
-                        // Pokreni timer za misiju
-                        startMissionTimer(mission.getAllianceId(), mission.getEndTime());
-                        Log.d("SpecialMissionService", "✅ Misija uspešno aktivirana!");
-                        listener.onComplete(Tasks.forResult(true));
+                    // 8. Ažuriraj taskove u bazi sa notCompletedTasksBeforeActivation
+                    updateTasksWithNotCompletedCounts(newTasks, () -> {
+                        // 9. Postavi alliance.isMissionStarted = true
+                        updateAllianceMissionStatus(alliance.getId(), true, () -> {
+                            // Pokreni timer za misiju
+                            startMissionTimer(mission.getAllianceId(), mission.getEndTime());
+                            Log.d("SpecialMissionService", "✅ Misija uspešno aktivirana!");
+                            listener.onComplete(Tasks.forResult(true));
+                        });
                     });
                 });
             });
         });
+    }
+    
+    /**
+     * Ažuriraj taskove u bazi sa notCompletedTasksBeforeActivation
+     */
+    private void updateTasksWithNotCompletedCounts(List<SpecialTask> tasks, Runnable onComplete) {
+        List<SpecialTask> noUnresolvedTasks = new ArrayList<>();
+        for (SpecialTask task : tasks) {
+            if (task.getTaskType() == SpecialTaskType.NO_UNRESOLVED_TASKS) {
+                noUnresolvedTasks.add(task);
+            }
+        }
+        
+        if (noUnresolvedTasks.isEmpty()) {
+            Log.d("SpecialMissionService", "No NO_UNRESOLVED_TASKS tasks to update");
+            onComplete.run();
+            return;
+        }
+        
+        final int[] completedTasks = {0};
+        final int totalTasks = noUnresolvedTasks.size();
+        
+        for (SpecialTask task : noUnresolvedTasks) {
+            specialTaskRepository.updateSpecialTask(task, updateTask -> {
+                if (updateTask.isSuccessful()) {
+                    Log.d("SpecialMissionService", "Updated task " + task.getId() + " with notCompletedTasksBeforeActivation: " + task.getNotCompletedTasksBeforeActivation());
+                } else {
+                    Log.e("SpecialMissionService", "Failed to update task " + task.getId());
+                }
+                
+                completedTasks[0]++;
+                if (completedTasks[0] == totalTasks) {
+                    Log.d("SpecialMissionService", "All NO_UNRESOLVED_TASKS tasks updated in database");
+                    onComplete.run();
+                }
+            });
+        }
     }
     
     /**
@@ -507,19 +557,33 @@ public class SpecialMissionService {
         final int[] completedMembers = {0};
         final int totalMembers = memberIds.size();
         
+        Log.d("SpecialMissionService", "=== GETTING NOT_COMPLETED TASKS FOR ALL MEMBERS ===");
+        Log.d("SpecialMissionService", "Total members: " + totalMembers);
+        Log.d("SpecialMissionService", "Member IDs: " + memberIds);
+        
         if (totalMembers == 0) {
+            Log.d("SpecialMissionService", "No members found, returning empty map");
             listener.onComplete(Tasks.forResult(notCompletedCounts));
             return;
         }
         
         for (String userId : memberIds) {
+            Log.d("SpecialMissionService", "Getting NOT_COMPLETED count for user: " + userId);
             getNotCompletedTasksCount(userId, countTask -> {
-                int count = countTask.getResult();
-                notCompletedCounts.put(userId, count);
-                Log.d("SpecialMissionService", "User " + userId + " has " + count + " NOT_COMPLETED tasks before activation");
+                if (!countTask.isSuccessful()) {
+                    Log.e("SpecialMissionService", "Failed to get count for user: " + userId);
+                    notCompletedCounts.put(userId, 0);
+                } else {
+                    int count = countTask.getResult();
+                    notCompletedCounts.put(userId, count);
+                    Log.d("SpecialMissionService", "User " + userId + " has " + count + " NOT_COMPLETED tasks before activation");
+                }
                 
                 completedMembers[0]++;
+                Log.d("SpecialMissionService", "Completed members: " + completedMembers[0] + "/" + totalMembers);
+                
                 if (completedMembers[0] == totalMembers) {
+                    Log.d("SpecialMissionService", "All members processed. Final counts: " + notCompletedCounts);
                     listener.onComplete(Tasks.forResult(notCompletedCounts));
                 }
             });
@@ -583,26 +647,30 @@ public class SpecialMissionService {
      * Dohvati broj NOT_COMPLETED taskova za korisnika
      */
     private void getNotCompletedTasksCount(String userId, OnCompleteListener<Integer> listener) {
-        try {
-            List<com.e2_ma_tim09_2025.questify.models.Task> userTasks = taskRepository.getTasksByUser(userId);
-            int count = 0;
-            Log.d("SpecialMissionService", "=== GETTING NOT_COMPLETED TASKS COUNT ===");
-            Log.d("SpecialMissionService", "User: " + userId);
-            Log.d("SpecialMissionService", "Total tasks found: " + userTasks.size());
-            
-            for (com.e2_ma_tim09_2025.questify.models.Task userTask : userTasks) {
-                Log.d("SpecialMissionService", "Task: " + userTask.getName() + ", Status: " + userTask.getStatus());
-                if (userTask.getStatus() == TaskStatus.NOT_COMPLETED) {
-                    count++;
-                    Log.d("SpecialMissionService", "NOT_COMPLETED task found: " + userTask.getName());
+        Log.d("SpecialMissionService", "=== GETTING NOT_COMPLETED TASKS COUNT ===");
+        Log.d("SpecialMissionService", "User: " + userId);
+        
+        // Pokreni u novom thread-u da ne blokira UI
+        new Thread(() -> {
+            try {
+                List<com.e2_ma_tim09_2025.questify.models.Task> userTasks = taskRepository.getTasksByUser(userId);
+                int count = 0;
+                Log.d("SpecialMissionService", "Total tasks found: " + userTasks.size());
+                
+                for (com.e2_ma_tim09_2025.questify.models.Task userTask : userTasks) {
+                    Log.d("SpecialMissionService", "Task: " + userTask.getName() + ", Status: " + userTask.getStatus());
+                    if (userTask.getStatus() == TaskStatus.NOT_COMPLETED) {
+                        count++;
+                        Log.d("SpecialMissionService", "NOT_COMPLETED task found: " + userTask.getName());
+                    }
                 }
+                Log.d("SpecialMissionService", "Final count: " + count + " NOT_COMPLETED tasks");
+                listener.onComplete(Tasks.forResult(count));
+            } catch (Exception e) {
+                Log.e("SpecialMissionService", "Failed to get tasks for user: " + userId, e);
+                listener.onComplete(Tasks.forResult(0));
             }
-            Log.d("SpecialMissionService", "Final count: " + count + " NOT_COMPLETED tasks");
-            listener.onComplete(Tasks.forResult(count));
-        } catch (Exception e) {
-            Log.e("SpecialMissionService", "Failed to get tasks for user: " + userId, e);
-            listener.onComplete(Tasks.forResult(0));
-        }
+        }).start();
     }
     
     /**
@@ -666,8 +734,12 @@ public class SpecialMissionService {
         String userId = specialTask.getUserId();
         int beforeActivation = specialTask.getNotCompletedTasksBeforeActivation();
         
-        Log.d("SpecialMissionService", "Checking NO_UNRESOLVED_TASKS for user: " + userId + 
-              ", before activation: " + beforeActivation);
+        Log.d("SpecialMissionService", "=== CHECKING NO_UNRESOLVED_TASKS FOR USER ===");
+        Log.d("SpecialMissionService", "User: " + userId);
+        Log.d("SpecialMissionService", "Task ID: " + specialTask.getId());
+        Log.d("SpecialMissionService", "Before activation: " + beforeActivation);
+        Log.d("SpecialMissionService", "Task status: " + specialTask.getStatus());
+        Log.d("SpecialMissionService", "Task type: " + specialTask.getTaskType());
         
         // Dohvati trenutni broj NOT_COMPLETED taskova
         getNotCompletedTasksCount(userId, countTask -> {
