@@ -1,10 +1,12 @@
 package com.e2_ma_tim09_2025.questify.repositories;
 
 import com.e2_ma_tim09_2025.questify.models.SpecialMission;
+import com.e2_ma_tim09_2025.questify.models.enums.SpecialMissionStatus;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -41,6 +43,12 @@ public class SpecialMissionRepository {
     public void deleteSpecialMission(String allianceId, OnCompleteListener<Void> listener) {
         specialMissionsRef.document(allianceId)
                 .delete()
+                .addOnCompleteListener(listener);
+    }
+
+    public void getAllActiveMissions(OnCompleteListener<QuerySnapshot> listener) {
+        specialMissionsRef.whereEqualTo("status", SpecialMissionStatus.ACTIVE)
+                .get()
                 .addOnCompleteListener(listener);
     }
 }

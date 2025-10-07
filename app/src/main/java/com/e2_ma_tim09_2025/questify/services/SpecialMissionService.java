@@ -7,18 +7,23 @@ import com.e2_ma_tim09_2025.questify.models.Alliance;
 import com.e2_ma_tim09_2025.questify.models.SpecialBoss;
 import com.e2_ma_tim09_2025.questify.models.SpecialMission;
 import com.e2_ma_tim09_2025.questify.models.SpecialTask;
+import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.models.enums.SpecialMissionStatus;
+import com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskStatus;
 import com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskType;
 import com.e2_ma_tim09_2025.questify.repositories.AllianceRepository;
 import com.e2_ma_tim09_2025.questify.repositories.SpecialMissionRepository;
 import com.e2_ma_tim09_2025.questify.repositories.SpecialTaskRepository;
+import com.e2_ma_tim09_2025.questify.repositories.UserRepository;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentSnapshot;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.inject.Inject;
@@ -29,6 +34,7 @@ public class SpecialMissionService {
     private final AllianceRepository allianceRepository;
     private final SpecialMissionRepository specialMissionRepository;
     private final SpecialTaskRepository specialTaskRepository;
+    private final UserRepository userRepository;
     
     // Timer za praćenje završetka misije
     private CountDownTimer missionTimer;
@@ -37,10 +43,12 @@ public class SpecialMissionService {
     public SpecialMissionService(
             AllianceRepository allianceRepository,
             SpecialMissionRepository specialMissionRepository,
-            SpecialTaskRepository specialTaskRepository) {
+            SpecialTaskRepository specialTaskRepository,
+            UserRepository userRepository) {
         this.allianceRepository = allianceRepository;
         this.specialMissionRepository = specialMissionRepository;
         this.specialTaskRepository = specialTaskRepository;
+        this.userRepository = userRepository;
     }
     
     /**
@@ -163,10 +171,7 @@ public class SpecialMissionService {
         SpecialBoss specialBoss = new SpecialBoss(specialMission.getAllianceId(), alliance.getId(), alliance.getMemberIds().size());
         specialMission.setBoss(specialBoss); // Dodaj boss u misiju
 
-        // 3. Kreiraj taskove i za INACTIVE misiju (da korisnici mogu da ih rade)
-        List<SpecialTask> specialTasks = createSpecialTasksForAlliance(alliance, 0);
-
-        // 4. Sačuvaj misiju i taskove u Firebase
+        // 3. Sačuvaj misiju u Firebase (bez taskova - oni se kreiraju kada se aktivira)
         specialMissionRepository.createSpecialMission(specialMission, task -> {
             if (!task.isSuccessful()) {
                 Log.e("SpecialMissionService", "Greška pri čuvanju SpecialMission");
@@ -174,17 +179,8 @@ public class SpecialMissionService {
                 return;
             }
 
-            // Sačuvaj taskove
-            specialTaskRepository.createSpecialTasksForAlliance(specialTasks, task2 -> {
-                if (!task2.isSuccessful()) {
-                    Log.e("SpecialMissionService", "Greška pri čuvanju SpecialTask-ova");
-                    listener.onComplete(Tasks.forResult(false));
-                    return;
-                }
-
-                Log.d("SpecialMissionService", "✅ Specijalna misija uspešno kreirana (neaktivna) sa taskovima!");
-                listener.onComplete(Tasks.forResult(true));
-            });
+            Log.d("SpecialMissionService", "✅ Specijalna misija uspešno kreirana (neaktivna)!");
+            listener.onComplete(Tasks.forResult(true));
         });
     }
 
@@ -313,10 +309,13 @@ public class SpecialMissionService {
                         Log.d("SpecialMissionService", "Mission status updated to DEFEATED");
                         // Označava sve taskove kao INACTIVE i postavi alliance.isMissionStarted = false
                         markAllTasksAsInactive(allianceId, () -> {
-                            updateAllianceMissionStatus(allianceId, false, () -> {
-                                // Zaustavi timer jer je misija završena
-                                stopMissionTimer();
-                                listener.onComplete(Tasks.forResult(true));
+                            // Dodeli bedževe igračima
+                            distributeBadges(allianceId, mission.getMissionNumber(), () -> {
+                                updateAllianceMissionStatus(allianceId, false, () -> {
+                                    // Zaustavi timer jer je misija završena
+                                    stopMissionTimer();
+                                    listener.onComplete(Tasks.forResult(true));
+                                });
                             });
                         });
                     } else {
@@ -332,10 +331,13 @@ public class SpecialMissionService {
                         Log.d("SpecialMissionService", "Mission status updated to EXPIRED");
                         // Označava sve taskove kao INACTIVE i postavi alliance.isMissionStarted = false
                         markAllTasksAsInactive(allianceId, () -> {
-                            updateAllianceMissionStatus(allianceId, false, () -> {
-                                // Zaustavi timer jer je misija završena
-                                stopMissionTimer();
-                                listener.onComplete(Tasks.forResult(true));
+                            // Dodeli bedževe igračima
+                            distributeBadges(allianceId, mission.getMissionNumber(), () -> {
+                                updateAllianceMissionStatus(allianceId, false, () -> {
+                                    // Zaustavi timer jer je misija završena
+                                    stopMissionTimer();
+                                    listener.onComplete(Tasks.forResult(true));
+                                });
                             });
                         });
                     } else {
@@ -445,6 +447,202 @@ public class SpecialMissionService {
                     onComplete.run();
                 }
             } else {
+                onComplete.run();
+            }
+        });
+    }
+    
+    /**
+     * Proveri sve aktivne misije i završi one koje su istekle
+     * Poziva se pri pokretanju aplikacije
+     */
+    public void checkExpiredMissions(OnCompleteListener<Boolean> listener) {
+        Log.d("SpecialMissionService", "=== PROVERAVAM ISTEKLE MISIJE PRI POKRETANJU APLIKACIJE ===");
+        
+        // Dohvati sve aktivne misije
+        specialMissionRepository.getAllActiveMissions(task -> {
+            if (!task.isSuccessful()) {
+                Log.e("SpecialMissionService", "Failed to get active missions");
+                listener.onComplete(Tasks.forResult(false));
+                return;
+            }
+            
+            List<SpecialMission> activeMissions = new ArrayList<>();
+            for (DocumentSnapshot doc : task.getResult()) {
+                SpecialMission mission = doc.toObject(SpecialMission.class);
+                if (mission != null && mission.getStatus() == SpecialMissionStatus.ACTIVE) {
+                    activeMissions.add(mission);
+                }
+            }
+            
+            Log.d("SpecialMissionService", "Found " + activeMissions.size() + " active missions to check");
+            
+            if (activeMissions.isEmpty()) {
+                listener.onComplete(Tasks.forResult(true));
+                return;
+            }
+            
+            // Proveri svaku aktivnu misiju
+            final int[] completedChecks = {0};
+            final int totalMissions = activeMissions.size();
+            final boolean[] hasExpiredMissions = {false};
+            
+            for (SpecialMission mission : activeMissions) {
+                long currentTime = System.currentTimeMillis();
+                long endTime = mission.getEndTime();
+                
+                Log.d("SpecialMissionService", "Checking mission " + mission.getAllianceId() + 
+                      " - Current: " + currentTime + ", End: " + endTime + 
+                      ", Expired: " + (currentTime >= endTime));
+                
+                if (currentTime >= endTime) {
+                    // Misija je istekla - završi je
+                    Log.d("SpecialMissionService", "Mission " + mission.getAllianceId() + " has expired, completing...");
+                    hasExpiredMissions[0] = true;
+                    
+                    checkAndCompleteMission(mission.getAllianceId(), missionCheckTask -> {
+                        completedChecks[0]++;
+                        if (completedChecks[0] == totalMissions) {
+                            Log.d("SpecialMissionService", "All mission checks completed. Had expired missions: " + hasExpiredMissions[0]);
+                            listener.onComplete(Tasks.forResult(true));
+                        }
+                    });
+                } else {
+                    // Misija je još uvek aktivna - pokreni timer
+                    Log.d("SpecialMissionService", "Mission " + mission.getAllianceId() + " is still active, starting timer...");
+                    startMissionTimer(mission.getAllianceId(), mission.getEndTime());
+                    
+                    completedChecks[0]++;
+                    if (completedChecks[0] == totalMissions) {
+                        Log.d("SpecialMissionService", "All mission checks completed. Had expired missions: " + hasExpiredMissions[0]);
+                        listener.onComplete(Tasks.forResult(true));
+                    }
+                }
+            }
+        });
+    }
+    
+    private void distributeBadges(String allianceId, int missionNumber, Runnable onComplete) {
+        Log.d("SpecialMissionService", "=== DISTRIBUTING BADGES ===");
+        Log.d("SpecialMissionService", "Alliance ID: " + allianceId + ", Mission Number: " + missionNumber);
+        
+        // Dohvati sve taskove za ovu misiju
+        specialTaskRepository.getSpecialTasksByAllianceId(allianceId, task -> {
+            if (!task.isSuccessful()) {
+                Log.e("SpecialMissionService", "Failed to get tasks for badge distribution");
+                onComplete.run();
+                return;
+            }
+            
+            // Grupisi taskove po korisniku
+            Map<String, List<SpecialTask>> userTasks = new HashMap<>();
+            for (DocumentSnapshot doc : task.getResult()) {
+                SpecialTask specialTask = doc.toObject(SpecialTask.class);
+                if (specialTask != null && specialTask.getMissionNumber() == missionNumber) {
+                    String userId = specialTask.getUserId();
+                    if (!userTasks.containsKey(userId)) {
+                        userTasks.put(userId, new ArrayList<>());
+                    }
+                    userTasks.get(userId).add(specialTask);
+                }
+            }
+            
+            Log.d("SpecialMissionService", "Found " + userTasks.size() + " users for badge distribution");
+            
+            // Dodeli bedževe svakom korisniku
+            final int[] completedUsers = {0};
+            final int totalUsers = userTasks.size();
+            
+            if (totalUsers == 0) {
+                onComplete.run();
+                return;
+            }
+            
+            for (Map.Entry<String, List<SpecialTask>> entry : userTasks.entrySet()) {
+                String userId = entry.getKey();
+                List<SpecialTask> userTaskList = entry.getValue();
+                
+                // Broji koliko je taskova korisnik završio
+                int completedTasks = 0;
+                for (SpecialTask userTask : userTaskList) {
+                    if (userTask.getStatus() == SpecialTaskStatus.COMPLETED) {
+                        completedTasks++;
+                    }
+                }
+                
+                Log.d("SpecialMissionService", "User " + userId + " completed " + completedTasks + "/6 tasks");
+                
+                // Odredi koji bedž da dodeli
+                String badgeToAdd = getBadgeForCompletedTasks(completedTasks);
+                
+                if (badgeToAdd != null) {
+                    addBadgeToUser(userId, badgeToAdd, () -> {
+                        completedUsers[0]++;
+                        if (completedUsers[0] == totalUsers) {
+                            Log.d("SpecialMissionService", "Badge distribution completed");
+                            onComplete.run();
+                        }
+                    });
+                } else {
+                    Log.d("SpecialMissionService", "User " + userId + " gets no badge (completed: " + completedTasks + ")");
+                    completedUsers[0]++;
+                    if (completedUsers[0] == totalUsers) {
+                        Log.d("SpecialMissionService", "Badge distribution completed");
+                        onComplete.run();
+                    }
+                }
+            }
+        });
+    }
+    
+    private String getBadgeForCompletedTasks(int completedTasks) {
+        if (completedTasks < 2) {
+            return null;
+        } else if (completedTasks >= 2 && completedTasks <= 3) {
+            return "bronze_badge";
+        } else if (completedTasks >= 4 && completedTasks <= 5) {
+            return "silver_badge";
+        } else if (completedTasks == 6) {
+            return "gold_badge";
+        }
+        return null;
+    }
+    
+    private void addBadgeToUser(String userId, String badge, Runnable onComplete) {
+        Log.d("SpecialMissionService", "Adding badge " + badge + " to user " + userId);
+        
+        userRepository.getUser(userId, task -> {
+            if (task.isSuccessful() && task.getResult() != null) {
+                User user = task.getResult().toObject(User.class);
+                if (user != null) {
+                    List<String> currentBadges = user.getBadges();
+                    if (currentBadges == null) {
+                        currentBadges = new ArrayList<>();
+                    }
+                    
+                    // Proveri da li korisnik već ima ovaj bedž
+                    if (!currentBadges.contains(badge)) {
+                        currentBadges.add(badge);
+                        user.setBadges(currentBadges);
+                        
+                        userRepository.updateUser(user, updateTask -> {
+                            if (updateTask.isSuccessful()) {
+                                Log.d("SpecialMissionService", "Badge " + badge + " added to user " + userId);
+                            } else {
+                                Log.e("SpecialMissionService", "Failed to add badge to user " + userId);
+                            }
+                            onComplete.run();
+                        });
+                    } else {
+                        Log.d("SpecialMissionService", "User " + userId + " already has badge " + badge);
+                        onComplete.run();
+                    }
+                } else {
+                    Log.e("SpecialMissionService", "User is null for ID: " + userId);
+                    onComplete.run();
+                }
+            } else {
+                Log.e("SpecialMissionService", "Failed to get user for ID: " + userId);
                 onComplete.run();
             }
         });
