@@ -159,6 +159,7 @@ public class TasksMainActivity extends AppCompatActivity {
             startActivity(intent);
         });
     }
+    
 
     private void updateFilterState() {
         boolean anyFilterSelected =
