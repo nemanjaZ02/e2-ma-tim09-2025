@@ -8,6 +8,7 @@ import com.e2_ma_tim09_2025.questify.models.Boss;
 import com.e2_ma_tim09_2025.questify.models.SpecialBoss;
 import com.e2_ma_tim09_2025.questify.models.SpecialMission;
 import com.e2_ma_tim09_2025.questify.models.SpecialTask;
+import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.models.Equipment;
 import com.e2_ma_tim09_2025.questify.models.MyEquipment;
@@ -15,16 +16,18 @@ import com.e2_ma_tim09_2025.questify.models.enums.EquipmentType;
 import com.e2_ma_tim09_2025.questify.models.enums.SpecialMissionStatus;
 import com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskStatus;
 import com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskType;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskStatus;
 import com.e2_ma_tim09_2025.questify.repositories.AllianceRepository;
 import com.e2_ma_tim09_2025.questify.repositories.SpecialMissionRepository;
 import com.e2_ma_tim09_2025.questify.repositories.SpecialTaskRepository;
 import com.e2_ma_tim09_2025.questify.repositories.UserRepository;
 import com.e2_ma_tim09_2025.questify.repositories.EquipmentRepository;
 import com.e2_ma_tim09_2025.questify.repositories.BossRepository;
+import com.e2_ma_tim09_2025.questify.repositories.TaskRepository;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -43,6 +46,7 @@ public class SpecialMissionService {
     private final UserRepository userRepository;
     private final EquipmentRepository equipmentRepository;
     private final BossRepository bossRepository;
+    private final TaskRepository taskRepository;
     
     // Timer za praćenje završetka misije
     private CountDownTimer missionTimer;
@@ -54,13 +58,15 @@ public class SpecialMissionService {
             SpecialTaskRepository specialTaskRepository,
             UserRepository userRepository,
             EquipmentRepository equipmentRepository,
-            BossRepository bossRepository) {
+            BossRepository bossRepository,
+            TaskRepository taskRepository) {
         this.allianceRepository = allianceRepository;
         this.specialMissionRepository = specialMissionRepository;
         this.specialTaskRepository = specialTaskRepository;
         this.userRepository = userRepository;
         this.equipmentRepository = equipmentRepository;
         this.bossRepository = bossRepository;
+        this.taskRepository = taskRepository;
     }
     
     /**
@@ -313,42 +319,40 @@ public class SpecialMissionService {
                 return;
             }
 
-            // Proveri da li je boss pobeden
-            if (mission.isBossDefeated()) {
-                Log.d("SpecialMissionService", "Boss defeated! Distributing rewards...");
-                mission.setStatus(SpecialMissionStatus.DEFEATED);
-                specialMissionRepository.updateSpecialMission(mission, updateTask -> {
-                    if (updateTask.isSuccessful()) {
-                        Log.d("SpecialMissionService", "Mission status updated to DEFEATED");
-                        // Označava sve taskove kao INACTIVE i postavi alliance.isMissionStarted = false
-                        markAllTasksAsInactive(allianceId, () -> {
-                            // Dodeli bedževe igračima
-                            distributeBadges(allianceId, mission.getMissionNumber(), () -> {
-                                // Dodeli nagrade igračima (coins, potion, clothes) - samo ako je boss pobeden
-                                distributeRewards(allianceId, mission, () -> {
-                                    updateAllianceMissionStatus(allianceId, false, () -> {
-                                        // Zaustavi timer jer je misija završena
-                                        stopMissionTimer();
-                                        listener.onComplete(Tasks.forResult(true));
-                                    });
-                                });
-                            });
-                        });
+            // Prvo proveri NO_UNRESOLVED_TASKS taskove i skini health bossu ako treba
+            checkAndUpdateNoUnresolvedTasks(allianceId, mission.getMissionNumber(), () -> {
+                // Ažuriraj mission objekat sa najnovijim podacima iz baze
+                specialMissionRepository.getSpecialMissionByAllianceId(allianceId, updatedMissionTask -> {
+                    if (updatedMissionTask.isSuccessful() && updatedMissionTask.getResult() != null && updatedMissionTask.getResult().exists()) {
+                        SpecialMission updatedMission = updatedMissionTask.getResult().toObject(SpecialMission.class);
+                        if (updatedMission != null) {
+                            // Koristi ažuriranu misiju za proveru
+                            checkMissionStatus(updatedMission, allianceId, listener);
+                        } else {
+                            listener.onComplete(Tasks.forResult(false));
+                        }
                     } else {
                         listener.onComplete(Tasks.forResult(false));
                     }
                 });
-            } else {
-                // Boss nije pobeden - misija je istekla
-                Log.d("SpecialMissionService", "Boss not defeated - mission expired");
-                mission.setStatus(SpecialMissionStatus.EXPIRED);
-                specialMissionRepository.updateSpecialMission(mission, updateTask -> {
-                    if (updateTask.isSuccessful()) {
-                        Log.d("SpecialMissionService", "Mission status updated to EXPIRED");
-                        // Označava sve taskove kao INACTIVE i postavi alliance.isMissionStarted = false
-                        markAllTasksAsInactive(allianceId, () -> {
-                            // Dodeli bedževe igračima
-                            distributeBadges(allianceId, mission.getMissionNumber(), () -> {
+            });
+        });
+    }
+    
+    private void checkMissionStatus(SpecialMission mission, String allianceId, OnCompleteListener<Boolean> listener) {
+        // Proveri da li je boss pobeden
+        if (mission.isBossDefeated()) {
+            Log.d("SpecialMissionService", "Boss defeated! Distributing rewards...");
+            mission.setStatus(SpecialMissionStatus.DEFEATED);
+            specialMissionRepository.updateSpecialMission(mission, updateTask -> {
+                if (updateTask.isSuccessful()) {
+                    Log.d("SpecialMissionService", "Mission status updated to DEFEATED");
+                    // Označava sve taskove kao INACTIVE i postavi alliance.isMissionStarted = false
+                    markAllTasksAsInactive(allianceId, () -> {
+                        // Dodeli bedževe igračima
+                        distributeBadges(allianceId, mission.getMissionNumber(), () -> {
+                            // Dodeli nagrade igračima (coins, potion, clothes) - samo ako je boss pobeden
+                            distributeRewards(allianceId, mission, () -> {
                                 updateAllianceMissionStatus(allianceId, false, () -> {
                                     // Zaustavi timer jer je misija završena
                                     stopMissionTimer();
@@ -356,12 +360,34 @@ public class SpecialMissionService {
                                 });
                             });
                         });
-                    } else {
-                        listener.onComplete(Tasks.forResult(false));
-                    }
-                });
-            }
-        });
+                    });
+                } else {
+                    listener.onComplete(Tasks.forResult(false));
+                }
+            });
+        } else {
+            // Boss nije pobeden - misija je istekla
+            Log.d("SpecialMissionService", "Boss not defeated - mission expired");
+            mission.setStatus(SpecialMissionStatus.EXPIRED);
+            specialMissionRepository.updateSpecialMission(mission, updateTask -> {
+                if (updateTask.isSuccessful()) {
+                    Log.d("SpecialMissionService", "Mission status updated to EXPIRED");
+                    // Označava sve taskove kao INACTIVE i postavi alliance.isMissionStarted = false
+                    markAllTasksAsInactive(allianceId, () -> {
+                        // Dodeli bedževe igračima
+                        distributeBadges(allianceId, mission.getMissionNumber(), () -> {
+                            updateAllianceMissionStatus(allianceId, false, () -> {
+                                // Zaustavi timer jer je misija završena
+                                stopMissionTimer();
+                                listener.onComplete(Tasks.forResult(true));
+                            });
+                        });
+                    });
+                } else {
+                    listener.onComplete(Tasks.forResult(false));
+                }
+            });
+        }
     }
     
     private void markAllTasksAsInactive(String allianceId, Runnable onComplete) {
@@ -373,6 +399,12 @@ public class SpecialMissionService {
                 for (DocumentSnapshot doc : task.getResult()) {
                     SpecialTask specialTask = doc.toObject(SpecialTask.class);
                     if (specialTask != null && specialTask.getStatus().toString().equals("ACTIVE")) {
+                        // Preskoči NO_UNRESOLVED_TASKS taskove - oni će biti obrađeni u checkAndUpdateNoUnresolvedTasks
+                        if (specialTask.getTaskType() == SpecialTaskType.NO_UNRESOLVED_TASKS) {
+                            Log.d("SpecialMissionService", "Preskačem NO_UNRESOLVED_TASKS task - biće obrađen posebno");
+                            continue;
+                        }
+                        
                         // Označava samo ACTIVE taskove kao EXPIRED
                         specialTask.setStatus(com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskStatus.EXPIRED);
                         tasks.add(specialTask);
@@ -428,21 +460,316 @@ public class SpecialMissionService {
                 return;
             }
             
-            // 4. Kreiraj taskove za sve članove (kada se aktivira misija)
-            List<SpecialTask> newTasks = createSpecialTasksForAlliance(alliance, mission.getMissionNumber());
-            specialTaskRepository.createSpecialTasksForAlliance(newTasks, task2 -> {
-                if (!task2.isSuccessful()) {
-                    Log.e("SpecialMissionService", "Greška pri kreiranju zadataka");
-                    listener.onComplete(Tasks.forResult(false));
-                    return;
+            // 4. Prvo dohvati broj NOT_COMPLETED taskova za sve članove, pa tek onda kreiraj taskove
+            getNotCompletedTasksCountForAllMembers(alliance.getMemberIds(), (notCompletedCounts) -> {
+                // 5. Kreiraj taskove za sve članove (kada se aktivira misija)
+                List<SpecialTask> newTasks = createSpecialTasksForAlliance(alliance, mission.getMissionNumber());
+                
+                // 6. Postavi notCompletedTasksBeforeActivation za NO_UNRESOLVED_TASKS taskove
+                Map<String, Integer> counts = notCompletedCounts.getResult();
+                for (SpecialTask specialTask : newTasks) {
+                    if (specialTask.getTaskType() == SpecialTaskType.NO_UNRESOLVED_TASKS) {
+                        String userId = specialTask.getUserId();
+                        int count = counts.getOrDefault(userId, 0);
+                        specialTask.setNotCompletedTasksBeforeActivation(count);
+                        Log.d("SpecialMissionService", "=== SETTING NOT_COMPLETED_TASKS_BEFORE_ACTIVATION ===");
+                        Log.d("SpecialMissionService", "User: " + userId);
+                        Log.d("SpecialMissionService", "Task ID: " + specialTask.getId());
+                        Log.d("SpecialMissionService", "NOT_COMPLETED tasks before activation: " + count);
+                    }
                 }
                 
-                // 5. Postavi alliance.isMissionStarted = true
-                updateAllianceMissionStatus(alliance.getId(), true, () -> {
-                    // Pokreni timer za misiju
-                    startMissionTimer(mission.getAllianceId(), mission.getEndTime());
-                    Log.d("SpecialMissionService", "✅ Misija uspešno aktivirana!");
-                    listener.onComplete(Tasks.forResult(true));
+                // 7. Kreiraj taskove u bazi
+                specialTaskRepository.createSpecialTasksForAlliance(newTasks, task2 -> {
+                    if (!task2.isSuccessful()) {
+                        Log.e("SpecialMissionService", "Greška pri kreiranju zadataka");
+                        listener.onComplete(Tasks.forResult(false));
+                        return;
+                    }
+                    
+                    // 8. Postavi alliance.isMissionStarted = true
+                    updateAllianceMissionStatus(alliance.getId(), true, () -> {
+                        // Pokreni timer za misiju
+                        startMissionTimer(mission.getAllianceId(), mission.getEndTime());
+                        Log.d("SpecialMissionService", "✅ Misija uspešno aktivirana!");
+                        listener.onComplete(Tasks.forResult(true));
+                    });
+                });
+            });
+        });
+    }
+    
+    /**
+     * Dohvati broj NOT_COMPLETED taskova za sve članove alijanse
+     */
+    private void getNotCompletedTasksCountForAllMembers(List<String> memberIds, OnCompleteListener<Map<String, Integer>> listener) {
+        Map<String, Integer> notCompletedCounts = new HashMap<>();
+        final int[] completedMembers = {0};
+        final int totalMembers = memberIds.size();
+        
+        if (totalMembers == 0) {
+            listener.onComplete(Tasks.forResult(notCompletedCounts));
+            return;
+        }
+        
+        for (String userId : memberIds) {
+            getNotCompletedTasksCount(userId, countTask -> {
+                int count = countTask.getResult();
+                notCompletedCounts.put(userId, count);
+                Log.d("SpecialMissionService", "User " + userId + " has " + count + " NOT_COMPLETED tasks before activation");
+                
+                completedMembers[0]++;
+                if (completedMembers[0] == totalMembers) {
+                    listener.onComplete(Tasks.forResult(notCompletedCounts));
+                }
+            });
+        }
+    }
+    
+    /**
+     * Postavi notCompletedTasksBeforeActivation za NO_UNRESOLVED_TASKS taskove
+     */
+    private void setNotCompletedTasksBeforeActivation(List<SpecialTask> tasks, Runnable onComplete) {
+        Log.d("SpecialMissionService", "Setting notCompletedTasksBeforeActivation for NO_UNRESOLVED_TASKS tasks");
+        
+        // Grupiši taskove po korisnicima
+        Map<String, List<SpecialTask>> userTasks = new HashMap<>();
+        for (SpecialTask task : tasks) {
+            if (task.getTaskType() == SpecialTaskType.NO_UNRESOLVED_TASKS) {
+                String userId = task.getUserId();
+                if (!userTasks.containsKey(userId)) {
+                    userTasks.put(userId, new ArrayList<>());
+                }
+                userTasks.get(userId).add(task);
+            }
+        }
+        
+        if (userTasks.isEmpty()) {
+            Log.d("SpecialMissionService", "No NO_UNRESOLVED_TASKS tasks found");
+            onComplete.run();
+            return;
+        }
+        
+        final int[] completedUsers = {0};
+        final int totalUsers = userTasks.size();
+        
+        for (Map.Entry<String, List<SpecialTask>> entry : userTasks.entrySet()) {
+            String userId = entry.getKey();
+            List<SpecialTask> userTaskList = entry.getValue();
+            
+            // Dohvati broj NOT_COMPLETED taskova za ovog korisnika
+            getNotCompletedTasksCount(userId, countTask -> {
+                int count = countTask.getResult();
+                // Postavi count za sve NO_UNRESOLVED_TASKS taskove ovog korisnika
+                for (SpecialTask task : userTaskList) {
+                    task.setNotCompletedTasksBeforeActivation(count);
+                    Log.d("SpecialMissionService", "=== SETTING NOT_COMPLETED_TASKS_BEFORE_ACTIVATION ===");
+                    Log.d("SpecialMissionService", "User: " + userId);
+                    Log.d("SpecialMissionService", "Task ID: " + task.getId());
+                    Log.d("SpecialMissionService", "NOT_COMPLETED tasks before activation: " + count);
+                    Log.d("SpecialMissionService", "Task set to: " + task.getNotCompletedTasksBeforeActivation());
+                }
+                
+                completedUsers[0]++;
+                if (completedUsers[0] == totalUsers) {
+                    Log.d("SpecialMissionService", "All NO_UNRESOLVED_TASKS tasks updated");
+                    onComplete.run();
+                }
+            });
+        }
+    }
+    
+    /**
+     * Dohvati broj NOT_COMPLETED taskova za korisnika
+     */
+    private void getNotCompletedTasksCount(String userId, OnCompleteListener<Integer> listener) {
+        try {
+            List<com.e2_ma_tim09_2025.questify.models.Task> userTasks = taskRepository.getTasksByUser(userId);
+            int count = 0;
+            Log.d("SpecialMissionService", "=== GETTING NOT_COMPLETED TASKS COUNT ===");
+            Log.d("SpecialMissionService", "User: " + userId);
+            Log.d("SpecialMissionService", "Total tasks found: " + userTasks.size());
+            
+            for (com.e2_ma_tim09_2025.questify.models.Task userTask : userTasks) {
+                Log.d("SpecialMissionService", "Task: " + userTask.getName() + ", Status: " + userTask.getStatus());
+                if (userTask.getStatus() == TaskStatus.NOT_COMPLETED) {
+                    count++;
+                    Log.d("SpecialMissionService", "NOT_COMPLETED task found: " + userTask.getName());
+                }
+            }
+            Log.d("SpecialMissionService", "Final count: " + count + " NOT_COMPLETED tasks");
+            listener.onComplete(Tasks.forResult(count));
+        } catch (Exception e) {
+            Log.e("SpecialMissionService", "Failed to get tasks for user: " + userId, e);
+            listener.onComplete(Tasks.forResult(0));
+        }
+    }
+    
+    /**
+     * Proveri NO_UNRESOLVED_TASKS taskove i postavi status na COMPLETED ili EXPIRED
+     */
+    private void checkAndUpdateNoUnresolvedTasks(String allianceId, int missionNumber, Runnable onComplete) {
+        Log.d("SpecialMissionService", "=== CHECKING NO_UNRESOLVED_TASKS TASKS ===");
+        Log.d("SpecialMissionService", "Alliance ID: " + allianceId + ", Mission Number: " + missionNumber);
+        
+        // Dohvati sve taskove za ovu misiju
+        specialTaskRepository.getSpecialTasksByAllianceId(allianceId, task -> {
+            if (!task.isSuccessful()) {
+                Log.e("SpecialMissionService", "Failed to get tasks for NO_UNRESOLVED_TASKS check");
+                onComplete.run();
+                return;
+            }
+            
+            List<SpecialTask> tasksToUpdate = new ArrayList<>();
+            
+            for (DocumentSnapshot doc : task.getResult()) {
+                SpecialTask specialTask = doc.toObject(SpecialTask.class);
+                if (specialTask != null && 
+                    specialTask.getMissionNumber() == missionNumber && 
+                    specialTask.getTaskType() == SpecialTaskType.NO_UNRESOLVED_TASKS) {
+                    
+                    // Proveri da li je korisnik uspešno završio task
+                    checkNoUnresolvedTaskForUser(specialTask, () -> {
+                        tasksToUpdate.add(specialTask);
+                        
+                        // Ako smo proverili sve taskove, ažuriraj ih
+                        if (tasksToUpdate.size() == getNoUnresolvedTasksCount(task.getResult(), missionNumber)) {
+                            if (!tasksToUpdate.isEmpty()) {
+                                specialTaskRepository.updateSpecialTasks(tasksToUpdate, updateTask -> {
+                                    if (updateTask.isSuccessful()) {
+                                        Log.d("SpecialMissionService", "NO_UNRESOLVED_TASKS tasks updated successfully");
+                                    } else {
+                                        Log.e("SpecialMissionService", "Failed to update NO_UNRESOLVED_TASKS tasks");
+                                    }
+                                    onComplete.run();
+                                });
+                            } else {
+                                onComplete.run();
+                            }
+                        }
+                    });
+                }
+            }
+            
+            // Ako nema NO_UNRESOLVED_TASKS taskova, završi odmah
+            if (getNoUnresolvedTasksCount(task.getResult(), missionNumber) == 0) {
+                Log.d("SpecialMissionService", "No NO_UNRESOLVED_TASKS tasks found for this mission");
+                onComplete.run();
+            }
+        });
+    }
+    
+    /**
+     * Proveri NO_UNRESOLVED_TASKS task za jednog korisnika
+     */
+    private void checkNoUnresolvedTaskForUser(SpecialTask specialTask, Runnable onComplete) {
+        String userId = specialTask.getUserId();
+        int beforeActivation = specialTask.getNotCompletedTasksBeforeActivation();
+        
+        Log.d("SpecialMissionService", "Checking NO_UNRESOLVED_TASKS for user: " + userId + 
+              ", before activation: " + beforeActivation);
+        
+        // Dohvati trenutni broj NOT_COMPLETED taskova
+        getNotCompletedTasksCount(userId, countTask -> {
+            int count = countTask.getResult();
+            Log.d("SpecialMissionService", "=== NO_UNRESOLVED_TASKS DEBUG ===");
+            Log.d("SpecialMissionService", "User: " + userId);
+            Log.d("SpecialMissionService", "Before activation: " + beforeActivation);
+            Log.d("SpecialMissionService", "Current count: " + count);
+            Log.d("SpecialMissionService", "Comparison: " + count + " <= " + beforeActivation + " = " + (count <= beforeActivation));
+            
+            if (count <= beforeActivation) {
+                // Uspešno - nema više NOT_COMPLETED taskova nego pre aktivacije
+                // Koristi postojeću logiku za completovanje taska
+                completeNoUnresolvedTask(specialTask);
+                Log.d("SpecialMissionService", "✅ User " + userId + " successfully completed NO_UNRESOLVED_TASKS task");
+            } else {
+                // Neuspešno - ima više NOT_COMPLETED taskova nego pre aktivacije
+                specialTask.setStatus(SpecialTaskStatus.EXPIRED);
+                Log.d("SpecialMissionService", "❌ User " + userId + " failed NO_UNRESOLVED_TASKS task");
+            }
+            
+            onComplete.run();
+        });
+    }
+    
+    /**
+     * Broji koliko ima NO_UNRESOLVED_TASKS taskova za datu misiju
+     */
+    private int getNoUnresolvedTasksCount(QuerySnapshot querySnapshot, int missionNumber) {
+        int count = 0;
+        for (DocumentSnapshot doc : querySnapshot) {
+            SpecialTask specialTask = doc.toObject(SpecialTask.class);
+            if (specialTask != null && 
+                specialTask.getMissionNumber() == missionNumber && 
+                specialTask.getTaskType() == SpecialTaskType.NO_UNRESOLVED_TASKS) {
+                count++;
+            }
+        }
+        return count;
+    }
+    
+    /**
+     * Completuje NO_UNRESOLVED_TASKS task koristeći istu logiku kao SpecialTaskService
+     */
+    private void completeNoUnresolvedTask(SpecialTask specialTask) {
+        Log.d("SpecialMissionService", "Completing NO_UNRESOLVED_TASKS task for user: " + specialTask.getUserId());
+        
+        // Proveri da li task može biti completovan
+        if (!specialTask.canComplete()) {
+            Log.e("SpecialMissionService", "Task cannot be completed (already completed or inactive)");
+            return;
+        }
+        
+        // Izvrši task (koristi postojeću logiku)
+        specialTask.complete();
+        
+        Log.d("SpecialMissionService", "Task completed. Current count: " + specialTask.getCurrentCount() + 
+              "/" + specialTask.getMaxCount() + ", Status: " + specialTask.getStatus());
+        
+        // Izračunaj damage i skini health bossu
+        int damage = specialTask.getDamagePerCompletion();
+        Log.d("SpecialMissionService", "Dealing " + damage + " damage to boss from NO_UNRESOLVED_TASKS task");
+        
+        // Pozovi logiku za skidanje health-a bossu
+        dealDamageToBossFromNoUnresolvedTask(specialTask.getAllianceId(), damage);
+    }
+    
+    /**
+     * Skida health bossu kada se NO_UNRESOLVED_TASKS task completuje
+     */
+    private void dealDamageToBossFromNoUnresolvedTask(String allianceId, int damage) {
+        specialMissionRepository.getSpecialMissionByAllianceId(allianceId, task -> {
+            if (!task.isSuccessful() || task.getResult() == null || !task.getResult().exists()) {
+                Log.e("SpecialMissionService", "Greška pri dohvatanju misije za NO_UNRESOLVED_TASKS damage");
+                return;
+            }
+
+            SpecialMission mission = task.getResult().toObject(SpecialMission.class);
+            if (mission == null || mission.getBoss() == null) {
+                Log.e("SpecialMissionService", "Misija ili boss je null za NO_UNRESOLVED_TASKS damage");
+                return;
+            }
+
+            // Nanesei štetu koristeći convenience metodu
+            mission.dealDamageToBoss(damage);
+            Log.d("SpecialMissionService", "NO_UNRESOLVED_TASKS damage: " + damage + " HP. Boss HP: " + mission.getBossCurrentHealth() + "/" + mission.getBossMaxHealth());
+
+            // Ažuriraj misiju (sa boss-om unutar nje)
+            specialMissionRepository.updateSpecialMission(mission, task1 -> {
+                if (!task1.isSuccessful()) {
+                    Log.e("SpecialMissionService", "Greška pri ažuriranju misije za NO_UNRESOLVED_TASKS damage");
+                    return;
+                }
+
+                // Ažuriraj ukupnu štetu u misiji
+                mission.addDamage(damage);
+                specialMissionRepository.updateSpecialMission(mission, task2 -> {
+                    if (task2.isSuccessful()) {
+                        Log.d("SpecialMissionService", "✅ NO_UNRESOLVED_TASKS damage successfully applied to boss!");
+                    } else {
+                        Log.e("SpecialMissionService", "❌ Failed to update mission damage for NO_UNRESOLVED_TASKS");
+                    }
                 });
             });
         });
@@ -717,7 +1044,17 @@ public class SpecialMissionService {
                     completedUsers[0]++;
                     if (completedUsers[0] == totalUsers) {
                         Log.d("SpecialMissionService", "Reward distribution completed");
-                        onComplete.run();
+                        
+                        // Postavi rewardsDistributed na true
+                        mission.setRewardsDistributed(true);
+                        specialMissionRepository.updateSpecialMission(mission, updateTask -> {
+                            if (updateTask.isSuccessful()) {
+                                Log.d("SpecialMissionService", "✅ rewardsDistributed set to true");
+                            } else {
+                                Log.e("SpecialMissionService", "❌ Failed to update rewardsDistributed");
+                            }
+                            onComplete.run();
+                        });
                     }
                 });
             }

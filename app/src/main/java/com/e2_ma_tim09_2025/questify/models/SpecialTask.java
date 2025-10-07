@@ -15,6 +15,7 @@ public class SpecialTask {
     private int maxCount; // Maksimalan broj izvrsenja
     private int damagePerCompletion; // HP damage po izvrsenju
     private long lastCompletedAt; // Poslednji put izvrsen
+    private int notCompletedTasksBeforeActivation; // Broj NOT_COMPLETED taskova pre aktivacije (za NO_UNRESOLVED_TASKS)
 
     public SpecialTask() {}
 
@@ -27,6 +28,7 @@ public class SpecialTask {
         this.status = SpecialTaskStatus.ACTIVE;
         this.currentCount = 0;
         this.lastCompletedAt = 0;
+        this.notCompletedTasksBeforeActivation = 0;
 
         switch (taskType) {
             case SHOP_PURCHASE:
@@ -174,5 +176,13 @@ public class SpecialTask {
     
     public void setMissionNumber(int missionNumber) {
         this.missionNumber = missionNumber;
+    }
+    
+    public int getNotCompletedTasksBeforeActivation() {
+        return notCompletedTasksBeforeActivation;
+    }
+    
+    public void setNotCompletedTasksBeforeActivation(int notCompletedTasksBeforeActivation) {
+        this.notCompletedTasksBeforeActivation = notCompletedTasksBeforeActivation;
     }
 }
