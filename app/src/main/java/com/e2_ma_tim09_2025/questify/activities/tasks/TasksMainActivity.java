@@ -20,18 +20,21 @@ import com.e2_ma_tim09_2025.questify.activities.users.ProfileActivity;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksCalendarFragment;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksListFragment;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
+import com.e2_ma_tim09_2025.questify.services.SpecialMissionService;
 import com.e2_ma_tim09_2025.questify.viewmodels.TaskViewModel;
 import com.e2_ma_tim09_2025.questify.viewmodels.UserViewModel;
 import com.google.android.material.button.MaterialButton;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksFilterFragment;
 
 import dagger.hilt.android.AndroidEntryPoint;
+import javax.inject.Inject;
 
 @AndroidEntryPoint
 public class TasksMainActivity extends AppCompatActivity {
 
     private TaskViewModel taskViewModel;
     private UserViewModel userViewModel;
+    @Inject SpecialMissionService specialMissionService;
     private MaterialButton addTaskButton;
     private MaterialButton viewChangeButton;
     private MaterialButton filterButton;
@@ -59,6 +62,15 @@ public class TasksMainActivity extends AppCompatActivity {
         bossButton = findViewById(R.id.boss_button);
 
         replaceFragment(new TasksListFragment());
+
+        // Proveri istekle misije pri pokretanju aplikacije
+        specialMissionService.checkExpiredMissions(task -> {
+            if (task.isSuccessful()) {
+                android.util.Log.d("TasksMainActivity", "Expired missions check completed");
+            } else {
+                android.util.Log.e("TasksMainActivity", "Failed to check expired missions", task.getException());
+            }
+        });
 
         isFilterActive.addSource(taskViewModel.getSelectedCategoryIds(), ids -> updateFilterState());
         isFilterActive.addSource(taskViewModel.getSelectedDifficulties(), difficulties -> updateFilterState());
@@ -147,6 +159,7 @@ public class TasksMainActivity extends AppCompatActivity {
             startActivity(intent);
         });
     }
+    
 
     private void updateFilterState() {
         boolean anyFilterSelected =
