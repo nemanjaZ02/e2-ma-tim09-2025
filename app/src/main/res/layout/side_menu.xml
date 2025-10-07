@@ -45,6 +45,37 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
+        <!-- Profile Menu Item -->
+        <LinearLayout
+            android:id="@+id/profileMenuItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="👤 Profile"
+                android:textSize="18sp"
+                android:textColor="#5C4033"
+                android:fontFamily="serif"
+                android:gravity="center_vertical" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→"
+                android:textSize="18sp"
+                android:textColor="#5C4033"
+                android:fontFamily="serif" />
+
+        </LinearLayout>
+
         <!-- Statistics Menu Item -->
         <LinearLayout
             android:id="@+id/statisticsMenuItem"
