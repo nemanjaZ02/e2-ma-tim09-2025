@@ -3,6 +3,7 @@ package com.e2_ma_tim09_2025.questify.activities.alliance;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -43,6 +44,7 @@ public class MemberAllianceActivity extends AppCompatActivity {
     private TextView missionStatusText;
     private TextView noAllianceText;
     private RecyclerView membersRecyclerView;
+    private Button allianceChatButton;
     private ProgressBar progressBar;
     
     // Special Mission Progress UI
@@ -78,6 +80,7 @@ public class MemberAllianceActivity extends AppCompatActivity {
         missionStatusText = findViewById(R.id.textViewMissionStatus);
         noAllianceText = findViewById(R.id.textViewNoAlliance);
         membersRecyclerView = findViewById(R.id.recyclerViewMembers);
+        allianceChatButton = findViewById(R.id.buttonAllianceChat);
         progressBar = findViewById(R.id.progressBar);
         
         // Special Mission Progress UI
@@ -91,6 +94,13 @@ public class MemberAllianceActivity extends AppCompatActivity {
         // Back button
         ImageButton backButton = findViewById(R.id.buttonBack);
         backButton.setOnClickListener(v -> finish());
+        
+        // Chat button
+        allianceChatButton.setOnClickListener(v -> {
+            if (currentAlliance != null) {
+                openAllianceChat();
+            }
+        });
     }
     
     private void setupRecyclerView() {
@@ -171,6 +181,7 @@ public class MemberAllianceActivity extends AppCompatActivity {
         membersCountText.setVisibility(View.VISIBLE);
         missionStatusText.setVisibility(View.VISIBLE);
         membersRecyclerView.setVisibility(View.VISIBLE);
+        allianceChatButton.setVisibility(View.VISIBLE);
         noAllianceText.setVisibility(View.GONE);
         
         // Load special mission
@@ -180,12 +191,22 @@ public class MemberAllianceActivity extends AppCompatActivity {
         updateMissionStatus(alliance.isMissionStarted());
     }
     
+    private void openAllianceChat() {
+        if (currentAlliance == null) return;
+        
+        Intent intent = new Intent(this, AllianceChatActivity.class);
+        intent.putExtra("allianceId", currentAlliance.getId());
+        intent.putExtra("allianceName", currentAlliance.getName());
+        startActivity(intent);
+    }
+    
     private void displayNoAlliance() {
         allianceNameText.setVisibility(View.GONE);
         leaderNameText.setVisibility(View.GONE);
         membersCountText.setVisibility(View.GONE);
         missionStatusText.setVisibility(View.GONE);
         membersRecyclerView.setVisibility(View.GONE);
+        allianceChatButton.setVisibility(View.GONE);
         noAllianceText.setVisibility(View.VISIBLE);
     }
     

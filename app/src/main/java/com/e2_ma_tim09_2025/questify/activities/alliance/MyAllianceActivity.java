@@ -53,6 +53,7 @@ public class MyAllianceActivity extends AppCompatActivity {
     private Button inviteUsersButton;
     private Button deleteAllianceButton;
     private Button startSpecialMissionButton;
+    private Button allianceChatButton;
     private ProgressBar progressBar;
     
     // Special Mission Progress UI
@@ -92,6 +93,7 @@ public class MyAllianceActivity extends AppCompatActivity {
         inviteUsersButton = findViewById(R.id.buttonInviteUsers);
         deleteAllianceButton = findViewById(R.id.buttonDeleteAlliance);
         startSpecialMissionButton = findViewById(R.id.buttonStartSpecialMission);
+        allianceChatButton = findViewById(R.id.buttonAllianceChat);
         progressBar = findViewById(R.id.progressBar);
         
         // Special Mission Progress UI
@@ -251,6 +253,12 @@ public class MyAllianceActivity extends AppCompatActivity {
                 showStartSpecialMissionConfirmationDialog();
             }
         });
+        
+        allianceChatButton.setOnClickListener(v -> {
+            if (currentAlliance != null) {
+                openAllianceChat();
+            }
+        });
     }
     
     private void displayAlliance(Alliance alliance) {
@@ -262,6 +270,7 @@ public class MyAllianceActivity extends AppCompatActivity {
         inviteUsersButton.setVisibility(View.VISIBLE);
         deleteAllianceButton.setVisibility(View.VISIBLE);
         startSpecialMissionButton.setVisibility(View.VISIBLE);
+        allianceChatButton.setVisibility(View.VISIBLE);
         noAllianceText.setVisibility(View.GONE);
         
         // Update mission status
@@ -316,6 +325,15 @@ public class MyAllianceActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+    
+    private void openAllianceChat() {
+        if (currentAlliance == null) return;
+        
+        Intent intent = new Intent(this, AllianceChatActivity.class);
+        intent.putExtra("allianceId", currentAlliance.getId());
+        intent.putExtra("allianceName", currentAlliance.getName());
+        startActivity(intent);
     }
     
     private void showDeleteAllianceConfirmationDialog() {
