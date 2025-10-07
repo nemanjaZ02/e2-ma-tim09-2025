@@ -1,7 +1,6 @@
 package com.e2_ma_tim09_2025.questify.models;
 
 public class SpecialBoss {
-    private String id;
     private String specialMissionId; // ID specijalne misije
     private String allianceId; // Za svaki slučaj
     private int currentHealth;
@@ -18,14 +17,6 @@ public class SpecialBoss {
         this.currentHealth = this.maxHealth;
         this.coinsDrop = 0; // Postaviće se kada se misija završi
         this.isDefeated = false;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
     }
 
     public String getSpecialMissionId() {

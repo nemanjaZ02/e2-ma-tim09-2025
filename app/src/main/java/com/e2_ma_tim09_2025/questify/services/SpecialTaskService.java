@@ -9,6 +9,7 @@ import com.e2_ma_tim09_2025.questify.models.SpecialMission;
 import com.e2_ma_tim09_2025.questify.models.SpecialTask;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskType;
+import com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskStatus;
 import com.e2_ma_tim09_2025.questify.repositories.SpecialMissionRepository;
 import com.e2_ma_tim09_2025.questify.repositories.SpecialTaskRepository;
 import com.e2_ma_tim09_2025.questify.repositories.UserRepository;
@@ -202,16 +203,22 @@ public class SpecialTaskService {
             }
 
             SpecialTask specialTask = null;
+            Log.d("SpecialTaskService", "Pronađeno " + task.getResult().size() + " taskova za korisnika");
+            
             for (DocumentSnapshot doc : task.getResult()) {
                 SpecialTask t = doc.toObject(SpecialTask.class);
-                if (t != null && t.getTaskType() == taskType) {
-                    specialTask = t;
-                    break;
+                if (t != null) {
+                    Log.d("SpecialTaskService", "Task: " + t.getTaskType() + ", Status: " + t.getStatus() + ", Mission: " + t.getMissionNumber());
+                    if (t.getTaskType() == taskType && t.getStatus() == SpecialTaskStatus.ACTIVE) {
+                        specialTask = t;
+                        Log.d("SpecialTaskService", "Pronađen odgovarajući task!");
+                        break;
+                    }
                 }
             }
 
             if (specialTask == null) {
-                Log.e("SpecialTaskService", "Special task nije pronađen");
+                Log.e("SpecialTaskService", "Special task nije pronađen ili nije ACTIVE za tip: " + taskType);
                 listener.onComplete(Tasks.forResult(false));
                 return;
             }

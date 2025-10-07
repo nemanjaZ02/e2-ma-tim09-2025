@@ -1,5 +1,6 @@
 package com.e2_ma_tim09_2025.questify.services;
 
+import android.os.CountDownTimer;
 import android.util.Log;
 
 import com.e2_ma_tim09_2025.questify.models.Alliance;
@@ -28,6 +29,9 @@ public class SpecialMissionService {
     private final AllianceRepository allianceRepository;
     private final SpecialMissionRepository specialMissionRepository;
     private final SpecialTaskRepository specialTaskRepository;
+    
+    // Timer za praćenje završetka misije
+    private CountDownTimer missionTimer;
 
     @Inject
     public SpecialMissionService(
@@ -37,6 +41,67 @@ public class SpecialMissionService {
         this.allianceRepository = allianceRepository;
         this.specialMissionRepository = specialMissionRepository;
         this.specialTaskRepository = specialTaskRepository;
+    }
+    
+    /**
+     * Pokreni timer za misiju - poziva se kada se misija aktivira
+     */
+    private void startMissionTimer(String allianceId, long endTime) {
+        // Zaustavi postojeći timer ako postoji
+        stopMissionTimer();
+        
+        long currentTime = System.currentTimeMillis();
+        long timeUntilEnd = endTime - currentTime;
+        
+        if (timeUntilEnd <= 0) {
+            // Misija je već istekla
+            Log.d("SpecialMissionService", "Mission already expired for alliance: " + allianceId);
+            onMissionTimeExpired(allianceId);
+            return;
+        }
+        
+        Log.d("SpecialMissionService", "Starting mission timer for alliance: " + allianceId + 
+              ", time until end: " + (timeUntilEnd / 1000) + " seconds");
+        
+        missionTimer = new CountDownTimer(timeUntilEnd, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                // Možete dodati logiku ovde ako treba
+            }
+            
+            @Override
+            public void onFinish() {
+                Log.d("SpecialMissionService", "Mission timer finished for alliance: " + allianceId);
+                onMissionTimeExpired(allianceId);
+            }
+        };
+        
+        missionTimer.start();
+    }
+    
+    /**
+     * Zaustavi timer
+     */
+    private void stopMissionTimer() {
+        if (missionTimer != null) {
+            Log.d("SpecialMissionService", "Stopping mission timer");
+            missionTimer.cancel();
+            missionTimer = null;
+        }
+    }
+
+    private void onMissionTimeExpired(String allianceId) {
+        Log.d("SpecialMissionService", "=== TIMER ISTEKAO - PROVERAVAM STATUS MISIJE ===");
+        Log.d("SpecialMissionService", "Alliance ID: " + allianceId);
+        
+        // Koristi postojeću logiku za proveru i ažuriranje statusa
+        checkAndCompleteMission(allianceId, task -> {
+            if (task.isSuccessful()) {
+                Log.d("SpecialMissionService", "Status misije uspešno ažuriran preko checkAndCompleteMission");
+            } else {
+                Log.e("SpecialMissionService", "Greška pri ažuriranju statusa misije preko checkAndCompleteMission");
+            }
+        });
     }
 
     public void createSpecialMission(String allianceId, String leaderId, OnCompleteListener<Boolean> listener) {
@@ -87,26 +152,40 @@ public class SpecialMissionService {
     }
 
     private void createMissionData(Alliance alliance, OnCompleteListener<Boolean> listener) {
-        // 1. Kreiraj SpecialMission
+        // 1. Kreiraj SpecialMission (neaktivna)
         SpecialMission specialMission = new SpecialMission(alliance.getId());
-        specialMission.setStatus(SpecialMissionStatus.ACTIVE); // Aktivna odmah
-        specialMission.setStartTime(System.currentTimeMillis());
-        specialMission.setEndTime(specialMission.getStartTime() + (14 * 24 * 60 * 60 * 1000L)); // 2 nedelje
-        
-        // Povećaj mission number za 1 (prva aktivna misija)
-        specialMission.setMissionNumber(specialMission.getMissionNumber() + 1);
+        specialMission.setStatus(SpecialMissionStatus.INACTIVE); // Neaktivna na početku
+        specialMission.setStartTime(0); // Nije pokrenuta
+        specialMission.setEndTime(0); // Nije pokrenuta
+        specialMission.setMissionNumber(0); // Početni broj - nije pokrenuta
         
         // 2. Kreiraj SpecialBoss i dodaj u misiju
-        String bossId = UUID.randomUUID().toString();
         SpecialBoss specialBoss = new SpecialBoss(specialMission.getAllianceId(), alliance.getId(), alliance.getMemberIds().size());
-        specialBoss.setId(bossId);
         specialMission.setBoss(specialBoss); // Dodaj boss u misiju
 
-        // 3. Kreiraj SpecialTask-ove za sve članove (6 tipova × broj članova)
-        List<SpecialTask> specialTasks = createSpecialTasksForAlliance(alliance, specialMission.getMissionNumber());
+        // 3. Kreiraj taskove i za INACTIVE misiju (da korisnici mogu da ih rade)
+        List<SpecialTask> specialTasks = createSpecialTasksForAlliance(alliance, 0);
 
-        // 4. Sačuvaj sve u Firebase (bez zasebnog boss-a)
-        saveMissionData(specialMission, specialTasks, listener);
+        // 4. Sačuvaj misiju i taskove u Firebase
+        specialMissionRepository.createSpecialMission(specialMission, task -> {
+            if (!task.isSuccessful()) {
+                Log.e("SpecialMissionService", "Greška pri čuvanju SpecialMission");
+                listener.onComplete(Tasks.forResult(false));
+                return;
+            }
+
+            // Sačuvaj taskove
+            specialTaskRepository.createSpecialTasksForAlliance(specialTasks, task2 -> {
+                if (!task2.isSuccessful()) {
+                    Log.e("SpecialMissionService", "Greška pri čuvanju SpecialTask-ova");
+                    listener.onComplete(Tasks.forResult(false));
+                    return;
+                }
+
+                Log.d("SpecialMissionService", "✅ Specijalna misija uspešno kreirana (neaktivna) sa taskovima!");
+                listener.onComplete(Tasks.forResult(true));
+            });
+        });
     }
 
     private List<SpecialTask> createSpecialTasksForAlliance(Alliance alliance, int missionNumber) {
@@ -123,7 +202,7 @@ public class SpecialMissionService {
             }
         }
 
-        Log.d("SpecialMissionService", "Kreirano " + tasks.size() + " special task-ova za " + alliance.getMemberIds().size() + " članova");
+        Log.d("SpecialMissionService", "Kreirano " + tasks.size() + " special task-ova za " + alliance.getMemberIds().size() + " članova sa mission number: " + missionNumber);
         return tasks;
     }
 
@@ -151,6 +230,8 @@ public class SpecialMissionService {
                 
                 // Postavi alliance.isMissionStarted = true
                 updateAllianceMissionStatus(specialMission.getAllianceId(), true, () -> {
+                    // Pokreni timer za misiju
+                    startMissionTimer(specialMission.getAllianceId(), specialMission.getEndTime());
                     listener.onComplete(Tasks.forResult(true));
                 });
             });
@@ -223,27 +304,7 @@ public class SpecialMissionService {
                 return;
             }
 
-            // Proveri da li je misija istekla
-            if (mission.isExpired()) {
-                Log.d("SpecialMissionService", "Mission expired without defeating boss");
-                mission.setStatus(SpecialMissionStatus.EXPIRED);
-                specialMissionRepository.updateSpecialMission(mission, updateTask -> {
-                    if (updateTask.isSuccessful()) {
-                        Log.d("SpecialMissionService", "Mission status updated to EXPIRED");
-                        // Označava sve taskove kao INACTIVE i postavi alliance.isMissionStarted = false
-                        markAllTasksAsInactive(allianceId, () -> {
-                            updateAllianceMissionStatus(allianceId, false, () -> {
-                                listener.onComplete(Tasks.forResult(true));
-                            });
-                        });
-                    } else {
-                        listener.onComplete(Tasks.forResult(false));
-                    }
-                });
-                return;
-            }
-
-            // Proveri da li je boss pobeden (koristi boss iz misije)
+            // Proveri da li je boss pobeden
             if (mission.isBossDefeated()) {
                 Log.d("SpecialMissionService", "Boss defeated! Distributing rewards...");
                 mission.setStatus(SpecialMissionStatus.DEFEATED);
@@ -253,6 +314,8 @@ public class SpecialMissionService {
                         // Označava sve taskove kao INACTIVE i postavi alliance.isMissionStarted = false
                         markAllTasksAsInactive(allianceId, () -> {
                             updateAllianceMissionStatus(allianceId, false, () -> {
+                                // Zaustavi timer jer je misija završena
+                                stopMissionTimer();
                                 listener.onComplete(Tasks.forResult(true));
                             });
                         });
@@ -261,14 +324,30 @@ public class SpecialMissionService {
                     }
                 });
             } else {
-                // Misija je aktivna i boss nije pobeden
-                listener.onComplete(Tasks.forResult(false));
+                // Boss nije pobeden - misija je istekla
+                Log.d("SpecialMissionService", "Boss not defeated - mission expired");
+                mission.setStatus(SpecialMissionStatus.EXPIRED);
+                specialMissionRepository.updateSpecialMission(mission, updateTask -> {
+                    if (updateTask.isSuccessful()) {
+                        Log.d("SpecialMissionService", "Mission status updated to EXPIRED");
+                        // Označava sve taskove kao INACTIVE i postavi alliance.isMissionStarted = false
+                        markAllTasksAsInactive(allianceId, () -> {
+                            updateAllianceMissionStatus(allianceId, false, () -> {
+                                // Zaustavi timer jer je misija završena
+                                stopMissionTimer();
+                                listener.onComplete(Tasks.forResult(true));
+                            });
+                        });
+                    } else {
+                        listener.onComplete(Tasks.forResult(false));
+                    }
+                });
             }
         });
     }
     
     private void markAllTasksAsInactive(String allianceId, Runnable onComplete) {
-        Log.d("SpecialMissionService", "Označavam sve taskove kao INACTIVE za alijansu: " + allianceId);
+        Log.d("SpecialMissionService", "Označavam sve taskove kao EXPIRED za alijansu: " + allianceId);
         
         specialTaskRepository.getSpecialTasksByAllianceId(allianceId, task -> {
             if (task.isSuccessful()) {
@@ -276,20 +355,20 @@ public class SpecialMissionService {
                 for (DocumentSnapshot doc : task.getResult()) {
                     SpecialTask specialTask = doc.toObject(SpecialTask.class);
                     if (specialTask != null && specialTask.getStatus().toString().equals("ACTIVE")) {
-                        // Označava samo ACTIVE taskove kao INACTIVE
-                        specialTask.setStatus(com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskStatus.INACTIVE);
+                        // Označava samo ACTIVE taskove kao EXPIRED
+                        specialTask.setStatus(com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskStatus.EXPIRED);
                         tasks.add(specialTask);
-                        Log.d("SpecialMissionService", "Task " + specialTask.getTaskType() + " označen kao INACTIVE");
+                        Log.d("SpecialMissionService", "Task " + specialTask.getTaskType() + " označen kao EXPIRED");
                     }
                 }
                 
                 if (!tasks.isEmpty()) {
-                    Log.d("SpecialMissionService", "Ažuriram " + tasks.size() + " taskova kao INACTIVE");
+                    Log.d("SpecialMissionService", "Ažuriram " + tasks.size() + " taskova kao EXPIRED");
                     specialTaskRepository.updateSpecialTasks(tasks, updateTask -> {
                         if (updateTask.isSuccessful()) {
-                            Log.d("SpecialMissionService", "Svi taskovi uspešno označeni kao INACTIVE");
+                            Log.d("SpecialMissionService", "Svi taskovi uspešno označeni kao EXPIRED");
                         } else {
-                            Log.e("SpecialMissionService", "Greška pri označavanju taskova kao INACTIVE", updateTask.getException());
+                            Log.e("SpecialMissionService", "Greška pri označavanju taskova kao EXPIRED", updateTask.getException());
                         }
                         onComplete.run();
                     });
@@ -310,12 +389,17 @@ public class SpecialMissionService {
         // 1. Aktiviraj misiju
         mission.setStatus(SpecialMissionStatus.ACTIVE);
         mission.setStartTime(System.currentTimeMillis());
-        mission.setEndTime(mission.getStartTime() + (14 * 24 * 60 * 60 * 1000L)); // 2 nedelje
+        // mission.setEndTime(mission.getStartTime() + (14 * 24 * 60 * 60 * 1000L)); // 2 nedelje
+        mission.setEndTime(mission.getStartTime() + (2 * 60 * 1000L)); // 1 minut za testiranje
         
         // Povećaj mission number za 1
         mission.setMissionNumber(mission.getMissionNumber() + 1);
         
-        // 2. Ažuriraj misiju u bazi
+        // 2. Resetuj boss-a za novu misiju
+        SpecialBoss newBoss = new SpecialBoss(mission.getAllianceId(), alliance.getId(), alliance.getMemberIds().size());
+        mission.setBoss(newBoss);
+        
+        // 3. Ažuriraj misiju u bazi
         specialMissionRepository.updateSpecialMission(mission, task -> {
             if (!task.isSuccessful()) {
                 Log.e("SpecialMissionService", "Greška pri ažuriranju misije");
@@ -323,7 +407,7 @@ public class SpecialMissionService {
                 return;
             }
             
-            // 3. Kreiraj nove zadatke za sve članove
+            // 4. Kreiraj taskove za sve članove (kada se aktivira misija)
             List<SpecialTask> newTasks = createSpecialTasksForAlliance(alliance, mission.getMissionNumber());
             specialTaskRepository.createSpecialTasksForAlliance(newTasks, task2 -> {
                 if (!task2.isSuccessful()) {
@@ -332,8 +416,10 @@ public class SpecialMissionService {
                     return;
                 }
                 
-                // 4. Postavi alliance.isMissionStarted = true
+                // 5. Postavi alliance.isMissionStarted = true
                 updateAllianceMissionStatus(alliance.getId(), true, () -> {
+                    // Pokreni timer za misiju
+                    startMissionTimer(mission.getAllianceId(), mission.getEndTime());
                     Log.d("SpecialMissionService", "✅ Misija uspešno aktivirana!");
                     listener.onComplete(Tasks.forResult(true));
                 });

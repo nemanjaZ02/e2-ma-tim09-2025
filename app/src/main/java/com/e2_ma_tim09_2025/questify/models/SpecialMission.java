@@ -76,10 +76,6 @@ public class SpecialMission {
         this.rewardsDistributed = rewardsDistributed;
     }
 
-    public boolean isExpired() {
-        return System.currentTimeMillis() > endTime;
-    }
-
     public long getTimeRemaining() {
         return Math.max(0, endTime - System.currentTimeMillis());
     }
