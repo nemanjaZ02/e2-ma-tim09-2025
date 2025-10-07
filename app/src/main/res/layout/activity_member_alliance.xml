@@ -110,6 +110,18 @@
 
     </LinearLayout>
 
+    <!-- Chat Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/buttonAllianceChat"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="💬 Alliance Chat"
+        android:layout_marginBottom="16dp"
+        android:backgroundTint="#2196F3"
+        app:icon="@drawable/ic_chat"
+        app:iconGravity="textStart"
+        android:visibility="gone" />
+
     <!-- Special Mission Progress Section -->
     <LinearLayout
         android:id="@+id/specialMissionProgressSection"
