@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/sideMenu"
+    android:layout_width="280dp"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFF3E0"
+    android:elevation="8dp"
+    android:padding="16dp">
+
+    <!-- Menu Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="16dp"
+        android:layout_marginBottom="16dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Menu"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:textColor="#5C4033"
+            android:fontFamily="serif" />
+
+        <ImageView
+            android:id="@+id/closeMenu"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:src="@drawable/ic_close"
+            android:contentDescription="Close Menu"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:padding="4dp" />
+
+    </LinearLayout>
+
+    <!-- Menu Items Container -->
+    <LinearLayout
+        android:id="@+id/menuItemsContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Statistics Menu Item -->
+        <LinearLayout
+            android:id="@+id/statisticsMenuItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="📊 Statistics"
+                android:textSize="18sp"
+                android:textColor="#5C4033"
+                android:fontFamily="serif"
+                android:gravity="center_vertical" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→"
+                android:textSize="16sp"
+                android:textColor="#8B4513"
+                android:fontFamily="serif" />
+
+        </LinearLayout>
+
+        <!-- Add more menu items here as needed -->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#E0E0E0"
+            android:layout_marginHorizontal="16dp" />
+
+    </LinearLayout>
+
+</LinearLayout>
