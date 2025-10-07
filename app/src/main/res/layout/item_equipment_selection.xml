@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:card_view="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginStart="8dp"
     android:layout_marginEnd="8dp"
     android:layout_marginTop="4dp"
     android:layout_marginBottom="4dp"
-    card_view:cardCornerRadius="12dp"
-    card_view:cardElevation="4dp"
-    card_view:cardBackgroundColor="#F5DEB3"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="4dp"
+    app:cardBackgroundColor="#F5F5DC"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?attr/selectableItemBackground">
@@ -46,48 +45,27 @@
                 android:textSize="18sp"
                 android:textStyle="bold"
                 android:textColor="#5C4033"
+                android:fontFamily="serif"
                 android:layout_marginBottom="4dp" />
 
             <TextView
-                android:id="@+id/tvEquipmentUses"
+                android:id="@+id/tvEquipmentDetails"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Amount left: 0"
+                android:text="Equipment details"
                 android:textSize="14sp"
                 android:textColor="#8B4513"
-                android:layout_marginBottom="2dp" />
-
-            <TextView
-                android:id="@+id/tvEquipmentUpgrades"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Upgrades: 0"
-                android:textSize="12sp"
-                android:textColor="#8B4513" />
+                android:fontFamily="serif" />
 
         </LinearLayout>
 
-        <!-- Selection Indicator -->
-        <ImageView
-            android:id="@+id/ivSelectionIndicator"
+        <!-- Selection Checkbox -->
+        <CheckBox
+            android:id="@+id/checkboxSelection"
             android:layout_width="24dp"
             android:layout_height="24dp"
-            android:src="@drawable/ic_check_circle"
             android:visibility="gone"
-            android:contentDescription="Selected" />
-
-        <!-- Status Badge -->
-        <TextView
-            android:id="@+id/tvStatusBadge"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="ACTIVE"
-            android:textSize="10sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:background="@drawable/status_background"
-            android:padding="4dp"
-            android:visibility="gone" />
+            android:contentDescription="Select equipment" />
 
     </LinearLayout>
 

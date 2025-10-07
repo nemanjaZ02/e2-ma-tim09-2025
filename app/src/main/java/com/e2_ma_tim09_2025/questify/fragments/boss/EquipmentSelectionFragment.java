@@ -6,8 +6,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -18,36 +16,31 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.e2_ma_tim09_2025.questify.R;
+import com.e2_ma_tim09_2025.questify.activities.bosses.BossMainActivity;
 import com.e2_ma_tim09_2025.questify.adapters.EquipmentSelectionAdapter;
 import com.e2_ma_tim09_2025.questify.models.MyEquipment;
 import com.e2_ma_tim09_2025.questify.viewmodels.EquipmentSelectionViewModel;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import dagger.hilt.android.AndroidEntryPoint;
 
 @AndroidEntryPoint
-public class EquipmentSelectionFragment extends Fragment implements EquipmentSelectionAdapter.OnEquipmentSelectedListener {
+public class EquipmentSelectionFragment extends Fragment {
 
     private EquipmentSelectionViewModel viewModel;
-    private EquipmentSelectionAdapter adapter;
-    private RecyclerView recyclerViewEquipment;
-    private LinearLayout layoutSelectedEquipment;
-    private TextView tvSelectedEquipmentName;
-    private TextView tvSelectedEquipmentUses;
-    private Button btnSkip;
-    private Button btnApply;
+    private EquipmentSelectionAdapter activeEquipmentAdapter;
+    private EquipmentSelectionAdapter availableEquipmentAdapter;
+    
+    // Views
+    private RecyclerView recyclerViewActiveEquipment;
+    private RecyclerView recyclerViewAvailableEquipment;
+    private Button btnActivateSelected;
     private ImageButton btnClose;
-
-    private MyEquipment selectedEquipment = null;
-
-    public interface OnEquipmentSelectionCompleteListener {
-        void onEquipmentSelected(MyEquipment equipment);
-        void onEquipmentSkipped();
-        void onFragmentClosed();
-    }
-
-    private OnEquipmentSelectionCompleteListener listener;
+    
+    // Selected equipment for activation
+    private List<MyEquipment> selectedEquipmentForActivation = new ArrayList<>();
 
     public static EquipmentSelectionFragment newInstance() {
         return new EquipmentSelectionFragment();
@@ -70,90 +63,120 @@ public class EquipmentSelectionFragment extends Fragment implements EquipmentSel
         super.onViewCreated(view, savedInstanceState);
         
         initViews(view);
-        setupRecyclerView();
+        setupRecyclerViews();
         setupClickListeners();
         observeViewModel();
-        loadUserEquipment();
+        loadEquipment();
     }
 
     private void initViews(View view) {
-        recyclerViewEquipment = view.findViewById(R.id.recyclerViewEquipment);
-        layoutSelectedEquipment = view.findViewById(R.id.layoutSelectedEquipment);
-        tvSelectedEquipmentName = view.findViewById(R.id.tvSelectedEquipmentName);
-        tvSelectedEquipmentUses = view.findViewById(R.id.tvSelectedEquipmentUses);
-        btnSkip = view.findViewById(R.id.btnSkip);
-        btnApply = view.findViewById(R.id.btnApply);
+        recyclerViewActiveEquipment = view.findViewById(R.id.recyclerViewActiveEquipment);
+        recyclerViewAvailableEquipment = view.findViewById(R.id.recyclerViewAvailableEquipment);
+        btnActivateSelected = view.findViewById(R.id.btnActivateSelected);
         btnClose = view.findViewById(R.id.btnClose);
     }
 
-    private void setupRecyclerView() {
-        adapter = new EquipmentSelectionAdapter(new ArrayList<>(), this);
-        recyclerViewEquipment.setLayoutManager(new LinearLayoutManager(getContext()));
-        recyclerViewEquipment.setAdapter(adapter);
+    private void setupRecyclerViews() {
+        // Active equipment adapter (display only)
+        activeEquipmentAdapter = new EquipmentSelectionAdapter();
+        activeEquipmentAdapter.setSelectionMode(false); // Display only
+        
+        recyclerViewActiveEquipment.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerViewActiveEquipment.setAdapter(activeEquipmentAdapter);
+
+        // Available equipment adapter (for activation)
+        availableEquipmentAdapter = new EquipmentSelectionAdapter();
+        availableEquipmentAdapter.setSelectionMode(true); // Enable multi-selection
+        availableEquipmentAdapter.setOnEquipmentSelectedListener(this::onEquipmentSelectedForActivation);
+        
+        recyclerViewAvailableEquipment.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerViewAvailableEquipment.setAdapter(availableEquipmentAdapter);
     }
 
     private void setupClickListeners() {
-        btnSkip.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onEquipmentSkipped();
-            }
-        });
-
-        btnApply.setOnClickListener(v -> {
-            if (selectedEquipment != null && listener != null) {
-                // Call equipment activation function (commented out as colleague said it doesn't work)
-                viewModel.activateEquipment(selectedEquipment);
-                listener.onEquipmentSelected(selectedEquipment);
-            }
-        });
-
         btnClose.setOnClickListener(v -> {
-            if (listener != null) {
-                listener.onFragmentClosed();
+            // Close fragment and return to boss battle
+            closeFragmentAndReturnToBoss();
+        });
+
+        btnActivateSelected.setOnClickListener(v -> {
+            if (!selectedEquipmentForActivation.isEmpty()) {
+                viewModel.activateEquipment(selectedEquipmentForActivation);
             }
         });
     }
 
-    private void observeViewModel() {
-        viewModel.getUserEquipment().observe(getViewLifecycleOwner(), equipmentList -> {
-            if (equipmentList != null) {
-                adapter.updateEquipmentList(equipmentList);
-            }
-        });
-
-        viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
-            // TODO: Show loading indicator if needed
-        });
-
-        viewModel.getErrorMessage().observe(getViewLifecycleOwner(), errorMessage -> {
-            if (errorMessage != null && !errorMessage.isEmpty()) {
-                Toast.makeText(getContext(), errorMessage, Toast.LENGTH_SHORT).show();
-            }
-        });
-    }
-
-    private void loadUserEquipment() {
-        viewModel.loadUserEquipment();
-    }
-
-    @Override
-    public void onEquipmentSelected(MyEquipment equipment) {
-        selectedEquipment = equipment;
-        updateSelectedEquipmentUI();
-        btnApply.setEnabled(true);
-    }
-
-    private void updateSelectedEquipmentUI() {
-        if (selectedEquipment != null) {
-            layoutSelectedEquipment.setVisibility(View.VISIBLE);
-            tvSelectedEquipmentName.setText("Equipment ID: " + selectedEquipment.getEquipmentId());
-            tvSelectedEquipmentUses.setText("Amount left: " + selectedEquipment.getLeftAmount());
+    private void closeFragmentAndReturnToBoss() {
+        if (getActivity() instanceof BossMainActivity) {
+            BossMainActivity bossActivity = (BossMainActivity) getActivity();
+            bossActivity.hideEquipmentSelection();
         } else {
-            layoutSelectedEquipment.setVisibility(View.GONE);
+            // Fallback to back press if not in BossMainActivity
+            if (getActivity() != null) {
+                getActivity().onBackPressed();
+            }
         }
     }
 
-    public void setOnEquipmentSelectionCompleteListener(OnEquipmentSelectionCompleteListener listener) {
-        this.listener = listener;
+    private void observeViewModel() {
+        // Observe active equipment (display only)
+        viewModel.getActiveEquipment().observe(getViewLifecycleOwner(), equipmentList -> {
+            if (equipmentList != null) {
+                activeEquipmentAdapter.updateEquipmentList(equipmentList);
+            }
+        });
+
+        // Observe available equipment (for activation)
+        viewModel.getAvailableEquipment().observe(getViewLifecycleOwner(), equipmentList -> {
+            if (equipmentList != null) {
+                availableEquipmentAdapter.updateEquipmentList(equipmentList);
+            }
+        });
+
+        // Observe loading state
+        viewModel.getIsLoading().observe(getViewLifecycleOwner(), isLoading -> {
+            btnActivateSelected.setEnabled(!isLoading && !selectedEquipmentForActivation.isEmpty());
+        });
+
+        // Observe messages
+        viewModel.getMessage().observe(getViewLifecycleOwner(), message -> {
+            if (message != null && !message.isEmpty()) {
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // Observe activation success
+        viewModel.getActivationSuccess().observe(getViewLifecycleOwner(), success -> {
+            if (success != null && success) {
+                selectedEquipmentForActivation.clear();
+                availableEquipmentAdapter.clearSelection();
+                updateActivateButton();
+                
+                // Close fragment and return to boss battle after successful activation
+                closeFragmentAndReturnToBoss();
+            }
+        });
+    }
+
+    private void loadEquipment() {
+        viewModel.loadUserEquipment();
+    }
+
+    private void onEquipmentSelectedForActivation(MyEquipment equipment) {
+        if (selectedEquipmentForActivation.contains(equipment)) {
+            selectedEquipmentForActivation.remove(equipment);
+        } else {
+            selectedEquipmentForActivation.add(equipment);
+        }
+        updateActivateButton();
+    }
+
+    private void updateActivateButton() {
+        btnActivateSelected.setEnabled(!selectedEquipmentForActivation.isEmpty());
+        if (!selectedEquipmentForActivation.isEmpty()) {
+            btnActivateSelected.setText("Activate Selected (" + selectedEquipmentForActivation.size() + ")");
+        } else {
+            btnActivateSelected.setText("Activate Selected Equipment");
+        }
     }
 }

@@ -3,6 +3,7 @@ package com.e2_ma_tim09_2025.questify.adapters;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -13,20 +14,31 @@ import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.models.MyEquipment;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class EquipmentSelectionAdapter extends RecyclerView.Adapter<EquipmentSelectionAdapter.EquipmentViewHolder> {
 
     private List<MyEquipment> equipmentList;
+    private Set<MyEquipment> selectedEquipment = new HashSet<>();
+    private boolean selectionMode = false;
     private OnEquipmentSelectedListener listener;
-    private int selectedPosition = -1;
 
     public interface OnEquipmentSelectedListener {
         void onEquipmentSelected(MyEquipment equipment);
     }
 
-    public EquipmentSelectionAdapter(List<MyEquipment> equipmentList, OnEquipmentSelectedListener listener) {
-        this.equipmentList = new ArrayList<>(equipmentList);
+    public EquipmentSelectionAdapter() {
+        this.equipmentList = new ArrayList<>();
+    }
+
+    public void setSelectionMode(boolean selectionMode) {
+        this.selectionMode = selectionMode;
+        notifyDataSetChanged();
+    }
+
+    public void setOnEquipmentSelectedListener(OnEquipmentSelectedListener listener) {
         this.listener = listener;
     }
 
@@ -41,7 +53,8 @@ public class EquipmentSelectionAdapter extends RecyclerView.Adapter<EquipmentSel
     @Override
     public void onBindViewHolder(@NonNull EquipmentViewHolder holder, int position) {
         MyEquipment equipment = equipmentList.get(position);
-        holder.bind(equipment, position == selectedPosition);
+        boolean isSelected = selectedEquipment.contains(equipment);
+        holder.bind(equipment, isSelected, selectionMode);
     }
 
     @Override
@@ -52,62 +65,68 @@ public class EquipmentSelectionAdapter extends RecyclerView.Adapter<EquipmentSel
     public void updateEquipmentList(List<MyEquipment> newEquipmentList) {
         this.equipmentList.clear();
         this.equipmentList.addAll(newEquipmentList);
-        selectedPosition = -1;
+        selectedEquipment.clear();
+        notifyDataSetChanged();
+    }
+
+    public void clearSelection() {
+        selectedEquipment.clear();
         notifyDataSetChanged();
     }
 
     class EquipmentViewHolder extends RecyclerView.ViewHolder {
         private ImageView ivEquipmentIcon;
         private TextView tvEquipmentName;
-        private TextView tvEquipmentUses;
-        private TextView tvEquipmentUpgrades;
-        private ImageView ivSelectionIndicator;
-        private TextView tvStatusBadge;
+        private TextView tvEquipmentDetails;
+        private CheckBox checkboxSelection;
 
         public EquipmentViewHolder(@NonNull View itemView) {
             super(itemView);
             ivEquipmentIcon = itemView.findViewById(R.id.ivEquipmentIcon);
             tvEquipmentName = itemView.findViewById(R.id.tvEquipmentName);
-            tvEquipmentUses = itemView.findViewById(R.id.tvEquipmentUses);
-            tvEquipmentUpgrades = itemView.findViewById(R.id.tvEquipmentUpgrades);
-            ivSelectionIndicator = itemView.findViewById(R.id.ivSelectionIndicator);
-            tvStatusBadge = itemView.findViewById(R.id.tvStatusBadge);
-
-            itemView.setOnClickListener(v -> {
-                int position = getAdapterPosition();
-                if (position != RecyclerView.NO_POSITION) {
-                    selectedPosition = position;
-                    notifyDataSetChanged();
-                    if (listener != null) {
-                        listener.onEquipmentSelected(equipmentList.get(position));
-                    }
-                }
-            });
+            tvEquipmentDetails = itemView.findViewById(R.id.tvEquipmentDetails);
+            checkboxSelection = itemView.findViewById(R.id.checkboxSelection);
         }
 
-        public void bind(MyEquipment equipment, boolean isSelected) {
-            // Set equipment name (using equipmentId for now since we don't have name)
+        public void bind(MyEquipment equipment, boolean isSelected, boolean selectionMode) {
+            // Set equipment name
             tvEquipmentName.setText("Equipment " + equipment.getEquipmentId());
             
-            // Set uses left
-            tvEquipmentUses.setText("Amount left: " + equipment.getLeftAmount());
-            
-            // Set upgrades
-            tvEquipmentUpgrades.setText("Upgrades: " + equipment.getTimesUpgraded());
-            
-            // Show selection indicator
-            ivSelectionIndicator.setVisibility(isSelected ? View.VISIBLE : View.GONE);
-            
-            // Show status badge if activated
+            // Set equipment details
+            String details = "Amount: " + equipment.getLeftAmount();
             if (equipment.isActivated()) {
-                tvStatusBadge.setVisibility(View.VISIBLE);
-                tvStatusBadge.setText("ACTIVE");
-            } else {
-                tvStatusBadge.setVisibility(View.GONE);
+                details += " | ACTIVE";
             }
+            tvEquipmentDetails.setText(details);
             
-            // Set equipment icon based on equipmentId
+            // Set equipment icon
             setEquipmentIcon(equipment.getEquipmentId());
+            
+            // Handle selection mode
+            if (selectionMode) {
+                checkboxSelection.setVisibility(View.VISIBLE);
+                checkboxSelection.setChecked(isSelected);
+                itemView.setBackgroundColor(isSelected ? 
+                    itemView.getContext().getResources().getColor(R.color.selected_background) : 
+                    itemView.getContext().getResources().getColor(R.color.default_background));
+                
+                // Set checkbox click listener
+                checkboxSelection.setOnCheckedChangeListener((buttonView, checked) -> {
+                    if (listener != null) {
+                        listener.onEquipmentSelected(equipment);
+                    }
+                });
+                
+                // Set item click listener (for tapping anywhere on the item)
+                itemView.setOnClickListener(v -> {
+                    checkboxSelection.setChecked(!checkboxSelection.isChecked());
+                });
+            } else {
+                checkboxSelection.setVisibility(View.GONE);
+                itemView.setBackgroundColor(itemView.getContext().getResources().getColor(R.color.default_background));
+                itemView.setOnClickListener(null);
+                checkboxSelection.setOnCheckedChangeListener(null);
+            }
         }
         
         private void setEquipmentIcon(String equipmentId) {
