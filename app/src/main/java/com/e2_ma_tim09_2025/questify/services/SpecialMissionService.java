@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -43,7 +44,6 @@ public class SpecialMissionService {
     private final AllianceRepository allianceRepository;
     private final SpecialMissionRepository specialMissionRepository;
     private final SpecialTaskRepository specialTaskRepository;
-    private final UserService userService;
     private final UserRepository userRepository;
     private final EquipmentRepository equipmentRepository;
     private final BossRepository bossRepository;
@@ -57,12 +57,10 @@ public class SpecialMissionService {
             AllianceRepository allianceRepository,
             SpecialMissionRepository specialMissionRepository,
             SpecialTaskRepository specialTaskRepository,
-            UserService userService,
             UserRepository userRepository,
             EquipmentRepository equipmentRepository,
             BossRepository bossRepository,
             TaskRepository taskRepository) {
-        this.userService = userService;
         this.allianceRepository = allianceRepository;
         this.specialMissionRepository = specialMissionRepository;
         this.specialTaskRepository = specialTaskRepository;
@@ -899,7 +897,7 @@ public class SpecialMissionService {
                     List<String> memberIds = alliance.getMemberIds();
                     Log.d("SpecialMissionService", "Found " + memberIds.size() + " alliance members to update");
 
-                    userService.incrementStartedMissionsForAll(memberIds, updateTask -> {
+                    incrementStartedMissionsForAll(memberIds, updateTask -> {
                         if (updateTask.isSuccessful()) {
                             Log.d("SpecialMissionService", "✅ Successfully incremented startedMissions for all alliance members");
                         } else {
@@ -1122,7 +1120,7 @@ public class SpecialMissionService {
                     List<String> memberIds = alliance.getMemberIds();
                     Log.d("SpecialMissionService", "Found " + memberIds.size() + " alliance members to update");
 
-                    userService.incrementFinishedMissionsForAll(memberIds, updateTask -> {
+                    incrementFinishedMissionsForAll(memberIds, updateTask -> {
                         if (updateTask.isSuccessful()) {
                             Log.d("SpecialMissionService", "✅ Successfully incremented finishedMissions for all alliance members");
                         } else {
@@ -1314,4 +1312,118 @@ public class SpecialMissionService {
         });
     }
     
+    /**
+     * Increment startedMissions for multiple users (alliance members)
+     */
+    private void incrementStartedMissionsForAll(List<String> userIds, OnCompleteListener<Void> listener) {
+        if (userIds == null || userIds.isEmpty()) {
+            listener.onComplete(Tasks.forResult(null));
+            return;
+        }
+        
+        Log.d("SpecialMissionService", "Incrementing startedMissions for " + userIds.size() + " users");
+        
+        // Use AtomicInteger to track completed operations
+        AtomicInteger completedCount = new AtomicInteger(0);
+        AtomicInteger totalCount = new AtomicInteger(userIds.size());
+        boolean[] hasError = {false};
+        
+        for (String userId : userIds) {
+            incrementStartedMissions(userId, task -> {
+                if (!task.isSuccessful()) {
+                    Log.e("SpecialMissionService", "Failed to increment startedMissions for user " + userId, task.getException());
+                    hasError[0] = true;
+                }
+                
+                int completed = completedCount.incrementAndGet();
+                if (completed == totalCount.get()) {
+                    if (hasError[0]) {
+                        listener.onComplete(Tasks.forException(new Exception("Some users failed to update")));
+                    } else {
+                        Log.d("SpecialMissionService", "Successfully incremented startedMissions for all " + userIds.size() + " users");
+                        listener.onComplete(Tasks.forResult(null));
+                    }
+                }
+            });
+        }
+    }
+    
+    /**
+     * Increment finishedMissions for multiple users (alliance members)
+     */
+    private void incrementFinishedMissionsForAll(List<String> userIds, OnCompleteListener<Void> listener) {
+        if (userIds == null || userIds.isEmpty()) {
+            listener.onComplete(Tasks.forResult(null));
+            return;
+        }
+        
+        Log.d("SpecialMissionService", "Incrementing finishedMissions for " + userIds.size() + " users");
+        
+        // Use AtomicInteger to track completed operations
+        AtomicInteger completedCount = new AtomicInteger(0);
+        AtomicInteger totalCount = new AtomicInteger(userIds.size());
+        boolean[] hasError = {false};
+        
+        for (String userId : userIds) {
+            incrementFinishedMissions(userId, task -> {
+                if (!task.isSuccessful()) {
+                    Log.e("SpecialMissionService", "Failed to increment finishedMissions for user " + userId, task.getException());
+                    hasError[0] = true;
+                }
+                
+                int completed = completedCount.incrementAndGet();
+                if (completed == totalCount.get()) {
+                    if (hasError[0]) {
+                        listener.onComplete(Tasks.forException(new Exception("Some users failed to update")));
+                    } else {
+                        Log.d("SpecialMissionService", "Successfully incremented finishedMissions for all " + userIds.size() + " users");
+                        listener.onComplete(Tasks.forResult(null));
+                    }
+                }
+            });
+        }
+    }
+    
+    /**
+     * Increment startedMissions count for a user
+     */
+    private void incrementStartedMissions(String userId, OnCompleteListener<Void> listener) {
+        userRepository.getUser(userId, task -> {
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                User user = task.getResult().toObject(User.class);
+                if (user != null) {
+                    int currentStartedMissions = user.getStartedMissions();
+                    user.setStartedMissions(currentStartedMissions + 1);
+                    userRepository.updateUser(user, listener);
+                    Log.d("SpecialMissionService", "Incremented startedMissions for user " + userId + " to " + user.getStartedMissions());
+                } else {
+                    listener.onComplete(Tasks.forException(new Exception("User not found")));
+                }
+            } else {
+                listener.onComplete(Tasks.forException(new Exception("Failed to get user")));
+            }
+        });
+    }
+    
+    /**
+     * Increment finishedMissions count for a user
+     */
+    private void incrementFinishedMissions(String userId, OnCompleteListener<Void> listener) {
+        userRepository.getUser(userId, task -> {
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                User user = task.getResult().toObject(User.class);
+                if (user != null) {
+                    int currentFinishedMissions = user.getFinishedMissions();
+                    user.setFinishedMissions(currentFinishedMissions + 1);
+                    userRepository.updateUser(user, listener);
+                    Log.d("SpecialMissionService", "Incremented finishedMissions for user " + userId + " to " + user.getFinishedMissions());
+                } else {
+                    listener.onComplete(Tasks.forException(new Exception("User not found")));
+                }
+            } else {
+                listener.onComplete(Tasks.forException(new Exception("Failed to get user")));
+            }
+        });
+    }
+
 }
