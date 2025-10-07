@@ -99,6 +99,10 @@ public class SpecialTasksListFragment extends Fragment {
         viewModel.getMyAllianceSpecialMission().observe(getViewLifecycleOwner(), mission -> {
             if (mission != null) {
                 myAllianceAdapter.setSpecialMission(mission);
+                // Refresh tasks when mission status changes
+                if (mission.getStatus().toString().equals("EXPIRED") || mission.getStatus().toString().equals("DEFEATED")) {
+                    viewModel.loadAllSpecialTasks();
+                }
             }
         });
         
@@ -106,6 +110,10 @@ public class SpecialTasksListFragment extends Fragment {
         viewModel.getMemberAllianceSpecialMission().observe(getViewLifecycleOwner(), mission -> {
             if (mission != null) {
                 memberAllianceAdapter.setSpecialMission(mission);
+                // Refresh tasks when mission status changes
+                if (mission.getStatus().toString().equals("EXPIRED") || mission.getStatus().toString().equals("DEFEATED")) {
+                    viewModel.loadAllSpecialTasks();
+                }
             }
         });
         

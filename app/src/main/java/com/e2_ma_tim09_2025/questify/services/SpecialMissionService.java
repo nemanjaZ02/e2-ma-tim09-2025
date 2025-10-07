@@ -366,11 +366,14 @@ public class SpecialMissionService {
                 
                 if (!tasks.isEmpty()) {
                     Log.d("SpecialMissionService", "Ažuriram " + tasks.size() + " taskova kao EXPIRED");
+                    for (SpecialTask specialTask : tasks) {
+                        Log.d("SpecialMissionService", "Updating task " + specialTask.getTaskType() + " to EXPIRED");
+                    }
                     specialTaskRepository.updateSpecialTasks(tasks, updateTask -> {
                         if (updateTask.isSuccessful()) {
-                            Log.d("SpecialMissionService", "Svi taskovi uspešno označeni kao EXPIRED");
+                            Log.d("SpecialMissionService", "✅ Svi taskovi uspešno označeni kao EXPIRED");
                         } else {
-                            Log.e("SpecialMissionService", "Greška pri označavanju taskova kao EXPIRED", updateTask.getException());
+                            Log.e("SpecialMissionService", "❌ Greška pri označavanju taskova kao EXPIRED", updateTask.getException());
                         }
                         onComplete.run();
                     });
