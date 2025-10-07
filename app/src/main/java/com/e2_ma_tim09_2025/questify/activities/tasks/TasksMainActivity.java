@@ -253,6 +253,14 @@ public class TasksMainActivity extends AppCompatActivity {
             return false;
         });
 
+        // Profile menu item click listener
+        View profileMenuItem = findViewById(R.id.profileMenuItem);
+        profileMenuItem.setOnClickListener(v -> {
+            closeMenu(); // Close the side menu
+            Intent intent = new Intent(TasksMainActivity.this, com.e2_ma_tim09_2025.questify.activities.users.ProfileActivity.class);
+            startActivity(intent);
+        });
+
         // Statistics menu item click listener
         View statisticsMenuItem = findViewById(R.id.statisticsMenuItem);
         statisticsMenuItem.setOnClickListener(v -> {

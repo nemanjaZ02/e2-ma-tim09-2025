@@ -8,6 +8,7 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -18,6 +19,7 @@ import android.widget.Toast;
 
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.activities.alliance.CreateAllianceActivity;
+import com.e2_ma_tim09_2025.questify.utils.BadgeMapper;
 import com.e2_ma_tim09_2025.questify.activities.alliance.MemberAllianceActivity;
 import com.e2_ma_tim09_2025.questify.activities.alliance.MyAllianceActivity;
 import com.e2_ma_tim09_2025.questify.activities.ShopActivity;
@@ -39,7 +41,7 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class ProfileActivity extends AppCompatActivity {
 
     private ImageView profileAvatar,qrCodeImage;
-    private TextView profileUsername, profileTitleText, profileLevel, profilePowerPoints, profileXP, profileCoins, equipmentCount;
+    private TextView profileUsername, profileTitleText, profileLevel, profilePowerPoints, profileXP, profileCoins, equipmentCount, badgeCount;
     private LinearLayout badgesContainer, equipmentContainer;
     private LinearLayout changePasswordContainer;
     private EditText editOldPassword, editNewPassword, editConfirmPassword;
@@ -70,6 +72,7 @@ public class ProfileActivity extends AppCompatActivity {
         badgesContainer = findViewById(R.id.badgesContainer);
         equipmentContainer = findViewById(R.id.equipmentContainer);
         equipmentCount = findViewById(R.id.equipmentCount);
+        badgeCount = findViewById(R.id.badgeCount);
         changePasswordContainer = findViewById(R.id.changePasswordContainer);
         editOldPassword = findViewById(R.id.editOldPassword);
         editNewPassword = findViewById(R.id.editNewPassword);
@@ -197,16 +200,17 @@ public class ProfileActivity extends AppCompatActivity {
         profileAvatar.setImageResource(drawableResId);
 
 
-        // Placeholder badges (for now just TextViews)
+        // Display badges as images
         List<String> badges = user.getBadges();
         badgesContainer.removeAllViews();
+        
+        // Update badge count
+        int badgeCountValue = (badges != null) ? badges.size() : 0;
+        badgeCount.setText("(" + badgeCountValue + " badges)");
+        
         if (badges != null && !badges.isEmpty()) {
             for (String badge : badges) {
-                TextView badgeView = new TextView(this);
-                badgeView.setText(badge);
-                badgeView.setTextColor(getResources().getColor(R.color.black));
-                badgeView.setPadding(8, 8, 8, 8);
-                badgesContainer.addView(badgeView);
+                addBadgeToView(badge);
             }
         }
 
@@ -223,6 +227,46 @@ public class ProfileActivity extends AppCompatActivity {
         int resId = getResources().getIdentifier(avatarName, "drawable", getPackageName());
         return resId != 0 ? resId : R.drawable.ninja;
     }
+    
+    /**
+     * Add a badge to the badges container with image and tooltip
+     */
+    private void addBadgeToView(String badgeString) {
+        // Create a container for the badge (image + tooltip)
+        LinearLayout badgeContainer = new LinearLayout(this);
+        badgeContainer.setOrientation(LinearLayout.VERTICAL);
+        badgeContainer.setPadding(4, 4, 4, 4); // Minimal padding for very compact layout
+        badgeContainer.setGravity(android.view.Gravity.CENTER);
+        
+        // Create ImageView for the badge
+        ImageView badgeImage = new ImageView(this);
+        badgeImage.setLayoutParams(new LinearLayout.LayoutParams(120, 120)); // 120x120 dp - bigger badges
+        badgeImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        
+        // Get the drawable resource for the badge
+        int badgeDrawableId = BadgeMapper.getBadgeDrawable(badgeString);
+        if (badgeDrawableId != -1) {
+            badgeImage.setImageResource(badgeDrawableId);
+        } else {
+            // Fallback to a default badge icon if the badge type is not found
+            badgeImage.setImageResource(android.R.drawable.ic_menu_help);
+        }
+        
+        // Create TextView for the badge name (tooltip)
+        TextView badgeName = new TextView(this);
+        badgeName.setText(BadgeMapper.getBadgeDisplayName(badgeString));
+        badgeName.setTextSize(12); // Slightly larger text to match bigger badges
+        badgeName.setTextColor(getResources().getColor(R.color.text_secondary));
+        badgeName.setGravity(android.view.Gravity.CENTER);
+        badgeName.setPadding(0, 2, 0, 0); // Minimal padding for very compact layout
+        
+        // Add views to container
+        badgeContainer.addView(badgeImage);
+        badgeContainer.addView(badgeName);
+        
+        // Add container to badges container
+        badgesContainer.addView(badgeContainer);
+    }
 
     /**
      * Display equipment details from ViewModel
@@ -235,6 +279,7 @@ public class ProfileActivity extends AppCompatActivity {
             TextView noEquipmentView = new TextView(this);
             noEquipmentView.setText("No equipment owned");
             noEquipmentView.setTextColor(getResources().getColor(R.color.black));
+            noEquipmentView.setTextSize(16);
             noEquipmentView.setPadding(16, 16, 16, 16);
             noEquipmentView.setGravity(android.view.Gravity.CENTER);
             equipmentContainer.addView(noEquipmentView);
@@ -245,6 +290,14 @@ public class ProfileActivity extends AppCompatActivity {
         for (UserViewModel.EquipmentWithQuantity eq : equipmentWithQuantities) {
             addEquipmentItemWithQuantityToView(eq.equipment, eq.quantity);
         }
+        
+        // Add some extra padding at the bottom to ensure scrolling works
+        View bottomPadding = new View(this);
+        bottomPadding.setLayoutParams(new LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT, 
+            20 // 20dp bottom padding
+        ));
+        equipmentContainer.addView(bottomPadding);
     }
     
     /**
