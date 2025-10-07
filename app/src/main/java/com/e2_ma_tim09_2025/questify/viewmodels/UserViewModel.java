@@ -7,7 +7,10 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.e2_ma_tim09_2025.questify.models.User;
+import com.e2_ma_tim09_2025.questify.models.Equipment;
+import com.e2_ma_tim09_2025.questify.models.MyEquipment;
 import com.e2_ma_tim09_2025.questify.services.UserService;
+import com.e2_ma_tim09_2025.questify.services.EquipmentService;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
@@ -15,6 +18,14 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseAuthWeakPasswordException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.inject.Inject;
 
@@ -24,17 +35,22 @@ import dagger.hilt.android.lifecycle.HiltViewModel;
 public class UserViewModel extends ViewModel {
 
     private final UserService userService;
+    private final EquipmentService equipmentService;
 
     private final MutableLiveData<User> userLiveData = new MutableLiveData<>();
     private final MutableLiveData<Boolean> registrationStatus = new MutableLiveData<>();
     private final MutableLiveData<String> registrationError = new MutableLiveData<>();
     private final MutableLiveData<Boolean> loginStatus = new MutableLiveData<>();
     private final MutableLiveData<String> changePasswordResult = new MutableLiveData<>();
+    private final MutableLiveData<List<Equipment>> userEquipmentDetails = new MutableLiveData<>();
+    private final MutableLiveData<List<EquipmentWithQuantity>> userEquipmentWithQuantities = new MutableLiveData<>();
+    private final MutableLiveData<Integer> equipmentCount = new MutableLiveData<>();
 
 
     @Inject
-    public UserViewModel(UserService userService) {
+    public UserViewModel(UserService userService, EquipmentService equipmentService) {
         this.userService = userService;
+        this.equipmentService = equipmentService;
     }
 
     public LiveData<String> getChangePasswordResult() {
@@ -54,6 +70,18 @@ public class UserViewModel extends ViewModel {
 
     public LiveData<Boolean> getLoginStatus() {
         return loginStatus;
+    }
+    
+    public LiveData<List<Equipment>> getUserEquipmentDetails() {
+        return userEquipmentDetails;
+    }
+    
+    public LiveData<List<EquipmentWithQuantity>> getUserEquipmentWithQuantities() {
+        return userEquipmentWithQuantities;
+    }
+    
+    public LiveData<Integer> getEquipmentCount() {
+        return equipmentCount;
     }
 
     public void registerUser(String email, String password, String username, String avatarUri) {
@@ -119,6 +147,68 @@ public class UserViewModel extends ViewModel {
         String currentUserId = userService.getCurrentUserId();
         if (currentUserId != null) {
             fetchUser(currentUserId);
+        }
+    }
+    
+    /**
+     * Load user equipment details - shows ALL individual equipment items
+     */
+    public void loadUserEquipmentDetails(List<MyEquipment> userEquipment) {
+        if (userEquipment == null || userEquipment.isEmpty()) {
+            userEquipmentDetails.setValue(new ArrayList<>());
+            equipmentCount.setValue(0);
+            return;
+        }
+        
+        // Group equipment by ID and count quantities
+        Map<String, Integer> equipmentQuantities = new HashMap<>();
+        for (MyEquipment myEquipment : userEquipment) {
+            String equipmentId = myEquipment.getEquipmentId();
+            equipmentQuantities.put(equipmentId, equipmentQuantities.getOrDefault(equipmentId, 0) + 1);
+        }
+        
+        // Update equipment count to show total items
+        int totalItems = userEquipment.size();
+        equipmentCount.setValue(totalItems);
+        
+        // Load equipment details for unique equipment items
+        List<EquipmentWithQuantity> equipmentDetails = new ArrayList<>();
+        AtomicInteger loadedCount = new AtomicInteger(0);
+        int totalUniqueItems = equipmentQuantities.size();
+        
+        for (Map.Entry<String, Integer> entry : equipmentQuantities.entrySet()) {
+            String equipmentId = entry.getKey();
+            int quantity = entry.getValue();
+            
+            equipmentService.getEquipment(equipmentId, task -> {
+                if (task.isSuccessful() && task.getResult() != null) {
+                    equipmentDetails.add(new EquipmentWithQuantity(task.getResult(), quantity));
+                }
+                
+                // Check if all equipment details are loaded
+                if (loadedCount.incrementAndGet() == totalUniqueItems) {
+                    // Set the equipment with quantities
+                    userEquipmentWithQuantities.setValue(equipmentDetails);
+                    
+                    // Convert to regular Equipment list for compatibility
+                    List<Equipment> equipmentList = new ArrayList<>();
+                    for (EquipmentWithQuantity eq : equipmentDetails) {
+                        equipmentList.add(eq.equipment);
+                    }
+                    userEquipmentDetails.setValue(equipmentList);
+                }
+            });
+        }
+    }
+    
+    // Helper class to hold equipment with quantity
+    public static class EquipmentWithQuantity {
+        public Equipment equipment;
+        public int quantity;
+        
+        public EquipmentWithQuantity(Equipment equipment, int quantity) {
+            this.equipment = equipment;
+            this.quantity = quantity;
         }
     }
 

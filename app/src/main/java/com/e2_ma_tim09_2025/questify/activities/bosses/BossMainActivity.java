@@ -568,6 +568,9 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
                 selectedEquipment = equipment;
                 hideEquipmentSelection();
                 startBossBattle();
+                // pozovem metodu iz boss view modela da se trenutnom korisniku na osnovu aktivne opreme
+                // preracuna pp i ostali atributi
+                // to radim tako sto pozovem servis metodu u boss view modelu
             }
 
             @Override

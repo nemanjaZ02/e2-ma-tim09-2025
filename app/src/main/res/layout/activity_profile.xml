@@ -149,26 +149,60 @@
             </LinearLayout>
 
             <!-- Equipment -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Equipment"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#5C4033"
-                android:fontFamily="serif"
-                android:layout_marginTop="20dp"/>
-
             <LinearLayout
-                android:id="@+id/equipmentContainer"
                 android:layout_width="match_parent"
-                android:layout_height="100dp"
+                android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center"
-                android:background="#E6E6E6"
-                android:layout_marginTop="8dp">
-                <!-- placeholder equipment -->
+                android:layout_marginTop="20dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Equipment"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    android:textColor="#5C4033"
+                    android:fontFamily="serif"/>
+
+                <TextView
+                    android:id="@+id/equipmentCount"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="(0 total items)"
+                    android:textSize="14sp"
+                    android:textColor="#8B4513"
+                    android:fontFamily="serif"/>
+
             </LinearLayout>
+
+            <ScrollView
+                android:layout_width="match_parent"
+                android:layout_height="300dp"
+                android:layout_marginTop="8dp"
+                android:background="#FFF3E0"
+                android:padding="8dp"
+                android:elevation="2dp"
+                android:fillViewport="true"
+                android:scrollbars="vertical"
+                android:scrollbarStyle="outsideOverlay"
+                android:scrollbarThumbVertical="@android:color/darker_gray"
+                android:scrollbarTrackVertical="@android:color/white"
+                android:scrollbarSize="8dp"
+                android:focusableInTouchMode="true"
+                android:descendantFocusability="beforeDescendants">
+
+                <LinearLayout
+                    android:id="@+id/equipmentContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:minHeight="300dp">
+                    <!-- Equipment items will be added here -->
+                </LinearLayout>
+
+            </ScrollView>
 
             <!-- QR Code -->
             <TextView

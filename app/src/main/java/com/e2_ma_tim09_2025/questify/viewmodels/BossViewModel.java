@@ -101,6 +101,9 @@ public class BossViewModel extends ViewModel {
         }
     }
 
+    // metoda koja uzima svu aktivnu opremu i currentUseru povecava atribute na osnovu te opreme
+    // mogu da koristim servis za to!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
     public LiveData<Integer> getCurrentHealth() {
         return currentHealth;
     }

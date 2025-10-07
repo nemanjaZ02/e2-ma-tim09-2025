@@ -22,6 +22,7 @@ import com.e2_ma_tim09_2025.questify.activities.alliance.MemberAllianceActivity;
 import com.e2_ma_tim09_2025.questify.activities.alliance.MyAllianceActivity;
 import com.e2_ma_tim09_2025.questify.activities.ShopActivity;
 import com.e2_ma_tim09_2025.questify.models.MyEquipment;
+import com.e2_ma_tim09_2025.questify.models.Equipment;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.viewmodels.UserViewModel;
 import com.google.firebase.auth.FirebaseAuth;
@@ -38,7 +39,7 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class ProfileActivity extends AppCompatActivity {
 
     private ImageView profileAvatar,qrCodeImage;
-    private TextView profileUsername, profileTitleText, profileLevel, profilePowerPoints, profileXP, profileCoins;
+    private TextView profileUsername, profileTitleText, profileLevel, profilePowerPoints, profileXP, profileCoins, equipmentCount;
     private LinearLayout badgesContainer, equipmentContainer;
     private LinearLayout changePasswordContainer;
     private EditText editOldPassword, editNewPassword, editConfirmPassword;
@@ -68,6 +69,7 @@ public class ProfileActivity extends AppCompatActivity {
         profileCoins = findViewById(R.id.profileCoins);
         badgesContainer = findViewById(R.id.badgesContainer);
         equipmentContainer = findViewById(R.id.equipmentContainer);
+        equipmentCount = findViewById(R.id.equipmentCount);
         changePasswordContainer = findViewById(R.id.changePasswordContainer);
         editOldPassword = findViewById(R.id.editOldPassword);
         editNewPassword = findViewById(R.id.editNewPassword);
@@ -83,6 +85,22 @@ public class ProfileActivity extends AppCompatActivity {
         viewModel.getUserLiveData().observe(this, user -> {
             if (user != null) {
                 bindUserData(user);
+                // Load equipment details when user data is available
+                viewModel.loadUserEquipmentDetails(user.getEquipment());
+            }
+        });
+        
+        // Observe equipment details with quantities
+        viewModel.getUserEquipmentWithQuantities().observe(this, equipmentWithQuantities -> {
+            if (equipmentWithQuantities != null) {
+                displayEquipmentWithQuantities(equipmentWithQuantities);
+            }
+        });
+        
+        // Observe equipment count
+        viewModel.getEquipmentCount().observe(this, count -> {
+            if (count != null) {
+                equipmentCount.setText("(" + count + " total items)");
             }
         });
 
@@ -192,18 +210,7 @@ public class ProfileActivity extends AppCompatActivity {
             }
         }
 
-        // Placeholder equipment (for now just TextViews)
-        List<MyEquipment> equipment = user.getEquipment();
-        equipmentContainer.removeAllViews();
-        if (equipment != null && !equipment.isEmpty()) {
-            for (MyEquipment eq : equipment) {
-                TextView eqView = new TextView(this);
-                //eqView.setText(eq);
-                eqView.setTextColor(getResources().getColor(R.color.black));
-                eqView.setPadding(8, 8, 8, 8);
-                equipmentContainer.addView(eqView);
-            }
-        }
+        // Equipment display is now handled by ViewModel observers
 
         if (user.getQrCode() != null) {
             Bitmap qrBitmap = QrCodeUtils.generateQRCode(user.getQrCode(), 400); // 400x400 px
@@ -215,6 +222,157 @@ public class ProfileActivity extends AppCompatActivity {
     private int getDrawableFromAvatarName(String avatarName) {
         int resId = getResources().getIdentifier(avatarName, "drawable", getPackageName());
         return resId != 0 ? resId : R.drawable.ninja;
+    }
+
+    /**
+     * Display equipment details from ViewModel
+     */
+    private void displayEquipmentWithQuantities(List<UserViewModel.EquipmentWithQuantity> equipmentWithQuantities) {
+        equipmentContainer.removeAllViews();
+        
+        if (equipmentWithQuantities == null || equipmentWithQuantities.isEmpty()) {
+            // Show "No equipment" message
+            TextView noEquipmentView = new TextView(this);
+            noEquipmentView.setText("No equipment owned");
+            noEquipmentView.setTextColor(getResources().getColor(R.color.black));
+            noEquipmentView.setPadding(16, 16, 16, 16);
+            noEquipmentView.setGravity(android.view.Gravity.CENTER);
+            equipmentContainer.addView(noEquipmentView);
+            return;
+        }
+        
+        // Display each unique equipment item with its quantity
+        for (UserViewModel.EquipmentWithQuantity eq : equipmentWithQuantities) {
+            addEquipmentItemWithQuantityToView(eq.equipment, eq.quantity);
+        }
+    }
+    
+    /**
+     * Add equipment item to the display with full details
+     */
+    private void addEquipmentItemToView(Equipment equipment, int itemNumber) {
+        LinearLayout itemLayout = new LinearLayout(this);
+        itemLayout.setOrientation(LinearLayout.HORIZONTAL);
+        itemLayout.setPadding(8, 8, 8, 8);
+        
+        // Equipment image
+        ImageView itemImage = new ImageView(this);
+        itemImage.setLayoutParams(new LinearLayout.LayoutParams(60, 60));
+        int drawableId = getDrawableIdForEquipment(equipment.getId());
+        if (drawableId != 0) {
+            itemImage.setImageResource(drawableId);
+        } else {
+            itemImage.setImageResource(android.R.drawable.ic_menu_help);
+        }
+        itemImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        
+        // Equipment details
+        LinearLayout detailsLayout = new LinearLayout(this);
+        detailsLayout.setOrientation(LinearLayout.VERTICAL);
+        detailsLayout.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        detailsLayout.setPadding(12, 0, 0, 0);
+        
+        TextView nameView = new TextView(this);
+        nameView.setText(equipment.getName());
+        nameView.setTextSize(16);
+        nameView.setTextColor(getResources().getColor(R.color.black));
+        nameView.setTypeface(null, android.graphics.Typeface.BOLD);
+        
+        TextView typeView = new TextView(this);
+        typeView.setText("Type: " + equipment.getType().toString());
+        typeView.setTextSize(12);
+        typeView.setTextColor(getResources().getColor(R.color.text_secondary));
+        
+        TextView itemNumberView = new TextView(this);
+        itemNumberView.setText("Item #" + itemNumber);
+        itemNumberView.setTextSize(10);
+        itemNumberView.setTextColor(getResources().getColor(R.color.text_secondary));
+        
+        detailsLayout.addView(nameView);
+        detailsLayout.addView(typeView);
+        detailsLayout.addView(itemNumberView);
+        
+        itemLayout.addView(itemImage);
+        itemLayout.addView(detailsLayout);
+        
+        equipmentContainer.addView(itemLayout);
+    }
+    
+    /**
+     * Add equipment item to the display with quantity
+     */
+    private void addEquipmentItemWithQuantityToView(Equipment equipment, int quantity) {
+        LinearLayout itemLayout = new LinearLayout(this);
+        itemLayout.setOrientation(LinearLayout.HORIZONTAL);
+        itemLayout.setPadding(8, 8, 8, 8);
+        
+        // Equipment image
+        ImageView itemImage = new ImageView(this);
+        itemImage.setLayoutParams(new LinearLayout.LayoutParams(60, 60));
+        int drawableId = getDrawableIdForEquipment(equipment.getId());
+        if (drawableId != 0) {
+            itemImage.setImageResource(drawableId);
+        } else {
+            itemImage.setImageResource(android.R.drawable.ic_menu_help);
+        }
+        itemImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        
+        // Equipment details
+        LinearLayout detailsLayout = new LinearLayout(this);
+        detailsLayout.setOrientation(LinearLayout.VERTICAL);
+        detailsLayout.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        detailsLayout.setPadding(12, 0, 0, 0);
+        
+        TextView nameView = new TextView(this);
+        nameView.setText(equipment.getName());
+        nameView.setTextSize(16);
+        nameView.setTextColor(getResources().getColor(R.color.black));
+        nameView.setTypeface(null, android.graphics.Typeface.BOLD);
+        
+        TextView typeView = new TextView(this);
+        typeView.setText("Type: " + equipment.getType().toString());
+        typeView.setTextSize(12);
+        typeView.setTextColor(getResources().getColor(R.color.text_secondary));
+        
+        TextView quantityView = new TextView(this);
+        quantityView.setText("Quantity: " + quantity);
+        quantityView.setTextSize(12);
+        quantityView.setTextColor(getResources().getColor(R.color.text_secondary));
+        quantityView.setTypeface(null, android.graphics.Typeface.BOLD);
+        
+        detailsLayout.addView(nameView);
+        detailsLayout.addView(typeView);
+        detailsLayout.addView(quantityView);
+        
+        itemLayout.addView(itemImage);
+        itemLayout.addView(detailsLayout);
+        
+        equipmentContainer.addView(itemLayout);
+    }
+    
+    
+    /**
+     * Get drawable ID for equipment based on equipment ID
+     */
+    private int getDrawableIdForEquipment(String equipmentId) {
+        switch (equipmentId) {
+            case "potion1":
+                return getResources().getIdentifier("potion1", "drawable", getPackageName());
+            case "potion2":
+                return getResources().getIdentifier("potion2", "drawable", getPackageName());
+            case "potion3":
+                return getResources().getIdentifier("potion3", "drawable", getPackageName());
+            case "potion4":
+                return getResources().getIdentifier("potion4", "drawable", getPackageName());
+            case "Gloves":
+                return getResources().getIdentifier("gloves", "drawable", getPackageName());
+            case "Shield":
+                return getResources().getIdentifier("shield", "drawable", getPackageName());
+            case "Boots":
+                return getResources().getIdentifier("boots", "drawable", getPackageName());
+            default:
+                return 0; // No image found
+        }
     }
 
 

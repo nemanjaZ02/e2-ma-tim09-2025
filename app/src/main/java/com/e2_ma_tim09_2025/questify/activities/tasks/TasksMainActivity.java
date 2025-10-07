@@ -3,6 +3,12 @@ package com.e2_ma_tim09_2025.questify.activities.tasks;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.view.GestureDetector;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.TranslateAnimation;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,6 +19,7 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.activities.MainActivity;
+import com.e2_ma_tim09_2025.questify.activities.StatisticsActivity;
 import com.e2_ma_tim09_2025.questify.activities.bosses.BossMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.specialTasks.SpecialTasksMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.taskCategories.TaskCategoriesMainActivity;
@@ -41,6 +48,14 @@ public class TasksMainActivity extends AppCompatActivity {
     private TextView tasksTitle;
     private boolean showingCalendar = false;
     private final MediatorLiveData<Boolean> isFilterActive = new MediatorLiveData<>();
+    
+    // Menu components
+    private View sideMenuContainer;
+    private View menuOverlay;
+    private ImageView hamburgerMenu;
+    private ImageView closeMenu;
+    private boolean isMenuOpen = false;
+    private GestureDetector gestureDetector;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +64,22 @@ public class TasksMainActivity extends AppCompatActivity {
 
         taskViewModel = new ViewModelProvider(this).get(TaskViewModel.class);
         userViewModel = new ViewModelProvider(this).get(UserViewModel.class);
+
+        // Initialize menu components
+        sideMenuContainer = findViewById(R.id.sideMenuContainer);
+        menuOverlay = findViewById(R.id.menuOverlay);
+        hamburgerMenu = findViewById(R.id.hamburgerMenu);
+        closeMenu = findViewById(R.id.closeMenu);
+        
+        // Ensure menu is hidden by default
+        sideMenuContainer.setVisibility(View.GONE);
+        menuOverlay.setVisibility(View.GONE);
+        
+        // Set up gesture detector for swipe-to-close
+        setupGestureDetector();
+        
+        // Set up menu click listeners
+        setupMenuListeners();
 
         tasksTitle = findViewById(R.id.tasksTitle);
         addTaskButton = findViewById(R.id.add_task_button);
@@ -163,5 +194,109 @@ public class TasksMainActivity extends AppCompatActivity {
                 .beginTransaction()
                 .replace(R.id.fragment_container, fragment)
                 .commit();
+    }
+
+    private void setupGestureDetector() {
+        gestureDetector = new GestureDetector(this, new GestureDetector.SimpleOnGestureListener() {
+            @Override
+            public boolean onFling(MotionEvent e1, MotionEvent e2, float velocityX, float velocityY) {
+                if (isMenuOpen && e1.getX() < e2.getX()) {
+                    // Swipe from left to right (swipe right) - close menu
+                    closeMenu();
+                    return true;
+                }
+                return false;
+            }
+        });
+    }
+
+    private void setupMenuListeners() {
+        // Hamburger menu click listener
+        hamburgerMenu.setOnClickListener(v -> {
+            if (!isMenuOpen) {
+                openMenu();
+            }
+        });
+
+        // Close menu click listener
+        closeMenu.setOnClickListener(v -> {
+            if (isMenuOpen) {
+                closeMenu();
+            }
+        });
+
+        // Overlay click listener (close menu when clicking outside)
+        menuOverlay.setOnClickListener(v -> {
+            if (isMenuOpen) {
+                closeMenu();
+            }
+        });
+
+        // Add touch listener to side menu for swipe gesture
+        sideMenuContainer.setOnTouchListener((v, event) -> {
+            if (isMenuOpen) {
+                return gestureDetector.onTouchEvent(event);
+            }
+            return false;
+        });
+
+        // Statistics menu item click listener
+        View statisticsMenuItem = findViewById(R.id.statisticsMenuItem);
+        statisticsMenuItem.setOnClickListener(v -> {
+            closeMenu(); // Close the side menu
+            Intent intent = new Intent(TasksMainActivity.this, StatisticsActivity.class);
+            startActivity(intent);
+        });
+    }
+
+    private void openMenu() {
+        isMenuOpen = true;
+        
+        // Show menu and overlay
+        sideMenuContainer.setVisibility(View.VISIBLE);
+        menuOverlay.setVisibility(View.VISIBLE);
+        
+        // Animate menu slide in
+        TranslateAnimation slideIn = new TranslateAnimation(
+            Animation.RELATIVE_TO_SELF, -1.0f,
+            Animation.RELATIVE_TO_SELF, 0.0f,
+            Animation.RELATIVE_TO_SELF, 0.0f,
+            Animation.RELATIVE_TO_SELF, 0.0f
+        );
+        slideIn.setDuration(300);
+        slideIn.setFillAfter(true);
+        
+        sideMenuContainer.startAnimation(slideIn);
+    }
+
+    private void closeMenu() {
+        isMenuOpen = false;
+        
+        // Animate menu slide out
+        TranslateAnimation slideOut = new TranslateAnimation(
+            Animation.RELATIVE_TO_SELF, 0.0f,
+            Animation.RELATIVE_TO_SELF, -1.0f,
+            Animation.RELATIVE_TO_SELF, 0.0f,
+            Animation.RELATIVE_TO_SELF, 0.0f
+        );
+        slideOut.setDuration(300);
+        slideOut.setFillAfter(true);
+        
+        slideOut.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) {}
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                // Hide menu and overlay after animation
+                sideMenuContainer.setVisibility(View.GONE);
+                menuOverlay.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) {}
+        });
+        
+        sideMenuContainer.startAnimation(slideOut);
     }
 }

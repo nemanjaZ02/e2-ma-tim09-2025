@@ -345,6 +345,13 @@ public class EquipmentService {
     }
 
     /**
+     * Get equipment by ID
+     */
+    public void getEquipment(String equipmentId, OnCompleteListener<Equipment> listener) {
+        equipmentRepository.getEquipment(equipmentId, listener);
+    }
+
+    /**
      * Get user's current coin balance
      */
     public void getUserCoins(String userId, OnCompleteListener<Integer> listener) {

@@ -28,15 +28,18 @@ public class SpecialMissionService {
     private final AllianceRepository allianceRepository;
     private final SpecialMissionRepository specialMissionRepository;
     private final SpecialTaskRepository specialTaskRepository;
+    private final UserService userService;
 
     @Inject
     public SpecialMissionService(
             AllianceRepository allianceRepository,
             SpecialMissionRepository specialMissionRepository,
-            SpecialTaskRepository specialTaskRepository) {
+            SpecialTaskRepository specialTaskRepository,
+            UserService userService) {
         this.allianceRepository = allianceRepository;
         this.specialMissionRepository = specialMissionRepository;
         this.specialTaskRepository = specialTaskRepository;
+        this.userService = userService;
     }
 
     public void createSpecialMission(String allianceId, String leaderId, OnCompleteListener<Boolean> listener) {
@@ -149,9 +152,12 @@ public class SpecialMissionService {
 
                 Log.d("SpecialMissionService", "✅ Specijalna misija uspešno kreirana!");
                 
-                // Postavi alliance.isMissionStarted = true
-                updateAllianceMissionStatus(specialMission.getAllianceId(), true, () -> {
-                    listener.onComplete(Tasks.forResult(true));
+                // Increment startedMissions for all alliance members
+                incrementStartedMissionsForAlliance(specialMission.getAllianceId(), () -> {
+                    // Postavi alliance.isMissionStarted = true
+                    updateAllianceMissionStatus(specialMission.getAllianceId(), true, () -> {
+                        listener.onComplete(Tasks.forResult(true));
+                    });
                 });
             });
         });
@@ -250,10 +256,14 @@ public class SpecialMissionService {
                 specialMissionRepository.updateSpecialMission(mission, updateTask -> {
                     if (updateTask.isSuccessful()) {
                         Log.d("SpecialMissionService", "Mission status updated to DEFEATED");
-                        // Označava sve taskove kao INACTIVE i postavi alliance.isMissionStarted = false
-                        markAllTasksAsInactive(allianceId, () -> {
-                            updateAllianceMissionStatus(allianceId, false, () -> {
-                                listener.onComplete(Tasks.forResult(true));
+                        
+                        // Increment finishedMissions for all alliance members
+                        incrementFinishedMissionsForAlliance(allianceId, () -> {
+                            // Označava sve taskove kao INACTIVE i postavi alliance.isMissionStarted = false
+                            markAllTasksAsInactive(allianceId, () -> {
+                                updateAllianceMissionStatus(allianceId, false, () -> {
+                                    listener.onComplete(Tasks.forResult(true));
+                                });
                             });
                         });
                     } else {
@@ -332,10 +342,13 @@ public class SpecialMissionService {
                     return;
                 }
                 
-                // 4. Postavi alliance.isMissionStarted = true
-                updateAllianceMissionStatus(alliance.getId(), true, () -> {
-                    Log.d("SpecialMissionService", "✅ Misija uspešno aktivirana!");
-                    listener.onComplete(Tasks.forResult(true));
+                // 4. Increment startedMissions for all alliance members
+                incrementStartedMissionsForAlliance(alliance.getId(), () -> {
+                    // Postavi alliance.isMissionStarted = true
+                    updateAllianceMissionStatus(alliance.getId(), true, () -> {
+                        Log.d("SpecialMissionService", "✅ Misija uspešno aktivirana!");
+                        listener.onComplete(Tasks.forResult(true));
+                    });
                 });
             });
         });
@@ -359,6 +372,70 @@ public class SpecialMissionService {
                     onComplete.run();
                 }
             } else {
+                onComplete.run();
+            }
+        });
+    }
+    
+    /**
+     * Increment startedMissions for all alliance members when mission becomes ACTIVE
+     */
+    private void incrementStartedMissionsForAlliance(String allianceId, Runnable onComplete) {
+        Log.d("SpecialMissionService", "Incrementing startedMissions for alliance: " + allianceId);
+        
+        allianceRepository.getAlliance(allianceId, task -> {
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                Alliance alliance = task.getResult().toObject(Alliance.class);
+                if (alliance != null && alliance.getMemberIds() != null) {
+                    List<String> memberIds = alliance.getMemberIds();
+                    Log.d("SpecialMissionService", "Found " + memberIds.size() + " alliance members to update");
+                    
+                    userService.incrementStartedMissionsForAll(memberIds, updateTask -> {
+                        if (updateTask.isSuccessful()) {
+                            Log.d("SpecialMissionService", "✅ Successfully incremented startedMissions for all alliance members");
+                        } else {
+                            Log.e("SpecialMissionService", "❌ Failed to increment startedMissions for alliance members", updateTask.getException());
+                        }
+                        onComplete.run();
+                    });
+                } else {
+                    Log.e("SpecialMissionService", "Alliance not found or has no members");
+                    onComplete.run();
+                }
+            } else {
+                Log.e("SpecialMissionService", "Failed to get alliance for startedMissions increment");
+                onComplete.run();
+            }
+        });
+    }
+    
+    /**
+     * Increment finishedMissions for all alliance members when mission is DEFEATED
+     */
+    private void incrementFinishedMissionsForAlliance(String allianceId, Runnable onComplete) {
+        Log.d("SpecialMissionService", "Incrementing finishedMissions for alliance: " + allianceId);
+        
+        allianceRepository.getAlliance(allianceId, task -> {
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                Alliance alliance = task.getResult().toObject(Alliance.class);
+                if (alliance != null && alliance.getMemberIds() != null) {
+                    List<String> memberIds = alliance.getMemberIds();
+                    Log.d("SpecialMissionService", "Found " + memberIds.size() + " alliance members to update");
+                    
+                    userService.incrementFinishedMissionsForAll(memberIds, updateTask -> {
+                        if (updateTask.isSuccessful()) {
+                            Log.d("SpecialMissionService", "✅ Successfully incremented finishedMissions for all alliance members");
+                        } else {
+                            Log.e("SpecialMissionService", "❌ Failed to increment finishedMissions for alliance members", updateTask.getException());
+                        }
+                        onComplete.run();
+                    });
+                } else {
+                    Log.e("SpecialMissionService", "Alliance not found or has no members");
+                    onComplete.run();
+                }
+            } else {
+                Log.e("SpecialMissionService", "Failed to get alliance for finishedMissions increment");
                 onComplete.run();
             }
         });

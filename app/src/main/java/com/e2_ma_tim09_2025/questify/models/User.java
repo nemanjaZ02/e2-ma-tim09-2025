@@ -20,6 +20,8 @@ public class User {
     private List<String> friends;
     private String allianceId;
     private List<String> fcmTokens;
+    private int startedMissions;
+    private int finishedMissions;
 
     public User() {
         friends = new ArrayList<>();
@@ -29,7 +31,7 @@ public class User {
     public User(String id, String username, String avatar, int level, String title,
                 int powerPoints, int experiencePoints, int coins,
                 List<String> badges, List<MyEquipment> equipment, String qrCode, long createdAt,
-                ArrayList<String> friends, String allianceId) {
+                ArrayList<String> friends, String allianceId, int startedMissions, int finishedMissions) {
         this.id = id;
         this.username = username;
         this.avatar = avatar;
@@ -45,6 +47,8 @@ public class User {
         this.friends = friends;
         this.allianceId = allianceId;
         this.fcmTokens = new ArrayList<>();
+        this.startedMissions = startedMissions;
+        this.finishedMissions= finishedMissions;
     }
 
     public String getId() { return id; }
@@ -104,5 +108,21 @@ public class User {
 
     public void setFcmTokens(List<String> fcmTokens) {
         this.fcmTokens = fcmTokens;
+    }
+
+    public int getStartedMissions() {
+        return startedMissions;
+    }
+
+    public void setStartedMissions(int startedMissions) {
+        this.startedMissions = startedMissions;
+    }
+
+    public int getFinishedMissions() {
+        return finishedMissions;
+    }
+
+    public void setFinishedMissions(int finishedMissions) {
+        this.finishedMissions = finishedMissions;
     }
 }

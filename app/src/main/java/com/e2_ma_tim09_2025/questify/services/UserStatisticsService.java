@@ -6,7 +6,11 @@ import com.e2_ma_tim09_2025.questify.dtos.TaskStreakStatsDto;
 import com.e2_ma_tim09_2025.questify.models.Task;
 import com.e2_ma_tim09_2025.questify.models.TaskCategory;
 import com.e2_ma_tim09_2025.questify.models.TaskDifficultyStatsDto;
+import com.e2_ma_tim09_2025.questify.models.User;
+import com.e2_ma_tim09_2025.questify.models.enums.TaskDifficulty;
 import com.e2_ma_tim09_2025.questify.models.enums.TaskStatus;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Tasks;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -36,39 +40,73 @@ public class UserStatisticsService {
     }
     public int calculateActiveDaysStreak(String userId) {
         List<Task> tasks = taskService.getTasksByUser(userId);
+        
+        // Debug logging
+        System.out.println("DEBUG: calculateActiveDaysStreak - UserId: " + userId);
+        System.out.println("DEBUG: Total tasks found: " + tasks.size());
 
-        // Sakupi dane kada je korisnik bio aktivan
+        // Collect all days when user had any interaction with tasks
         Set<LocalDate> interactionDays = new HashSet<>();
         for (Task task : tasks) {
-            if (task.getLastInteractionAt() > 0) {
-                LocalDate date = Instant.ofEpochMilli(task.getLastInteractionAt())
+            // Add task creation date
+            if (task.getCreatedAt() > 0) {
+                LocalDate createdDate = Instant.ofEpochMilli(task.getCreatedAt())
                         .atZone(ZoneId.systemDefault())
                         .toLocalDate();
-                interactionDays.add(date);
+                interactionDays.add(createdDate);
+                System.out.println("DEBUG: Task created on: " + createdDate + " (Task: " + task.getName() + ")");
+            }
+            
+            // Add last interaction date (pause, unpause, edit, etc.)
+            if (task.getLastInteractionAt() > 0) {
+                LocalDate lastInteractionDate = Instant.ofEpochMilli(task.getLastInteractionAt())
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+                interactionDays.add(lastInteractionDate);
+                System.out.println("DEBUG: Last interaction on: " + lastInteractionDate + " (Task: " + task.getName() + ")");
+            }
+            
+            // Add completion date
+            if (task.getCompletedAt() > 0) {
+                LocalDate completedDate = Instant.ofEpochMilli(task.getCompletedAt())
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+                interactionDays.add(completedDate);
+                System.out.println("DEBUG: Task completed on: " + completedDate + " (Task: " + task.getName() + ")");
             }
         }
 
+        System.out.println("DEBUG: Total unique interaction days: " + interactionDays.size());
+        System.out.println("DEBUG: Interaction days: " + interactionDays);
+
         if (interactionDays.isEmpty()) {
+            System.out.println("DEBUG: No interaction days found, returning 0");
             return 0;
         }
 
         LocalDate today = LocalDate.now();
         LocalDate yesterday = today.minusDays(1);
+        System.out.println("DEBUG: Today: " + today + ", Yesterday: " + yesterday);
 
-        // Ako je poslednja interakcija bila pre juče → streak = 0
+        // If last interaction was before yesterday → streak = 0
         LocalDate lastInteraction = interactionDays.stream().max(Comparator.naturalOrder()).get();
+        System.out.println("DEBUG: Last interaction date: " + lastInteraction);
+        
         if (lastInteraction.isBefore(yesterday)) {
+            System.out.println("DEBUG: Last interaction was before yesterday, returning 0");
             return 0;
         }
 
-        // Inače brojimo streak od poslednje interakcije unazad
+        // Count consecutive days from last interaction backwards
         int streak = 0;
         LocalDate current = lastInteraction;
         while (interactionDays.contains(current)) {
             streak++;
+            System.out.println("DEBUG: Found interaction on " + current + ", streak: " + streak);
             current = current.minusDays(1);
         }
 
+        System.out.println("DEBUG: Final streak: " + streak);
         return streak;
     }
 
@@ -93,52 +131,85 @@ public class UserStatisticsService {
 
     public TaskStreakStatsDto calculateLongestTaskStreak(String userId) {
         List<Task> tasks = taskService.getTasksByUser(userId);
+        
+        System.out.println("DEBUG: calculateLongestTaskStreak - UserId: " + userId);
+        System.out.println("DEBUG: Total tasks found: " + tasks.size());
 
-        // Filtriraj samo prošle i današnje zadatke
+        // Get all tasks with due dates (past and today)
+        List<Task> tasksWithDueDates = new ArrayList<>();
         LocalDate today = LocalDate.now();
-        Map<LocalDate, List<Task>> tasksByDay = new HashMap<>();
 
         for (Task task : tasks) {
-            LocalDate day = Instant.ofEpochMilli(task.getCompletedAt())
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
-
-            if (!day.isAfter(today)) { // ignoriši buduće zadatke
-                tasksByDay.computeIfAbsent(day, k -> new ArrayList<>()).add(task);
+            // Only consider tasks that have a due date
+            if (task.getFinishDate() > 0) {
+                LocalDate dueDate = Instant.ofEpochMilli(task.getFinishDate())
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate();
+                
+                // Only consider past and today's due dates
+                if (!dueDate.isAfter(today)) {
+                    tasksWithDueDates.add(task);
+                    System.out.println("DEBUG: Task '" + task.getName() + "' due on " + dueDate + ", status: " + task.getStatus());
+                }
             }
         }
 
-        if (tasksByDay.isEmpty()) {
+        if (tasksWithDueDates.isEmpty()) {
+            System.out.println("DEBUG: No tasks with due dates found, returning 0");
             return new TaskStreakStatsDto(0);
         }
 
-        LocalDate minDay = Collections.min(tasksByDay.keySet());
-        LocalDate maxDay = Collections.max(tasksByDay.keySet());
+        // Get the date range from earliest due date to today
+        LocalDate minDueDate = tasksWithDueDates.stream()
+                .map(task -> Instant.ofEpochMilli(task.getFinishDate())
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate())
+                .min(Comparator.naturalOrder())
+                .get();
+        
+        System.out.println("DEBUG: Date range: " + minDueDate + " to " + today);
 
         int maxStreak = 0;
         int currentStreak = 0;
 
-        // Iteriraj kroz sve dane u opsegu
-        for (LocalDate day = minDay; !day.isAfter(maxDay); day = day.plusDays(1)) {
-            List<Task> dayTasks = tasksByDay.get(day);
-
-            if (dayTasks == null) {
-                // Nema zadataka → streak se nastavlja
-                currentStreak++;
+        // Check each day from earliest due date to today
+        for (LocalDate day = minDueDate; !day.isAfter(today); day = day.plusDays(1)) {
+            final LocalDate currentDay = day; // Make effectively final for lambda
+            // Find tasks that were due on or before this day
+            List<Task> tasksDueByThisDay = tasksWithDueDates.stream()
+                    .filter(task -> {
+                        LocalDate dueDate = Instant.ofEpochMilli(task.getFinishDate())
+                                .atZone(ZoneId.systemDefault())
+                                .toLocalDate();
+                        return !dueDate.isAfter(currentDay);
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+            
+            if (tasksDueByThisDay.isEmpty()) {
+                // No tasks were due by this day - streak continues
+                System.out.println("DEBUG: Day " + day + " - No tasks due by this day, streak continues: " + currentStreak);
             } else {
-                boolean hasIncomplete = dayTasks.stream()
-                        .anyMatch(t -> t.getStatus() == TaskStatus.NOT_COMPLETED);
-
-                if (hasIncomplete) {
-                    currentStreak = 0; // streak se prekida
+                // Check if any task due by this day was NOT_COMPLETED
+                boolean hasNotCompleted = tasksDueByThisDay.stream()
+                        .anyMatch(task -> task.getStatus() == TaskStatus.NOT_COMPLETED);
+                
+                if (hasNotCompleted) {
+                    // At least one task was NOT_COMPLETED - streak breaks
+                    System.out.println("DEBUG: Day " + day + " - Some tasks not completed, streak breaks at: " + currentStreak);
+                    maxStreak = Math.max(maxStreak, currentStreak);
+                    currentStreak = 0;
                 } else {
+                    // All tasks due by this day were completed - streak continues
                     currentStreak++;
+                    System.out.println("DEBUG: Day " + day + " - All tasks due by this day completed, streak continues: " + currentStreak);
                 }
             }
-
-            maxStreak = Math.max(maxStreak, currentStreak);
         }
 
+        // Check final streak
+        maxStreak = Math.max(maxStreak, currentStreak);
+        System.out.println("DEBUG: Final longest streak: " + maxStreak);
+        
         return new TaskStreakStatsDto(maxStreak);
     }
 
@@ -166,28 +237,48 @@ public class UserStatisticsService {
     }
     public List<TaskDifficultyStatsDto> getAverageDifficultyXPPerDay(String userId) {
         List<Task> tasks = taskService.getTasksByUser(userId); // fetch all user tasks
-        Map<Long, List<Integer>> xpPerDay = new HashMap<>();
-
+        
+        // Calculate overall average difficulty of all completed tasks
+        List<Integer> allDifficulties = new ArrayList<>();
+        
         for (Task task : tasks) {
             if (task.getStatus() == TaskStatus.COMPLETED) {
-                // Normalize date to 00:00 to group tasks by day
-                long dayTimestamp = getDayStartTimestamp(task.getCompletedAt());
-
-                xpPerDay.computeIfAbsent(dayTimestamp, k -> new ArrayList<>()).add(task.getXp());
+                // Convert difficulty to numeric value
+                int difficultyValue = getDifficultyValue(task.getDifficulty());
+                allDifficulties.add(difficultyValue);
             }
         }
-
-        List<TaskDifficultyStatsDto> result = new ArrayList<>();
-        for (Map.Entry<Long, List<Integer>> entry : xpPerDay.entrySet()) {
-            long day = entry.getKey();
-            List<Integer> xpList = entry.getValue();
-            int avgXP = (int) xpList.stream().mapToInt(Integer::intValue).average().orElse(0);
-            result.add(new TaskDifficultyStatsDto(day, avgXP));
+        
+        if (allDifficulties.isEmpty()) {
+            return new ArrayList<>(); // No completed tasks
         }
-
-        // Sort by date ascending for line chart
-        result.sort(Comparator.comparingLong(TaskDifficultyStatsDto::getDate));
+        
+        // Calculate overall average difficulty
+        double overallAverage = allDifficulties.stream()
+                .mapToInt(Integer::intValue)
+                .average()
+                .orElse(0.0);
+        
+        System.out.println("DEBUG: All difficulties: " + allDifficulties);
+        System.out.println("DEBUG: Overall average difficulty: " + overallAverage);
+        System.out.println("DEBUG: Stored as integer * 100: " + (int) (overallAverage * 100));
+        
+        // Create a single data point for the chart (use today's date)
+        List<TaskDifficultyStatsDto> result = new ArrayList<>();
+        long todayTimestamp = getDayStartTimestamp(System.currentTimeMillis());
+        result.add(new TaskDifficultyStatsDto(todayTimestamp, (int) (overallAverage * 100))); // Store as integer * 100 to preserve decimals
+        
         return result;
+    }
+    
+    private int getDifficultyValue(TaskDifficulty difficulty) {
+        switch (difficulty) {
+            case VERY_EASY: return 1;
+            case EASY: return 2;
+            case HARD: return 3;
+            case EXTREME: return 4;
+            default: return 0;
+        }
     }
     public List<TaskDifficultyStatsDto> getXPLast7Days(String userId) {
         List<Task> tasks = taskService.getTasksByUser(userId);
@@ -228,5 +319,57 @@ public class UserStatisticsService {
         cal.set(Calendar.MILLISECOND, 0);
         return cal.getTimeInMillis();
     }
+    
+    /**
+     * Get mission statistics for a user
+     */
+    public void getMissionStatistics(String userId, OnCompleteListener<MissionStatsDto> listener) {
+        userService.getUser(userId, task -> {
+            if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                User user = task.getResult().toObject(User.class);
+                if (user != null) {
+                    MissionStatsDto stats = new MissionStatsDto();
+                    stats.setStartedMissions(user.getStartedMissions());
+                    stats.setFinishedMissions(user.getFinishedMissions());
+                    stats.setSuccessRate(calculateSuccessRate(user.getStartedMissions(), user.getFinishedMissions()));
+                    
+                    System.out.println("DEBUG: Mission stats for user " + userId + 
+                        " - Started: " + stats.getStartedMissions() + 
+                        ", Finished: " + stats.getFinishedMissions() + 
+                        ", Success Rate: " + stats.getSuccessRate() + "%");
+                    
+                    listener.onComplete(Tasks.forResult(stats));
+                } else {
+                    listener.onComplete(Tasks.forException(new Exception("User not found")));
+                }
+            } else {
+                listener.onComplete(Tasks.forException(new Exception("Failed to get user")));
+            }
+        });
+    }
+    
+    private double calculateSuccessRate(int startedMissions, int finishedMissions) {
+        if (startedMissions == 0) return 0.0;
+        return Math.round((double) finishedMissions / startedMissions * 100.0 * 100.0) / 100.0; // Round to 2 decimal places
+    }
+    
+    /**
+     * Data Transfer Object for mission statistics
+     */
+    public static class MissionStatsDto {
+        private int startedMissions;
+        private int finishedMissions;
+        private double successRate;
+        
+        public int getStartedMissions() { return startedMissions; }
+        public void setStartedMissions(int startedMissions) { this.startedMissions = startedMissions; }
+        
+        public int getFinishedMissions() { return finishedMissions; }
+        public void setFinishedMissions(int finishedMissions) { this.finishedMissions = finishedMissions; }
+        
+        public double getSuccessRate() { return successRate; }
+        public void setSuccessRate(double successRate) { this.successRate = successRate; }
+    }
 
 }
+
