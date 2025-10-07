@@ -142,24 +142,8 @@
         android:visibility="gone"
         app:iconTint="#D2B48C"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintStart_toEndOf="@id/profile_button"
-        style="@style/Widget.MaterialComponents.Button.Icon" />
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/profile_button"
-        android:layout_width="48dp"
-        android:layout_height="60dp"
-        android:layout_marginEnd="18dp"
-        android:layout_marginStart="10dp"
-        android:backgroundTint="#5C4033"
-        app:cornerRadius="30dp"
-        app:elevation="8dp"
-        app:icon="@drawable/ic_profile"
-        app:iconTint="#D2B48C"
-        app:layout_constraintBottom_toBottomOf="@id/logout_button"
         app:layout_constraintStart_toEndOf="@id/logout_button"
         style="@style/Widget.MaterialComponents.Button.Icon" />
-
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/logout_button"

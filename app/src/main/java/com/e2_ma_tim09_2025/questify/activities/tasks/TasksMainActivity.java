@@ -46,7 +46,6 @@ public class TasksMainActivity extends AppCompatActivity {
     private MaterialButton viewChangeButton;
     private MaterialButton filterButton;
     private MaterialButton logoutButton;
-    private MaterialButton profileButton;
     MaterialButton bossButton;
     private TextView tasksTitle;
     private boolean showingCalendar = false;
@@ -89,7 +88,6 @@ public class TasksMainActivity extends AppCompatActivity {
         viewChangeButton = findViewById(R.id.toggle_view_button);
         filterButton = findViewById(R.id.filter_button);
         logoutButton = findViewById(R.id.logout_button);
-        profileButton = findViewById(R.id.profile_button);
         bossButton = findViewById(R.id.boss_button);
 
         replaceFragment(new TasksListFragment());
@@ -170,11 +168,6 @@ public class TasksMainActivity extends AppCompatActivity {
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // prevent back navigation
             startActivity(intent);
             finish();
-        });
-
-        profileButton.setOnClickListener(v -> {
-            Intent intent = new Intent(TasksMainActivity.this, ProfileActivity.class);
-            startActivity(intent);
         });
 
         taskViewModel.isBossActive().observe(this, isActive -> {
