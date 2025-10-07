@@ -4,10 +4,14 @@ import android.os.CountDownTimer;
 import android.util.Log;
 
 import com.e2_ma_tim09_2025.questify.models.Alliance;
+import com.e2_ma_tim09_2025.questify.models.Boss;
 import com.e2_ma_tim09_2025.questify.models.SpecialBoss;
 import com.e2_ma_tim09_2025.questify.models.SpecialMission;
 import com.e2_ma_tim09_2025.questify.models.SpecialTask;
 import com.e2_ma_tim09_2025.questify.models.User;
+import com.e2_ma_tim09_2025.questify.models.Equipment;
+import com.e2_ma_tim09_2025.questify.models.MyEquipment;
+import com.e2_ma_tim09_2025.questify.models.enums.EquipmentType;
 import com.e2_ma_tim09_2025.questify.models.enums.SpecialMissionStatus;
 import com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskStatus;
 import com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskType;
@@ -15,6 +19,8 @@ import com.e2_ma_tim09_2025.questify.repositories.AllianceRepository;
 import com.e2_ma_tim09_2025.questify.repositories.SpecialMissionRepository;
 import com.e2_ma_tim09_2025.questify.repositories.SpecialTaskRepository;
 import com.e2_ma_tim09_2025.questify.repositories.UserRepository;
+import com.e2_ma_tim09_2025.questify.repositories.EquipmentRepository;
+import com.e2_ma_tim09_2025.questify.repositories.BossRepository;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
@@ -35,6 +41,8 @@ public class SpecialMissionService {
     private final SpecialMissionRepository specialMissionRepository;
     private final SpecialTaskRepository specialTaskRepository;
     private final UserRepository userRepository;
+    private final EquipmentRepository equipmentRepository;
+    private final BossRepository bossRepository;
     
     // Timer za praćenje završetka misije
     private CountDownTimer missionTimer;
@@ -44,11 +52,15 @@ public class SpecialMissionService {
             AllianceRepository allianceRepository,
             SpecialMissionRepository specialMissionRepository,
             SpecialTaskRepository specialTaskRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            EquipmentRepository equipmentRepository,
+            BossRepository bossRepository) {
         this.allianceRepository = allianceRepository;
         this.specialMissionRepository = specialMissionRepository;
         this.specialTaskRepository = specialTaskRepository;
         this.userRepository = userRepository;
+        this.equipmentRepository = equipmentRepository;
+        this.bossRepository = bossRepository;
     }
     
     /**
@@ -312,10 +324,13 @@ public class SpecialMissionService {
                         markAllTasksAsInactive(allianceId, () -> {
                             // Dodeli bedževe igračima
                             distributeBadges(allianceId, mission.getMissionNumber(), () -> {
-                                updateAllianceMissionStatus(allianceId, false, () -> {
-                                    // Zaustavi timer jer je misija završena
-                                    stopMissionTimer();
-                                    listener.onComplete(Tasks.forResult(true));
+                                // Dodeli nagrade igračima (coins, potion, clothes) - samo ako je boss pobeden
+                                distributeRewards(allianceId, mission, () -> {
+                                    updateAllianceMissionStatus(allianceId, false, () -> {
+                                        // Zaustavi timer jer je misija završena
+                                        stopMissionTimer();
+                                        listener.onComplete(Tasks.forResult(true));
+                                    });
                                 });
                             });
                         });
@@ -649,6 +664,173 @@ public class SpecialMissionService {
                 Log.e("SpecialMissionService", "Failed to get user for ID: " + userId);
                 onComplete.run();
             }
+        });
+    }
+    
+    /**
+     * Dodeli nagrade igračima kada se boss pobedi
+     * - 50% od coinsDrop boss-a
+     * - Jedan random napitak (POTION)
+     * - Jedan random komad odeće (CLOTHES)
+     */
+    private void distributeRewards(String allianceId, SpecialMission mission, Runnable onComplete) {
+        Log.d("SpecialMissionService", "=== DISTRIBUTING REWARDS ===");
+        Log.d("SpecialMissionService", "Alliance ID: " + allianceId);
+        
+        // Dohvati sve taskove za ovu misiju da vidimo ko je učestvovao
+        specialTaskRepository.getSpecialTasksByAllianceId(allianceId, task -> {
+            if (!task.isSuccessful()) {
+                Log.e("SpecialMissionService", "Failed to get tasks for reward distribution");
+                onComplete.run();
+                return;
+            }
+            
+            // Grupiši taskove po korisnicima
+            Map<String, List<SpecialTask>> userTasks = new HashMap<>();
+            for (DocumentSnapshot doc : task.getResult()) {
+                SpecialTask specialTask = doc.toObject(SpecialTask.class);
+                if (specialTask != null && specialTask.getMissionNumber() == mission.getMissionNumber()) {
+                    String userId = specialTask.getUserId();
+                    if (!userTasks.containsKey(userId)) {
+                        userTasks.put(userId, new ArrayList<>());
+                    }
+                    userTasks.get(userId).add(specialTask);
+                }
+            }
+            
+            Log.d("SpecialMissionService", "Found " + userTasks.size() + " users for reward distribution");
+            
+            if (userTasks.isEmpty()) {
+                onComplete.run();
+                return;
+            }
+            
+            // Dodeli nagrade svakom korisniku
+            final int[] completedUsers = {0};
+            final int totalUsers = userTasks.size();
+            
+            for (Map.Entry<String, List<SpecialTask>> entry : userTasks.entrySet()) {
+                String userId = entry.getKey();
+                
+                // Dodeli nagrade za ovog korisnika
+                giveRewardsToUser(userId, () -> {
+                    completedUsers[0]++;
+                    if (completedUsers[0] == totalUsers) {
+                        Log.d("SpecialMissionService", "Reward distribution completed");
+                        onComplete.run();
+                    }
+                });
+            }
+        });
+    }
+    
+    /**
+     * Dodeli nagrade jednom korisniku
+     */
+    private void giveRewardsToUser(String userId, Runnable onComplete) {
+        Log.d("SpecialMissionService", "Giving rewards to user: " + userId);
+        
+        // Dohvati korisnika
+        userRepository.getUser(userId, userTask -> {
+            if (!userTask.isSuccessful() || userTask.getResult() == null) {
+                Log.e("SpecialMissionService", "Failed to get user for rewards: " + userId);
+                onComplete.run();
+                return;
+            }
+            
+            User user = userTask.getResult().toObject(User.class);
+            if (user == null) {
+                Log.e("SpecialMissionService", "User is null for ID: " + userId);
+                onComplete.run();
+                return;
+            }
+            
+            // Dohvati običnog boss-a korisnika i uzmi 50% od njegovog coinsDrop
+            bossRepository.getBossByUserId(userId, bossTask -> {
+                if (bossTask.isSuccessful() && bossTask.getResult() != null && bossTask.getResult().exists()) {
+                    Boss userBoss = bossTask.getResult().toObject(Boss.class);
+                    if (userBoss != null) {
+                        int coinsReward = userBoss.getCoinsDrop() / 2;
+                        user.setCoins(user.getCoins() + coinsReward);
+                        
+                        Log.d("SpecialMissionService", "User " + userId + " gets " + coinsReward + " coins from boss " + userBoss.getCoinsDrop());
+                    } else {
+                        Log.e("SpecialMissionService", "Boss is null for user: " + userId);
+                    }
+                } else {
+                    Log.e("SpecialMissionService", "Failed to get boss for user: " + userId);
+                    // Ako nema boss-a, dodeli 0 coins
+                }
+                
+                // Nastavi sa dodelom opreme
+                giveRandomEquipmentToUser(user, EquipmentType.POTION, () -> {
+                    giveRandomEquipmentToUser(user, EquipmentType.CLOTHES, () -> {
+                        // Ažuriraj korisnika u bazi
+                        userRepository.updateUser(user, updateTask -> {
+                            if (updateTask.isSuccessful()) {
+                                Log.d("SpecialMissionService", "User " + userId + " rewards updated successfully");
+                            } else {
+                                Log.e("SpecialMissionService", "Failed to update user rewards: " + userId);
+                            }
+                            onComplete.run();
+                        });
+                    });
+                });
+            });
+        });
+    }
+    
+    /**
+     * Dodeli random opremu korisniku
+     */
+    private void giveRandomEquipmentToUser(User user, EquipmentType type, Runnable onComplete) {
+        Log.d("SpecialMissionService", "Giving random " + type + " to user: " + user.getId());
+        
+        // Dohvati sve opreme određenog tipa
+        equipmentRepository.getAllEquipment(task -> {
+            if (!task.isSuccessful() || task.getResult() == null) {
+                Log.e("SpecialMissionService", "Failed to get equipment for type: " + type);
+                onComplete.run();
+                return;
+            }
+            
+            List<Equipment> allEquipment = task.getResult();
+            List<Equipment> filteredEquipment = new ArrayList<>();
+            
+            // Filtriraj po tipu
+            for (Equipment equipment : allEquipment) {
+                if (equipment.getType() == type) {
+                    filteredEquipment.add(equipment);
+                }
+            }
+            
+            if (filteredEquipment.isEmpty()) {
+                Log.e("SpecialMissionService", "No equipment found for type: " + type);
+                onComplete.run();
+                return;
+            }
+            
+            // Izaberi random opremu
+            Equipment randomEquipment = filteredEquipment.get((int) (Math.random() * filteredEquipment.size()));
+            
+            // Kreiraj MyEquipment
+            MyEquipment myEquipment = new MyEquipment();
+            myEquipment.setId(java.util.UUID.randomUUID().toString());
+            myEquipment.setEquipmentId(randomEquipment.getId());
+            myEquipment.setLeftAmount(randomEquipment.getLasting());
+            myEquipment.setTimesUpgraded(0);
+            myEquipment.setActivated(false);
+            
+            // Dodaj u korisnikovu opremu
+            List<MyEquipment> userEquipment = user.getEquipment();
+            if (userEquipment == null) {
+                userEquipment = new ArrayList<>();
+            }
+            userEquipment.add(myEquipment);
+            user.setEquipment(userEquipment);
+            
+            Log.d("SpecialMissionService", "User " + user.getId() + " got equipment: " + randomEquipment.getName());
+            onComplete.run();
         });
     }
 }
