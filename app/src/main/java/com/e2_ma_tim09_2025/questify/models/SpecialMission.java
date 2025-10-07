@@ -1,6 +1,7 @@
 package com.e2_ma_tim09_2025.questify.models;
 
 import com.e2_ma_tim09_2025.questify.models.enums.SpecialMissionStatus;
+import com.google.firebase.firestore.Exclude;
 
 public class SpecialMission {
     private String allianceId; // 1-1 sa alliance, nema svoj ID
@@ -76,10 +77,6 @@ public class SpecialMission {
         this.rewardsDistributed = rewardsDistributed;
     }
 
-    public boolean isExpired() {
-        return System.currentTimeMillis() > endTime;
-    }
-
     public long getTimeRemaining() {
         return Math.max(0, endTime - System.currentTimeMillis());
     }
@@ -97,23 +94,28 @@ public class SpecialMission {
         this.boss = boss;
     }
     
-    // Convenience metode za boss
+    // Convenience metode za boss - ne čuvaju se u bazi
+    @Exclude
     public boolean isBossDefeated() {
         return boss != null && boss.isDefeated();
     }
     
+    @Exclude
     public int getBossCurrentHealth() {
         return boss != null ? boss.getCurrentHealth() : 0;
     }
     
+    @Exclude
     public int getBossMaxHealth() {
         return boss != null ? boss.getMaxHealth() : 0;
     }
     
+    @Exclude
     public double getBossHealthPercentage() {
         return boss != null ? boss.getHealthPercentage() : 0.0;
     }
     
+    @Exclude
     public void dealDamageToBoss(int damage) {
         if (boss != null) {
             boss.takeDamage(damage);

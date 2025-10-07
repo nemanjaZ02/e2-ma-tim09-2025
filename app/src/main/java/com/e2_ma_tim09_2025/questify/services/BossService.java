@@ -114,20 +114,24 @@ public class BossService {
                         if (updateTask.isSuccessful()) {
                             // Pošto je damage > 0, znači da je napad uspešan - reši special task
                             if (damage > 0) {
-                                Log.d("BossService", "Successful boss attack! Completing special task...");
+                                Log.d("BossService", "=== SUCCESSFUL BOSS ATTACK! ===");
+                                Log.d("BossService", "Damage: " + damage + ", User ID: " + userId);
+                                Log.d("BossService", "Completing special task...");
+                                
                                 // Dobij allianceId za korisnika
                                 allianceService.getUserAlliance(userId, new OnCompleteListener<Alliance>() {
                                     @Override
                                     public void onComplete(com.google.android.gms.tasks.Task<Alliance> allianceTask) {
                                         if (allianceTask.isSuccessful() && allianceTask.getResult() != null) {
                                             String allianceId = allianceTask.getResult().getId();
+                                            Log.d("BossService", "User alliance found: " + allianceId);
                                             specialTaskService.completeSpecialTaskForAllAlliances(userId, SpecialTaskType.BOSS_ATTACK, new OnCompleteListener<Boolean>() {
                                                 @Override
                                                 public void onComplete(com.google.android.gms.tasks.Task<Boolean> specialTaskResult) {
                                                     if (specialTaskResult.isSuccessful()) {
-                                                        Log.d("BossService", "Special task completed successfully");
+                                                        Log.d("BossService", "✅ Special task completed successfully");
                                                     } else {
-                                                        Log.e("BossService", "Failed to complete special task", specialTaskResult.getException());
+                                                        Log.e("BossService", "❌ Failed to complete special task", specialTaskResult.getException());
                                                     }
                                                 }
                                             });

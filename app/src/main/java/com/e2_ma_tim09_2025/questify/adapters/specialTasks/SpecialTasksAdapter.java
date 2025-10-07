@@ -1,5 +1,7 @@
 package com.e2_ma_tim09_2025.questify.adapters.specialTasks;
 
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.models.SpecialMission;
 import com.e2_ma_tim09_2025.questify.models.SpecialTask;
+import com.e2_ma_tim09_2025.questify.models.enums.SpecialMissionStatus;
 import com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskType;
 
 import java.util.ArrayList;
@@ -21,14 +24,42 @@ public class SpecialTasksAdapter extends RecyclerView.Adapter<SpecialTasksAdapte
 
     private List<SpecialTask> specialTasks;
     private SpecialMission specialMission;
+    private Handler timeUpdateHandler;
+    private Runnable timeUpdateRunnable;
 
     public SpecialTasksAdapter(List<SpecialTask> specialTasks) {
         this.specialTasks = specialTasks != null ? specialTasks : new ArrayList<>();
+        this.timeUpdateHandler = new Handler(Looper.getMainLooper());
+        startTimeUpdates();
     }
 
     public void setSpecialMission(SpecialMission specialMission) {
         this.specialMission = specialMission;
+        System.out.println("DEBUG: setSpecialMission called - mission number: " + 
+                          (specialMission != null ? specialMission.getMissionNumber() : "null") + 
+                          ", status: " + (specialMission != null ? specialMission.getStatus() : "null"));
         notifyDataSetChanged();
+    }
+    
+    private void startTimeUpdates() {
+        timeUpdateRunnable = new Runnable() {
+            @Override
+            public void run() {
+                // Ažuriraj samo ACTIVE taskove
+                if (specialMission != null && specialMission.getStatus() == SpecialMissionStatus.ACTIVE) {
+                    notifyDataSetChanged();
+                }
+                // Ponovi za 30 sekundi
+                timeUpdateHandler.postDelayed(this, 30000);
+            }
+        };
+        timeUpdateHandler.post(timeUpdateRunnable);
+    }
+    
+    public void stopTimeUpdates() {
+        if (timeUpdateHandler != null && timeUpdateRunnable != null) {
+            timeUpdateHandler.removeCallbacks(timeUpdateRunnable);
+        }
     }
 
     @NonNull
@@ -61,19 +92,30 @@ public class SpecialTasksAdapter extends RecyclerView.Adapter<SpecialTasksAdapte
         if (specialTasks == null) return;
         
         specialTasks.sort((task1, task2) -> {
-            // INACTIVE taskovi idu na dno
-            boolean task1Inactive = task1.getStatus().toString().equals("INACTIVE");
-            boolean task2Inactive = task2.getStatus().toString().equals("INACTIVE");
+            String status1 = task1.getStatus().toString();
+            String status2 = task2.getStatus().toString();
             
-            if (task1Inactive && !task2Inactive) {
-                return 1; // task1 ide na dno
-            } else if (!task1Inactive && task2Inactive) {
-                return -1; // task2 ide na dno
+            // ACTIVE -> COMPLETED -> EXPIRED -> INACTIVE
+            int priority1 = getStatusPriority(status1);
+            int priority2 = getStatusPriority(status2);
+            
+            if (priority1 != priority2) {
+                return Integer.compare(priority1, priority2);
             } else {
-                // Ako su oba INACTIVE ili oba nisu INACTIVE, sortiraj po tipu
+                // Ako su isti status, sortiraj po tipu
                 return task1.getTaskType().toString().compareTo(task2.getTaskType().toString());
             }
         });
+    }
+    
+    private int getStatusPriority(String status) {
+        switch (status) {
+            case "ACTIVE": return 0;
+            case "COMPLETED": return 1;
+            case "EXPIRED": return 2;
+            case "INACTIVE": return 3;
+            default: return 4;
+        }
     }
 
     static class SpecialTaskViewHolder extends RecyclerView.ViewHolder {
@@ -110,8 +152,18 @@ public class SpecialTasksAdapter extends RecyclerView.Adapter<SpecialTasksAdapte
             progressText.setText(currentCount + "/" + maxCount);
             progressBar.setProgress(progress);
             
-            // Set time remaining (calculate fresh each time)
-            if (specialMission != null) {
+            // Set time remaining based on task status
+            if (task.getStatus().toString().equals("EXPIRED") || 
+                task.getStatus().toString().equals("COMPLETED") ||
+                task.getStatus().toString().equals("INACTIVE")) {
+                // EXPIRED, COMPLETED, INACTIVE tasks - show empty string for time
+                timeRemainingText.setText("");
+                timeRemainingText.setTextColor(itemView.getContext().getColor(android.R.color.darker_gray));
+            } else if (task.getStatus().toString().equals("ACTIVE") && 
+                      specialMission != null && 
+                      task.getMissionNumber() == specialMission.getMissionNumber() && 
+                      specialMission.getStatus() == SpecialMissionStatus.ACTIVE) {
+                // ACTIVE task from current active mission - show live time remaining
                 long timeRemaining = calculateTimeRemaining(specialMission);
                 String timeText = formatTimeRemaining(timeRemaining);
                 timeRemainingText.setText(timeText);
@@ -125,7 +177,8 @@ public class SpecialTasksAdapter extends RecyclerView.Adapter<SpecialTasksAdapte
                     timeRemainingText.setTextColor(itemView.getContext().getColor(android.R.color.holo_green_dark));
                 }
             } else {
-                timeRemainingText.setText("Unknown");
+                // Other cases - show empty string
+                timeRemainingText.setText("");
                 timeRemainingText.setTextColor(itemView.getContext().getColor(android.R.color.darker_gray));
             }
             
@@ -133,6 +186,9 @@ public class SpecialTasksAdapter extends RecyclerView.Adapter<SpecialTasksAdapte
             if (task.getStatus().toString().equals("COMPLETED")) {
                 statusText.setText("COMPLETED");
                 statusText.setTextColor(itemView.getContext().getColor(android.R.color.holo_green_dark));
+            } else if (task.getStatus().toString().equals("EXPIRED")) {
+                statusText.setText("EXPIRED");
+                statusText.setTextColor(itemView.getContext().getColor(android.R.color.darker_gray));
             } else if (task.getStatus().toString().equals("ACTIVE")) {
                 statusText.setText("ACTIVE");
                 statusText.setTextColor(itemView.getContext().getColor(android.R.color.holo_blue_dark));

@@ -19,6 +19,7 @@ import com.e2_ma_tim09_2025.questify.models.Alliance;
 import com.e2_ma_tim09_2025.questify.models.MemberProgress;
 import com.e2_ma_tim09_2025.questify.models.SpecialMission;
 import com.e2_ma_tim09_2025.questify.models.User;
+import com.e2_ma_tim09_2025.questify.models.enums.SpecialMissionStatus;
 import com.e2_ma_tim09_2025.questify.services.SpecialTaskService;
 import com.e2_ma_tim09_2025.questify.viewmodels.MemberAllianceViewModel;
 
@@ -148,7 +149,14 @@ public class MemberAllianceActivity extends AppCompatActivity {
         // Observe special mission
         viewModel.getSpecialMission().observe(this, specialMission -> {
             if (specialMission != null) {
-                updateSpecialMissionProgress(specialMission);
+                // Hide progress section if mission is inactive or expired
+                if (specialMission.getStatus() == SpecialMissionStatus.INACTIVE || 
+                    specialMission.getStatus() == SpecialMissionStatus.EXPIRED) {
+                    specialMissionProgressSection.setVisibility(View.GONE);
+                } else {
+                    // Mission is active - show progress
+                    updateSpecialMissionProgress(specialMission);
+                }
             } else {
                 specialMissionProgressSection.setVisibility(View.GONE);
             }
@@ -197,6 +205,13 @@ public class MemberAllianceActivity extends AppCompatActivity {
     
     private void updateSpecialMissionProgress(SpecialMission specialMission) {
         if (specialMission == null || currentAlliance == null) {
+            specialMissionProgressSection.setVisibility(View.GONE);
+            return;
+        }
+        
+        // Hide progress section if mission is inactive or expired
+        if (specialMission.getStatus() == SpecialMissionStatus.INACTIVE || 
+            specialMission.getStatus() == SpecialMissionStatus.EXPIRED) {
             specialMissionProgressSection.setVisibility(View.GONE);
             return;
         }

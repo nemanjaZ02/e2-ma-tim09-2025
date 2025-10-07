@@ -9,6 +9,7 @@ import com.e2_ma_tim09_2025.questify.models.enums.AllianceInviteStatus;
 import com.e2_ma_tim09_2025.questify.repositories.AllianceRepository;
 import com.e2_ma_tim09_2025.questify.repositories.AllianceInviteRepository;
 import com.e2_ma_tim09_2025.questify.repositories.UserRepository;
+import com.e2_ma_tim09_2025.questify.services.SpecialMissionService;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.QuerySnapshot;
@@ -27,14 +28,16 @@ public class AllianceService {
     private final AllianceInviteService inviteService;
     private final AllianceInviteRepository inviteRepository;
     private final UserRepository userRepository;
+    private final SpecialMissionService specialMissionService;
 
     @Inject
     public AllianceService(AllianceInviteService inviteService, AllianceRepository allianceRepository, AllianceInviteRepository inviteRepository,
-                           UserRepository userRepository) {
+                           UserRepository userRepository, SpecialMissionService specialMissionService) {
         this.allianceRepository = allianceRepository;
         this.inviteService = inviteService;
         this.inviteRepository = inviteRepository;
         this.userRepository = userRepository;
+        this.specialMissionService = specialMissionService;
     }
 
     public void createAllianceWithInvites(String allianceName, String creatorUserId, @Nullable List<String> invitedMemberIds, OnCompleteListener<Void> listener) {
@@ -65,6 +68,16 @@ public class AllianceService {
         allianceRepository.createAlliance(alliance, task -> {
             if (task.isSuccessful()) {
                 Log.d("AllianceService", "✅ Alliance saved successfully to Firestore");
+                
+                // Create inactive special mission for this alliance
+                Log.d("AllianceService", "🎯 Creating inactive special mission for alliance: " + allianceId);
+                specialMissionService.createSpecialMission(allianceId, creatorUserId, missionTask -> {
+                    if (missionTask.isSuccessful()) {
+                        Log.d("AllianceService", "✅ Inactive special mission created successfully");
+                    } else {
+                        Log.e("AllianceService", "❌ Failed to create special mission", missionTask.getException());
+                    }
+                });
                 
                 if (invitedMemberIds != null && !invitedMemberIds.isEmpty()) {
                     Log.d("AllianceService", "📧 Sending invites to " + invitedMemberIds.size() + " members");
