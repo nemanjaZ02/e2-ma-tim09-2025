@@ -14,6 +14,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupMenu;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -41,7 +42,8 @@ import dagger.hilt.android.AndroidEntryPoint;
 public class ProfileActivity extends AppCompatActivity {
 
     private ImageView profileAvatar,qrCodeImage;
-    private TextView profileUsername, profileTitleText, profileLevel, profilePowerPoints, profileXP, profileCoins, equipmentCount, badgeCount;
+    private TextView profileUsername, profileTitleText, profileLevel, profilePowerPoints, profileXP, profileCoins, equipmentCount, badgeCount, xpProgressText;
+    private ProgressBar xpProgressBar;
     private LinearLayout badgesContainer, equipmentContainer;
     private LinearLayout changePasswordContainer;
     private EditText editOldPassword, editNewPassword, editConfirmPassword;
@@ -69,6 +71,8 @@ public class ProfileActivity extends AppCompatActivity {
         profilePowerPoints = findViewById(R.id.profilePowerPoints);
         profileXP = findViewById(R.id.profileXP);
         profileCoins = findViewById(R.id.profileCoins);
+        xpProgressText = findViewById(R.id.xpProgressText);
+        xpProgressBar = findViewById(R.id.xpProgressBar);
         badgesContainer = findViewById(R.id.badgesContainer);
         equipmentContainer = findViewById(R.id.equipmentContainer);
         equipmentCount = findViewById(R.id.equipmentCount);
@@ -193,6 +197,9 @@ public class ProfileActivity extends AppCompatActivity {
         profilePowerPoints.setText("Power Points: " + user.getPowerPoints());
         profileXP.setText("Experience Points: " + user.getExperiencePoints());
         profileCoins.setText("Coins: " + user.getCoins());
+
+        // Update XP progress bar
+        updateXPProgress(user);
 
         // Load avatar image with Glide or directly
         String avatarName = user.getAvatar(); // this should be the stored string name
@@ -426,6 +433,67 @@ public class ProfileActivity extends AppCompatActivity {
             default:
                 return 0; // No image found
         }
+    }
+
+    /**
+     * Update XP progress bar to show progress toward next level
+     */
+    private void updateXPProgress(User user) {
+        int currentLevel = user.getLevel();
+        int totalXP = user.getExperiencePoints();
+
+        // Calculate XP needed for current level and next level
+        int xpForCurrentLevel = getRequiredXpForLevel(currentLevel);
+        int xpForNextLevel = getRequiredXpForLevel(currentLevel + 1);
+
+        // Calculate current XP progress within the current level
+        int xpInCurrentLevel = totalXP % xpForCurrentLevel;
+        int xpNeededForNext = xpForNextLevel - xpInCurrentLevel;
+        int nex = getXPForNext(currentLevel);
+        // Update progress text
+        String progressText = "XP Progress: " + xpInCurrentLevel + " / " + nex;
+        xpProgressText.setText(progressText);
+
+        // Calculate progress percentage (0-100)
+        int progressPercentage = (int) ((double) xpInCurrentLevel / nex * 100);
+        xpProgressBar.setProgress(Math.min(progressPercentage, 100));
+    }
+
+    public int getXPForNext(int currentLevel) {
+        // Ako je trenutni nivo 0, prvi nivo zahteva 200 XP
+        if (currentLevel == 0) return 200;
+
+        // Početni XP za nivo 0
+        int xp = 200;
+
+        // Računamo kumulativni XP do trenutnog nivoa
+        for (int i = 1; i < currentLevel; i++) {
+            xp = (int) (Math.ceil((xp * 2 + xp / 2.0) / 100.0) * 100);
+        }
+
+        // XP potreban za sledeći nivo (od trenutnog)
+        int xpForNext = (int) (Math.ceil((xp * 2 + xp / 2.0) / 100.0) * 100);
+        return xpForNext;
+    }
+
+    /**
+     * Calculate required XP for a specific level (copied from UserService logic)
+     */
+    private int getRequiredXpForLevel(int level) {
+        if (level == 0) return 200;
+        int req = 200;
+        for (int i = 1; i <= level; i++) {
+            req = getRequiredXpForNextLevel(req);
+        }
+        return req;
+    }
+
+    /**
+     * Calculate required XP for next level (copied from UserService logic)
+     */
+    private int getRequiredXpForNextLevel(int previousLevelXP) {
+        double newXP = previousLevelXP * 2 + previousLevelXP / 2;
+        return (int) (Math.ceil(newXP / 100.0) * 100);
     }
 
 
