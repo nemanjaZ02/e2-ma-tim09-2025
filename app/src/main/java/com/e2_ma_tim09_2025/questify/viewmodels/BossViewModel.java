@@ -80,8 +80,12 @@ public class BossViewModel extends ViewModel {
         });
 
         attacksLeft.addSource(boss, bossVal -> {
-            if (bossVal != null) {
+            if (bossVal != null && !equipmentBonusesApplied) {
+                // Only set from server data if equipment bonuses haven't been applied yet
+                System.out.println("DEBUG: Setting attacksLeft from server: " + bossVal.getAttacksLeft());
                 attacksLeft.setValue(bossVal.getAttacksLeft());
+            } else if (bossVal != null && equipmentBonusesApplied) {
+                System.out.println("DEBUG: Skipping server attacksLeft update (bonuses applied), current value: " + attacksLeft.getValue());
             }
         });
 
@@ -120,14 +124,21 @@ public class BossViewModel extends ViewModel {
             int pp = user.getPowerPoints();
             pp += pp * bonuses.get(0);
 
-            // Create a *new* User instance (so LiveData detects change)
-            User updatedUser = user; // assuming you have a copy constructor
-            updatedUser.setPowerPoints(pp);
+            // Update the existing user instance (don't create new reference)
+            user.setPowerPoints(pp);
 
-            Log.d("USER PP", String.valueOf(updatedUser.getPowerPoints()));
+            Log.d("USER PP", String.valueOf(user.getPowerPoints()));
 
-            // Trigger LiveData update
-            currentUser.setValue(updatedUser);
+            // Trigger LiveData update with the same user instance
+            System.out.println("DEBUG: Updating user stats - equipment count: " + (user.getEquipment() != null ? user.getEquipment().size() : 0));
+            if (user.getEquipment() != null) {
+                for (MyEquipment eq : user.getEquipment()) {
+                    if (eq.isActivated()) {
+                        System.out.println("DEBUG: Active equipment after stats update: " + eq.getEquipmentId() + " (amount: " + eq.getLeftAmount() + ")");
+                    }
+                }
+            }
+            currentUser.setValue(user);
 
             // Update other LiveData values
             Double currentHitChance = hitChance.getValue();
@@ -148,6 +159,18 @@ public class BossViewModel extends ViewModel {
                 System.out.println("DEBUG: After coinsDrop update - New: " + newCoinsDrop);
             } else {
                 System.out.println("DEBUG: CoinsDrop is null, cannot update");
+            }
+
+            Integer attacksLefts = attacksLeft.getValue();
+            System.out.println("DEBUG: Before attacks left update - Current: " + attacksLefts + ", Bonus: " + bonuses.get(2));
+            if (attacksLefts != null && attacksLefts > 0) {
+                int newAttacksLeft = (int) (attacksLefts + attacksLefts * bonuses.get(2));
+                System.out.println("DEBUG: Setting attacksLeft to: " + newAttacksLeft + " (was: " + attacksLefts + ")");
+                attacksLeft.setValue(newAttacksLeft);
+                equipmentBonusesApplied = true; // Mark that equipment bonuses have been applied
+                System.out.println("DEBUG: After attacks left update - New: " + newAttacksLeft);
+            } else {
+                System.out.println("DEBUG: Attacks left is null or 0, cannot update");
             }
         });
     }
@@ -241,6 +264,101 @@ public class BossViewModel extends ViewModel {
         User user = currentUser.getValue();
         if (user == null) return;
 
+        //IDEJA MI JE DA KAD SE DODJE DO KRAJA BORBE SA BOSOM, BEZ OBZIRA NA ISHOD DA SE SMANJI AMOUNT, MEDJUTIM TO RADI SAMO ZA NAPITKE
+        //I TO TAKO DA TRAJNIM NAPICIMA SE VRATI NA ISACTIVE=FALSE NAKON BORBE
+        // Damage activated equipment directly before updating user
+        System.out.println("DEBUG: Starting equipment damage in BossViewModel");
+        List<MyEquipment> equipmentToRemove = new ArrayList<>();
+        boolean equipmentUpdated = false;
+
+        if (user.getEquipment() != null) {
+            System.out.println("DEBUG: User has " + user.getEquipment().size() + " equipment items total");
+            int processedCount = 0;
+            
+            // Process equipment based on leftAmount logic, not activation status
+            // Equipment with leftAmount 1 or 2 should be decremented after boss fight
+            for (MyEquipment equipment : user.getEquipment()) {
+                System.out.println("DEBUG: Checking equipment " + equipment.getEquipmentId() + 
+                                 " - isActivated: " + equipment.isActivated() + 
+                                 " - leftAmount: " + equipment.getLeftAmount());
+                
+                int leftAmount = equipment.getLeftAmount();
+                
+                // Process equipment that should be damaged after boss fight
+                if (leftAmount == 1 || leftAmount == 2) {
+                    processedCount++;
+                    System.out.println("DEBUG: Processing equipment " + equipment.getEquipmentId() +
+                            " with leftAmount: " + leftAmount + " (will be decremented after boss fight)");
+
+                    // Decrement leftAmount
+                    equipment.setLeftAmount(leftAmount - 1);
+                    equipmentUpdated = true;
+
+                    System.out.println("DEBUG: Decremented " + equipment.getEquipmentId() +
+                            " to leftAmount: " + equipment.getLeftAmount());
+
+                    // If after decrement amount is 0, remove that equipment item from user's list
+                    if (equipment.getLeftAmount() == 0) {
+                        equipmentToRemove.add(equipment);
+                        System.out.println("DEBUG: Equipment " + equipment.getEquipmentId() + " exhausted, marking for removal");
+                    }
+                } else if (leftAmount == 3) {
+                    System.out.println("DEBUG: Equipment " + equipment.getEquipmentId() + " has 3 uses (permanent), not decrementing");
+                } else if (leftAmount <= 0) {
+                    System.out.println("DEBUG: Equipment " + equipment.getEquipmentId() + " already exhausted, skipping");
+                }
+            }
+            System.out.println("DEBUG: Processed " + processedCount + " equipment items for damage");
+        } else {
+            System.out.println("DEBUG: User equipment list is null!");
+        }
+
+        // Remove exhausted equipment
+        if (!equipmentToRemove.isEmpty()) {
+            System.out.println("DEBUG: Removing " + equipmentToRemove.size() + " exhausted equipment items");
+            user.getEquipment().removeAll(equipmentToRemove);
+            equipmentUpdated = true;
+        }
+
+        if (equipmentUpdated) {
+            System.out.println("DEBUG: Equipment damage completed, updating user");
+        } else {
+            System.out.println("DEBUG: No equipment damage needed");
+        }
+
+        // Update user with modified equipment
+        System.out.println("DEBUG: About to update user - equipmentUpdated: " + equipmentUpdated);
+        if (equipmentUpdated) {
+            System.out.println("DEBUG: Updating user with modified equipment");
+            System.out.println("DEBUG: Equipment list before update:");
+            if (user.getEquipment() != null) {
+                for (MyEquipment eq : user.getEquipment()) {
+                    System.out.println("DEBUG:   - " + eq.getEquipmentId() + " (activated: " + eq.isActivated() + ", amount: " + eq.getLeftAmount() + ")");
+                }
+            }
+            userService.updateUser(user, task -> {
+                System.out.println("DEBUG: User update callback received");
+                if (task.isSuccessful()) {
+                    currentUser.postValue(user);
+                    System.out.println("DEBUG: ✅ User updated successfully with equipment changes");
+                    System.out.println("DEBUG: Equipment list after update:");
+                    if (user.getEquipment() != null) {
+                        for (MyEquipment eq : user.getEquipment()) {
+                            System.out.println("DEBUG:   - " + eq.getEquipmentId() + " (activated: " + eq.isActivated() + ", amount: " + eq.getLeftAmount() + ")");
+                        }
+                    }
+                } else {
+                    System.out.println("DEBUG: ❌ Failed to update user: " +
+                            (task.getException() != null ? task.getException().getMessage() : "Unknown error"));
+                    if (task.getException() != null) {
+                        task.getException().printStackTrace();
+                    }
+                }
+            });
+        } else {
+            System.out.println("DEBUG: No equipment changes to save - skipping user update");
+        }
+
         int reward = coinsDrop.getValue();
         Integer currentHealthValue = currentHealth.getValue();
         String userId = userService.getCurrentUserId();
@@ -290,63 +408,6 @@ public class BossViewModel extends ViewModel {
         }
 
         user.setCoins(user.getCoins() + reward);
-
-        // Damage activated equipment directly before updating user
-        System.out.println("DEBUG: Starting equipment damage in BossViewModel");
-        List<MyEquipment> equipmentToRemove = new ArrayList<>();
-        boolean equipmentUpdated = false;
-
-        if (user.getEquipment() != null) {
-            for (MyEquipment equipment : user.getEquipment()) {
-                if (equipment.isActivated()) {
-                    int leftAmount = equipment.getLeftAmount();
-                    System.out.println("DEBUG: Processing active equipment " + equipment.getEquipmentId() + 
-                                     " with leftAmount: " + leftAmount);
-
-                    if (leftAmount == 1 || leftAmount == 2) {
-                        // Decrement leftAmount
-                        equipment.setLeftAmount(leftAmount - 1);
-                        equipmentUpdated = true;
-                        
-                        System.out.println("DEBUG: Decremented " + equipment.getEquipmentId() + 
-                                         " to leftAmount: " + equipment.getLeftAmount());
-
-                        // If after decrement amount is 0, remove that equipment item from user's list
-                        if (equipment.getLeftAmount() == 0) {
-                            equipmentToRemove.add(equipment);
-                            System.out.println("DEBUG: Equipment " + equipment.getEquipmentId() + " exhausted, marking for removal");
-                        }
-                    } else if (leftAmount == 3) {
-                        // Don't decrement
-                        System.out.println("DEBUG: Equipment " + equipment.getEquipmentId() + " has 3 uses, not decrementing");
-                    }
-                }
-            }
-        }
-
-        // Remove exhausted equipment
-        if (!equipmentToRemove.isEmpty()) {
-            System.out.println("DEBUG: Removing " + equipmentToRemove.size() + " exhausted equipment items");
-            user.getEquipment().removeAll(equipmentToRemove);
-            equipmentUpdated = true;
-        }
-
-        if (equipmentUpdated) {
-            System.out.println("DEBUG: Equipment damage completed, updating user");
-        } else {
-            System.out.println("DEBUG: No equipment damage needed");
-        }
-
-        // Update user with modified equipment
-        userService.updateUser(user, task -> {
-            if (task.isSuccessful()) {
-                currentUser.postValue(user);
-                System.out.println("DEBUG: User updated successfully with equipment changes");
-            } else {
-                System.out.println("DEBUG: Failed to update user: " + 
-                                 (task.getException() != null ? task.getException().getMessage() : "Unknown error"));
-            }
-        });
     }
 
     private void giveEquipmentReward(String userId, double clothesChance, double weaponsChance) {
