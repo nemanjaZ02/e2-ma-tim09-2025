@@ -1,11 +1,14 @@
 package com.e2_ma_tim09_2025.questify.services;
 
+import android.util.Log;
+
 import com.e2_ma_tim09_2025.questify.models.Boss;
 import com.e2_ma_tim09_2025.questify.models.Equipment;
 import com.e2_ma_tim09_2025.questify.models.MyEquipment;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.models.enums.BossStatus;
 import com.e2_ma_tim09_2025.questify.models.enums.EquipmentType;
+import com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskType;
 import com.e2_ma_tim09_2025.questify.repositories.EquipmentRepository;
 import com.e2_ma_tim09_2025.questify.repositories.MyEquipmentRepository;
 import com.e2_ma_tim09_2025.questify.repositories.UserRepository;
@@ -30,15 +33,17 @@ public class EquipmentService {
     private final MyEquipmentRepository myEquipmentRepository;
     private final UserRepository userRepository;
     private final BossService bossService;
+    private final SpecialTaskService specialTaskService;
 
     @Inject
     public EquipmentService(EquipmentRepository equipmentRepository, MyEquipmentRepository myEquipmentRepository,
-                            UserService userService, UserRepository userRepository, BossService bossService) {
+                            UserService userService, UserRepository userRepository, BossService bossService, SpecialTaskService specialTaskService) {
         this.equipmentRepository = equipmentRepository;
         this.myEquipmentRepository = myEquipmentRepository;
         this.userService = userService;
         this.userRepository = userRepository;
         this.bossService = bossService;
+        this.specialTaskService = specialTaskService;
     }
 
     /**
@@ -184,6 +189,17 @@ public class EquipmentService {
      */
     public void buyEquipment(String userId, String equipmentId, OnCompleteListener<Boolean> listener) {
         // First get the equipment master data and user data sequentially
+        specialTaskService.completeSpecialTaskForAllAlliances(userId, SpecialTaskType.SHOP_PURCHASE, new OnCompleteListener<Boolean>() {
+            @Override
+            public void onComplete(com.google.android.gms.tasks.Task<Boolean> specialTaskResult) {
+                if (specialTaskResult.isSuccessful()) {
+                    Log.d("BossService", "✅ Special task completed successfully");
+                } else {
+                    Log.e("BossService", "❌ Failed to complete special task", specialTaskResult.getException());
+                }
+            }
+        });
+
         equipmentRepository.getEquipment(equipmentId, equipmentTask -> {
             if (!equipmentTask.isSuccessful()) {
                 listener.onComplete(com.google.android.gms.tasks.Tasks.forException(

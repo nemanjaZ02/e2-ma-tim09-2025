@@ -1,7 +1,10 @@
 package com.e2_ma_tim09_2025.questify.services;
 
+import android.util.Log;
+
 import com.e2_ma_tim09_2025.questify.models.AllianceMessage;
 import com.e2_ma_tim09_2025.questify.models.User;
+import com.e2_ma_tim09_2025.questify.models.enums.SpecialTaskType;
 import com.e2_ma_tim09_2025.questify.repositories.AllianceChatRepository;
 import com.e2_ma_tim09_2025.questify.repositories.UserRepository;
 import com.e2_ma_tim09_2025.questify.services.NotificationService;
@@ -24,18 +27,37 @@ public class AllianceChatService {
     private final AllianceChatRepository allianceChatRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final SpecialTaskService specialTaskService;
 
     @Inject
-    public AllianceChatService(AllianceChatRepository allianceChatRepository, UserRepository userRepository, NotificationService notificationService) {
+    public AllianceChatService(AllianceChatRepository allianceChatRepository, UserRepository userRepository, NotificationService notificationService, SpecialTaskService specialTaskService) {
         this.allianceChatRepository = allianceChatRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.specialTaskService = specialTaskService;
     }
 
     /**
      * Send a message to alliance chat
      */
     public void sendMessage(String allianceId, String senderId, String messageText, OnCompleteListener<Boolean> listener) {
+        allianceChatRepository.hasUserSentMessageToday(senderId, task -> {
+            if (task.isSuccessful() && Boolean.FALSE.equals(task.getResult())) {
+                specialTaskService.completeSpecialTaskForAllAlliances(senderId, SpecialTaskType.ALLIANCE_MESSAGE_DAILY, new OnCompleteListener<Boolean>() {
+                    @Override
+                    public void onComplete(com.google.android.gms.tasks.Task<Boolean> specialTaskResult) {
+                        if (specialTaskResult.isSuccessful()) {
+                            Log.d("BossService", "✅ Special task completed successfully");
+                        } else {
+                            Log.e("BossService", "❌ Failed to complete special task", specialTaskResult.getException());
+                        }
+                    }
+                });
+            } else {
+                Log.d("BossService", "User already sent a message today or check failed, skipping special task");
+            }
+        });
+
         // First get sender's name
         userRepository.getUser(senderId, userTask -> {
             if (!userTask.isSuccessful() || userTask.getResult() == null) {

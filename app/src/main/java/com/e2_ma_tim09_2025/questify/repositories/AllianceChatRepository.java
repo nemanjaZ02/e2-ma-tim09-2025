@@ -103,4 +103,32 @@ public class AllianceChatRepository {
                 .delete()
                 .addOnCompleteListener(listener);
     }
+
+    public void hasUserSentMessageToday(String userId, OnCompleteListener<Boolean> listener) {
+        messagesRef.whereEqualTo("senderId", userId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    boolean hasSentToday = false;
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMdd");
+                        String today = sdf.format(new java.util.Date());
+
+                        for (DocumentSnapshot doc : task.getResult().getDocuments()) {
+                            Long timestamp = doc.getLong("timestamp");
+                            if (timestamp != null) {
+                                String messageDate = sdf.format(new java.util.Date(timestamp));
+                                if (messageDate.equals(today)) {
+                                    hasSentToday = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    com.google.android.gms.tasks.TaskCompletionSource<Boolean> source =
+                            new com.google.android.gms.tasks.TaskCompletionSource<>();
+                    source.setResult(hasSentToday);
+                    listener.onComplete(source.getTask());
+                });
+    }
 }
