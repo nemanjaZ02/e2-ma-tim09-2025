@@ -245,7 +245,8 @@ public class EquipmentService {
                             myEquipmentId,
                             equipmentId,
                             0, // timesUpgraded = 0
-                            equipment.getLasting() // leftAmount = equipment lasting
+                            equipment.getLasting(),
+                            0// leftAmount = equipment lasting
                     );
                     newMyEquipment.setActivated(false); // Initially not activated
 
