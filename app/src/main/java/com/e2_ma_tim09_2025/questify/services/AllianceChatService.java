@@ -4,9 +4,12 @@ import com.e2_ma_tim09_2025.questify.models.AllianceMessage;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.repositories.AllianceChatRepository;
 import com.e2_ma_tim09_2025.questify.repositories.UserRepository;
+import com.e2_ma_tim09_2025.questify.services.NotificationService;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.ArrayList;
@@ -20,11 +23,13 @@ import javax.inject.Singleton;
 public class AllianceChatService {
     private final AllianceChatRepository allianceChatRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Inject
-    public AllianceChatService(AllianceChatRepository allianceChatRepository, UserRepository userRepository) {
+    public AllianceChatService(AllianceChatRepository allianceChatRepository, UserRepository userRepository, NotificationService notificationService) {
         this.allianceChatRepository = allianceChatRepository;
         this.userRepository = userRepository;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -60,6 +65,8 @@ public class AllianceChatService {
             // Send message
             allianceChatRepository.sendMessage(message, sendTask -> {
                 if (sendTask.isSuccessful()) {
+                    // Message sent successfully, now send notifications to alliance members
+                    sendChatNotifications(allianceId, senderId, sender.getUsername(), messageText);
                     listener.onComplete(Tasks.forResult(true));
                 } else {
                     listener.onComplete(Tasks.forException(
@@ -142,6 +149,104 @@ public class AllianceChatService {
                     task.getException() != null ? 
                     task.getException() : 
                     new Exception("Failed to check for new messages")));
+            }
+        });
+    }
+
+    /**
+     * Start listening to messages in real-time
+     */
+    public void startListeningToMessages(String allianceId, EventListener<List<AllianceMessage>> listener) {
+        allianceChatRepository.startListeningToMessages(allianceId, new EventListener<QuerySnapshot>() {
+            @Override
+            public void onEvent(QuerySnapshot snapshot, FirebaseFirestoreException e) {
+                if (e != null) {
+                    // Handle error
+                    listener.onEvent(null, e);
+                    return;
+                }
+                
+                if (snapshot != null) {
+                    List<AllianceMessage> messages = new ArrayList<>();
+                    for (DocumentSnapshot doc : snapshot.getDocuments()) {
+                        AllianceMessage message = doc.toObject(AllianceMessage.class);
+                        if (message != null) {
+                            messages.add(message);
+                        }
+                    }
+                    // Sort by timestamp in ascending order (oldest first)
+                    messages.sort((m1, m2) -> Long.compare(m1.getTimestamp(), m2.getTimestamp()));
+                    listener.onEvent(messages, null);
+                }
+            }
+        });
+    }
+    
+    /**
+     * Stop listening to messages
+     */
+    public void stopListeningToMessages() {
+        allianceChatRepository.stopListeningToMessages();
+    }
+
+    /**
+     * Send chat notifications to all alliance members except the sender
+     */
+    private void sendChatNotifications(String allianceId, String senderId, String senderUsername, String messageText) {
+        System.out.println("🔔 DEBUG: Starting sendChatNotifications");
+        System.out.println("🔔 DEBUG: allianceId=" + allianceId);
+        System.out.println("🔔 DEBUG: senderId=" + senderId);
+        System.out.println("🔔 DEBUG: senderUsername=" + senderUsername);
+        System.out.println("🔔 DEBUG: messageText=" + messageText);
+        
+        // Get alliance information to get member list and alliance name
+        userRepository.getUser(senderId, userTask -> {
+            System.out.println("🔔 DEBUG: User fetch task completed. Success: " + userTask.isSuccessful());
+            
+            if (userTask.isSuccessful() && userTask.getResult() != null) {
+                User sender = userTask.getResult().toObject(User.class);
+                System.out.println("🔔 DEBUG: Sender user object: " + (sender != null ? "Found" : "Null"));
+                
+                if (sender != null) {
+                    System.out.println("🔔 DEBUG: Sender allianceId=" + sender.getAllianceId());
+                    System.out.println("🔔 DEBUG: Expected allianceId=" + allianceId);
+                    System.out.println("🔔 DEBUG: Alliance IDs match: " + (sender.getAllianceId() != null && sender.getAllianceId().equals(allianceId)));
+                }
+                
+                if (sender != null) {
+                    // User exists, send notification regardless of allianceId in user document
+                    // The server will validate alliance membership by checking the alliance document
+                    String allianceName = "Alliance"; // Default name, could be improved by getting actual alliance name
+                    
+                    System.out.println("🔔 DEBUG: User found, sending notification (alliance validation handled by server)");
+                    System.out.println("🔔 DEBUG: Calling notificationService.sendAllianceChatNotification");
+                    
+                    notificationService.sendAllianceChatNotification(
+                        allianceId,
+                        senderId,
+                        senderUsername,
+                        messageText,
+                        allianceName,
+                        new NotificationService.NotificationCallback() {
+                            @Override
+                            public void onSuccess() {
+                                System.out.println("🔔 DEBUG: ✅ Notification sent successfully!");
+                            }
+
+                            @Override
+                            public void onFailure(String error) {
+                                System.out.println("🔔 DEBUG: ❌ Notification failed: " + error);
+                            }
+                        }
+                    );
+                } else {
+                    System.out.println("🔔 DEBUG: ❌ User not found - not sending notification");
+                }
+            } else {
+                System.out.println("🔔 DEBUG: ❌ Failed to get user data for notification");
+                if (userTask.getException() != null) {
+                    System.out.println("🔔 DEBUG: Exception: " + userTask.getException().getMessage());
+                }
             }
         });
     }

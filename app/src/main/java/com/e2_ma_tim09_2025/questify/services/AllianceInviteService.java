@@ -158,7 +158,13 @@ public class AllianceInviteService {
             // Check if user is already in an alliance
             getUserCurrentAlliance(userId, currentAllianceTask -> {
                 if (!currentAllianceTask.isSuccessful()) {
-                    listener.onComplete(com.google.android.gms.tasks.Tasks.forException(currentAllianceTask.getException()));
+                    Log.w("AllianceInviteService", "⚠️ Failed to get current alliance - treating as no alliance");
+                    Log.w("AllianceInviteService", "Error: " + 
+                        (currentAllianceTask.getException() != null ? currentAllianceTask.getException().getMessage() : "Unknown error"));
+                    Log.w("AllianceInviteService", "Allowing user to proceed with new invitation");
+                    
+                    // Treat user as not in any alliance - they can accept the new invitation
+                    acceptInvitationDirectly(invite, userId, listener);
                     return;
                 }
 
@@ -242,29 +248,88 @@ public class AllianceInviteService {
      * Check if user is currently in an alliance and get alliance details
      */
     private void getUserCurrentAlliance(String userId, OnCompleteListener<Alliance> listener) {
+        Log.d("AllianceInviteService", "=== GETTING USER CURRENT ALLIANCE ===");
+        Log.d("AllianceInviteService", "User ID: " + userId);
+        
         userRepository.getUser(userId, task -> {
-            if (!task.isSuccessful() || task.getResult() == null || !task.getResult().exists()) {
+            Log.d("AllianceInviteService", "User fetch task completed. Success: " + task.isSuccessful());
+            
+            if (!task.isSuccessful()) {
+                Log.e("AllianceInviteService", "❌ Failed to fetch user: " + 
+                    (task.getException() != null ? task.getException().getMessage() : "Unknown error"));
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                    new Exception("Failed to fetch user: " + 
+                    (task.getException() != null ? task.getException().getMessage() : "Network error"))));
+                return;
+            }
+            
+            if (task.getResult() == null || !task.getResult().exists()) {
+                Log.e("AllianceInviteService", "❌ User document does not exist");
                 listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
                     new Exception("User not found")));
                 return;
             }
 
             User user = task.getResult().toObject(User.class);
-            if (user == null || user.getAllianceId() == null || user.getAllianceId().isEmpty()) {
+            if (user == null) {
+                Log.e("AllianceInviteService", "❌ Failed to parse user data");
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                    new Exception("Failed to parse user data")));
+                return;
+            }
+            
+            if (user.getAllianceId() == null || user.getAllianceId().isEmpty()) {
+                Log.d("AllianceInviteService", "✅ User is not in any alliance");
                 // User is not in any alliance
                 listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(null));
                 return;
             }
 
+            Log.d("AllianceInviteService", "User is in alliance: " + user.getAllianceId());
             // Get the alliance details
             allianceRepository.getAlliance(user.getAllianceId(), allianceTask -> {
-                if (!allianceTask.isSuccessful() || allianceTask.getResult() == null || !allianceTask.getResult().exists()) {
-                    listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
-                        new Exception("Current alliance not found")));
+                Log.d("AllianceInviteService", "Current alliance fetch task completed. Success: " + allianceTask.isSuccessful());
+                
+                if (!allianceTask.isSuccessful()) {
+                    Log.w("AllianceInviteService", "⚠️ Failed to fetch current alliance - treating as no alliance");
+                    Log.w("AllianceInviteService", "Error: " + 
+                        (allianceTask.getException() != null ? allianceTask.getException().getMessage() : "Unknown error"));
+                    Log.w("AllianceInviteService", "This might be a network issue. Allowing user to proceed with new invitation.");
+                    
+                    // Treat user as not in any alliance - they can accept the new invitation
+                    listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(null));
+                    return;
+                }
+                
+                if (allianceTask.getResult() == null || !allianceTask.getResult().exists()) {
+                    Log.w("AllianceInviteService", "⚠️ Current alliance document does not exist - treating as no alliance");
+                    Log.w("AllianceInviteService", "Alliance ID: " + user.getAllianceId());
+                    Log.w("AllianceInviteService", "This likely means the alliance was deleted. Cleaning up user data and allowing new invitation.");
+                    
+                    // Clean up the user's allianceId since the alliance no longer exists
+                    user.setAllianceId(null);
+                    userRepository.updateUser(user, cleanupTask -> {
+                        if (cleanupTask.isSuccessful()) {
+                            Log.d("AllianceInviteService", "✅ Cleaned up user's allianceId");
+                        } else {
+                            Log.w("AllianceInviteService", "⚠️ Failed to cleanup user's allianceId, but continuing anyway");
+                        }
+                        
+                        // Treat user as not in any alliance - they can accept the new invitation
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(null));
+                    });
                     return;
                 }
 
                 Alliance alliance = allianceTask.getResult().toObject(Alliance.class);
+                if (alliance == null) {
+                    Log.e("AllianceInviteService", "❌ Failed to parse current alliance data");
+                    listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                        new Exception("Failed to parse current alliance data")));
+                    return;
+                }
+                
+                Log.d("AllianceInviteService", "✅ Successfully retrieved current alliance: " + alliance.getName());
                 listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(alliance));
             });
         });
@@ -331,11 +396,36 @@ public class AllianceInviteService {
      * Accept invitation directly (user is not in any alliance)
      */
     private void acceptInvitationDirectly(AllianceInvite invite, String userId, OnCompleteListener<AllianceConflictResult> listener) {
+        Log.d("AllianceInviteService", "=== ACCEPTING INVITATION DIRECTLY ===");
+        Log.d("AllianceInviteService", "Invite ID: " + invite.getId());
+        Log.d("AllianceInviteService", "Target Alliance ID: " + invite.getAllianceId());
+        Log.d("AllianceInviteService", "User ID: " + userId);
+        
         // Get the target alliance
         allianceRepository.getAlliance(invite.getAllianceId(), allianceTask -> {
-            if (!allianceTask.isSuccessful() || allianceTask.getResult() == null || !allianceTask.getResult().exists()) {
+            Log.d("AllianceInviteService", "Alliance fetch task completed. Success: " + allianceTask.isSuccessful());
+            
+            if (!allianceTask.isSuccessful()) {
+                Log.e("AllianceInviteService", "❌ Failed to fetch alliance: " + 
+                    (allianceTask.getException() != null ? allianceTask.getException().getMessage() : "Unknown error"));
                 listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
-                    new Exception("Target alliance not found")));
+                    new Exception("Failed to fetch alliance: " + 
+                    (allianceTask.getException() != null ? allianceTask.getException().getMessage() : "Network error"))));
+                return;
+            }
+            
+            if (allianceTask.getResult() == null) {
+                Log.e("AllianceInviteService", "❌ Alliance task result is null");
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                    new Exception("Alliance fetch returned null result")));
+                return;
+            }
+            
+            if (!allianceTask.getResult().exists()) {
+                Log.e("AllianceInviteService", "❌ Alliance document does not exist in Firestore");
+                Log.e("AllianceInviteService", "Alliance ID: " + invite.getAllianceId());
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                    new Exception("The alliance you're trying to join no longer exists. It may have been deleted by the leader.")));
                 return;
             }
 
@@ -366,6 +456,11 @@ public class AllianceInviteService {
                                     if (userUpdateTask.isSuccessful()) {
                                         // Mark invite as accepted
                                         inviteRepository.updateInviteStatus(invite.getId(), AllianceInviteStatus.ACCEPTED, statusTask -> {
+                                            if (statusTask.isSuccessful()) {
+                                                // Send notification to leader
+                                                sendLeaderAcceptanceNotification(targetAlliance, user.getUsername());
+                                            }
+                                            
                                             AllianceConflictResult result = new AllianceConflictResult();
                                             result.setCanAccept(true);
                                             result.setNeedsConfirmation(false);
@@ -402,5 +497,33 @@ public class AllianceInviteService {
         // For now, just log that we would create it
         Log.d("AllianceInviteService", "📱 Would create local notification for invite: " + invite.getId());
         Log.d("AllianceInviteService", "📱 From: " + fromUsername + " to alliance: " + allianceName);
+    }
+
+    /**
+     * Send notification to leader when someone accepts their invitation
+     */
+    private void sendLeaderAcceptanceNotification(Alliance alliance, String acceptedByUsername) {
+        Log.d("AllianceInviteService", "🔔 Sending acceptance notification to leader");
+        Log.d("AllianceInviteService", "👑 Leader ID: " + alliance.getLeaderId());
+        Log.d("AllianceInviteService", "✅ Accepted By: " + acceptedByUsername);
+        Log.d("AllianceInviteService", "🏰 Alliance: " + alliance.getName());
+        
+        notificationService.sendAllianceAcceptanceNotification(
+            alliance.getLeaderId(),
+            acceptedByUsername,
+            alliance.getName(),
+            alliance.getId(),
+            new NotificationService.NotificationCallback() {
+                @Override
+                public void onSuccess() {
+                    Log.d("AllianceInviteService", "✅ Leader acceptance notification sent successfully");
+                }
+
+                @Override
+                public void onFailure(String error) {
+                    Log.e("AllianceInviteService", "❌ Failed to send leader acceptance notification: " + error);
+                }
+            }
+        );
     }
 }

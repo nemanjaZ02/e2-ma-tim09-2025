@@ -270,6 +270,46 @@ public class TasksMainActivity extends AppCompatActivity {
             Intent intent = new Intent(TasksMainActivity.this, com.e2_ma_tim09_2025.questify.activities.ShopActivity.class);
             startActivity(intent);
         });
+
+        // Friends menu item click listener
+        View friendsMenuItem = findViewById(R.id.friendsMenuItem);
+        friendsMenuItem.setOnClickListener(v -> {
+            closeMenu(); // Close the side menu
+            Intent intent = new Intent(TasksMainActivity.this, com.e2_ma_tim09_2025.questify.activities.users.FriendsActivity.class);
+            startActivity(intent);
+        });
+
+        // All Users menu item click listener
+        View allUsersMenuItem = findViewById(R.id.allUsersMenuItem);
+        allUsersMenuItem.setOnClickListener(v -> {
+            closeMenu(); // Close the side menu
+            Intent intent = new Intent(TasksMainActivity.this, com.e2_ma_tim09_2025.questify.activities.users.AllUsersActivity.class);
+            startActivity(intent);
+        });
+
+        // Create Alliance menu item click listener
+        View createAllianceMenuItem = findViewById(R.id.createAllianceMenuItem);
+        createAllianceMenuItem.setOnClickListener(v -> {
+            closeMenu(); // Close the side menu
+            Intent intent = new Intent(TasksMainActivity.this, com.e2_ma_tim09_2025.questify.activities.alliance.CreateAllianceActivity.class);
+            startActivity(intent);
+        });
+
+        // My Alliance menu item click listener
+        View myAllianceMenuItem = findViewById(R.id.myAllianceMenuItem);
+        myAllianceMenuItem.setOnClickListener(v -> {
+            closeMenu(); // Close the side menu
+            Intent intent = new Intent(TasksMainActivity.this, com.e2_ma_tim09_2025.questify.activities.alliance.MyAllianceActivity.class);
+            startActivity(intent);
+        });
+
+        // Member Alliance menu item click listener
+        View memberAllianceMenuItem = findViewById(R.id.memberAllianceMenuItem);
+        memberAllianceMenuItem.setOnClickListener(v -> {
+            closeMenu(); // Close the side menu
+            Intent intent = new Intent(TasksMainActivity.this, com.e2_ma_tim09_2025.questify.activities.alliance.MemberAllianceActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void openMenu() {

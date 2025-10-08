@@ -10,6 +10,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProvider;
 
@@ -17,6 +19,7 @@ import com.e2_ma_tim09_2025.questify.R;
 import com.e2_ma_tim09_2025.questify.models.MyEquipment;
 import com.e2_ma_tim09_2025.questify.models.User;
 import com.e2_ma_tim09_2025.questify.utils.QrCodeUtils;
+import com.e2_ma_tim09_2025.questify.utils.BadgeMapper;
 import com.e2_ma_tim09_2025.questify.viewmodels.OtherProfileViewModel;
 import com.e2_ma_tim09_2025.questify.viewmodels.UserViewModel;
 import com.google.android.material.imageview.ShapeableImageView;
@@ -32,7 +35,7 @@ import com.google.zxing.integration.android.IntentResult;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
+
 
 import dagger.hilt.android.AndroidEntryPoint;
 
@@ -74,18 +77,49 @@ public class OtherProfileActivity extends AppCompatActivity {
             if (scannedUserId != null) {
                 String myUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
                 if (!scannedUserId.equals(myUserId)) {
-                    viewModel.addFriend(myUserId, scannedUserId);
-                    Toast.makeText(this, "Friend added!", Toast.LENGTH_SHORT).show();
+                    viewModel.addFriend(myUserId, scannedUserId, task -> {
+                        if (task.isSuccessful()) {
+                            Boolean result = task.getResult();
+                            if (result != null && result) {
+                                Toast.makeText(this, "Friend added successfully!", Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(this, "This user is already your friend!", Toast.LENGTH_SHORT).show();
+                            }
+                        } else {
+                            Toast.makeText(this, "Failed to add friend: " + 
+                                (task.getException() != null ? task.getException().getMessage() : "Unknown error"), 
+                                Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                } else {
+                    Toast.makeText(this, "You cannot add yourself as a friend!", Toast.LENGTH_SHORT).show();
                 }
             } else {
                 Toast.makeText(this, "Failed to read QR code", Toast.LENGTH_SHORT).show();
             }
         });
 
+        // Scan QR Code button functionality
+        Button btnScanQRCode = findViewById(R.id.btnScanQRCode);
+        btnScanQRCode.setOnClickListener(v -> {
+            IntentIntegrator integrator = new IntentIntegrator(this);
+            integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE);
+            integrator.setPrompt("Scan a QR code to add friend");
+            integrator.setCameraId(0); // Use back camera
+            integrator.setBeepEnabled(true);
+            integrator.setBarcodeImageEnabled(true);
+            integrator.setOrientationLocked(false);
+            integrator.initiateScan();
+        });
 
     }
 
     private void displayUser(User user) {
+        // Debug logging
+        System.out.println("DEBUG: Displaying user - " + user.getUsername());
+        System.out.println("DEBUG: User badges count: " + (user.getBadges() != null ? user.getBadges().size() : 0));
+        System.out.println("DEBUG: User equipment count: " + (user.getEquipment() != null ? user.getEquipment().size() : 0));
+        
         username.setText(user.getUsername());
         level.setText("Level: " + user.getLevel());
         title.setText(user.getTitle());
@@ -102,35 +136,131 @@ public class OtherProfileActivity extends AppCompatActivity {
             }
         }
 
-        // Load badges
+        // Load badges using BadgeMapper (same as ProfileActivity)
         badgesContainer.removeAllViews();
-        for (String badge : user.getBadges()) {
-            ImageView badgeView = new ImageView(this);
-            badgeView.setImageResource(getResources().getIdentifier(badge, "drawable", getPackageName()));
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(80, 80);
-            params.setMargins(8, 0, 8, 0);
-            badgeView.setLayoutParams(params);
-            badgesContainer.addView(badgeView);
+        if (user.getBadges() != null && !user.getBadges().isEmpty()) {
+            for (String badge : user.getBadges()) {
+                addBadgeToView(badge);
+            }
         }
 
-        // Load equipment
+        // Load equipment using same mapping as ProfileActivity
         equipmentContainer.removeAllViews();
-        for (MyEquipment item : user.getEquipment()) {
-            ImageView itemView = new ImageView(this);
-            //itemView.setImageResource(getResources().getIdentifier(item, "drawable", getPackageName()));
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(80, 80);
-            params.setMargins(8, 0, 8, 0);
-            itemView.setLayoutParams(params);
-            equipmentContainer.addView(itemView);
+        if (user.getEquipment() != null) {
+            System.out.println("DEBUG: Loading " + user.getEquipment().size() + " equipment items");
+            for (MyEquipment item : user.getEquipment()) {
+                System.out.println("DEBUG: Loading equipment - ID: " + item.getEquipmentId() + ", Amount: " + item.getLeftAmount());
+                
+                ImageView itemView = new ImageView(this);
+                
+                // Use the same equipment mapping logic as ProfileActivity
+                int equipmentImageResId = getDrawableIdForEquipment(item.getEquipmentId());
+                if (equipmentImageResId != 0) {
+                    itemView.setImageResource(equipmentImageResId);
+                    System.out.println("DEBUG: Loaded equipment image for: " + item.getEquipmentId());
+                } else {
+                    // Fallback to default equipment icon
+                    itemView.setImageResource(R.drawable.ic_equipment_default);
+                    System.out.println("DEBUG: Using default equipment icon for: " + item.getEquipmentId());
+                }
+                
+                // Set tooltip with equipment info
+                String tooltip = item.getEquipmentId() + "\nUses left: " + item.getLeftAmount();
+                itemView.setContentDescription(tooltip);
+                
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(80, 80);
+                params.setMargins(8, 0, 8, 0);
+                itemView.setLayoutParams(params);
+                equipmentContainer.addView(itemView);
+            }
+        } else {
+            System.out.println("DEBUG: User has no equipment");
         }
     }
+    
+    /**
+     * Add a badge to the badges container with image and tooltip (same as ProfileActivity)
+     */
+    private void addBadgeToView(String badgeString) {
+        // Create a container for the badge (image + tooltip)
+        LinearLayout badgeContainer = new LinearLayout(this);
+        badgeContainer.setOrientation(LinearLayout.VERTICAL);
+        badgeContainer.setPadding(4, 4, 4, 4); // Minimal padding for very compact layout
+        badgeContainer.setGravity(android.view.Gravity.CENTER);
+        
+        // Create ImageView for the badge
+        ImageView badgeImage = new ImageView(this);
+        badgeImage.setLayoutParams(new LinearLayout.LayoutParams(80, 80)); // Smaller size for other profiles
+        badgeImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        
+        // Get the drawable resource for the badge using BadgeMapper
+        int badgeDrawableId = BadgeMapper.getBadgeDrawable(badgeString);
+        if (badgeDrawableId != -1) {
+            badgeImage.setImageResource(badgeDrawableId);
+        } else {
+            // Fallback to a default badge icon if the badge type is not found
+            badgeImage.setImageResource(R.drawable.ic_badge_default);
+        }
+        
+        // Set tooltip with badge name
+        badgeImage.setContentDescription(BadgeMapper.getBadgeDisplayName(badgeString));
+        
+        // Add image to container
+        badgeContainer.addView(badgeImage);
+        
+        // Add container to badges container
+        badgesContainer.addView(badgeContainer);
+    }
+    
+    /**
+     * Get drawable ID for equipment based on equipment ID (same as ProfileActivity)
+     */
+    private int getDrawableIdForEquipment(String equipmentId) {
+        switch (equipmentId) {
+            case "potion1":
+                return getResources().getIdentifier("potion1", "drawable", getPackageName());
+            case "potion2":
+                return getResources().getIdentifier("potion2", "drawable", getPackageName());
+            case "potion3":
+                return getResources().getIdentifier("potion3", "drawable", getPackageName());
+            case "potion4":
+                return getResources().getIdentifier("potion4", "drawable", getPackageName());
+            case "Gloves":
+                return getResources().getIdentifier("gloves", "drawable", getPackageName());
+            case "Shield":
+                return getResources().getIdentifier("shield", "drawable", getPackageName());
+            case "Boots":
+                return getResources().getIdentifier("boots", "drawable", getPackageName());
+            case "Sword":
+                return getResources().getIdentifier("ic_sword", "drawable", getPackageName());
+            default:
+                return 0; // No image found
+        }
+    }
+    
     private void addFriendByQr(String scannedUserId) {
         String currentUserId = FirebaseAuth.getInstance().getCurrentUser().getUid();
-
-        // Call ViewModel or Service
-        viewModel.addFriend(currentUserId, scannedUserId);
-
-        Toast.makeText(this, "Friend added!", Toast.LENGTH_SHORT).show();
+        
+        if (scannedUserId != null && !scannedUserId.equals(currentUserId)) {
+            viewModel.addFriend(currentUserId, scannedUserId, task -> {
+                if (task.isSuccessful()) {
+                    Boolean result = task.getResult();
+                    if (result != null && result) {
+                        Toast.makeText(this, "Friend added successfully!", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "This user is already your friend!", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(this, "Failed to add friend: " + 
+                        (task.getException() != null ? task.getException().getMessage() : "Unknown error"), 
+                        Toast.LENGTH_SHORT).show();
+                }
+            });
+        } else if (scannedUserId != null && scannedUserId.equals(currentUserId)) {
+            Toast.makeText(this, "You cannot add yourself as a friend!", Toast.LENGTH_SHORT).show();
+        } else {
+            Toast.makeText(this, "Invalid QR code format", Toast.LENGTH_SHORT).show();
+        }
     }
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
@@ -146,6 +276,7 @@ public class OtherProfileActivity extends AppCompatActivity {
             }
         }
     }
+
     public String decodeQRCode(Bitmap bitmap) {
         if (bitmap == null) return null;
 

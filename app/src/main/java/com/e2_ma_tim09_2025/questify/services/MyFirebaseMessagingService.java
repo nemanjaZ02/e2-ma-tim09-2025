@@ -108,6 +108,10 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
                     Log.d(TAG, "Creating alliance invite accepted notification");
                     showAllianceInviteAcceptedNotification(title, body, allianceId, data.get("acceptedBy"), data.get("acceptedByUsername"));
                     break;
+                case "alliance_acceptance":
+                    Log.d(TAG, "Creating alliance acceptance notification");
+                    showAllianceInviteAcceptedNotification(title, body, allianceId, data.get("acceptedBy"), data.get("acceptedBy"));
+                    break;
                 default:
                     Log.d(TAG, "Creating generic notification for type: " + type);
                     showGenericNotification(title, body);

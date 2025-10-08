@@ -119,9 +119,7 @@
         android:layout_height="wrap_content"
         android:text="💬 Alliance Chat"
         android:layout_marginBottom="16dp"
-        android:backgroundTint="#2196F3"
-        app:icon="@drawable/ic_chat"
-        app:iconGravity="textStart"
+        android:backgroundTint="#5C4033"
         android:visibility="gone" />
 
     <!-- Special Mission Progress Section -->
@@ -253,8 +251,7 @@
             android:layout_weight="1"
             android:text="Invite Users"
             android:layout_marginEnd="8dp"
-            app:icon="@drawable/ic_add"
-            app:iconGravity="textStart" />
+            android:backgroundTint="#5C4033" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonDeleteAlliance"

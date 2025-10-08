@@ -79,7 +79,12 @@ public class AllianceService {
                     }
                 });
                 
-                if (invitedMemberIds != null && !invitedMemberIds.isEmpty()) {
+                // Add a small delay to ensure alliance is fully committed before sending invites
+                Log.d("AllianceService", "⏳ Waiting for alliance to be fully committed...");
+                new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                    Log.d("AllianceService", "🚀 Alliance committed, proceeding with invites");
+                    
+                    if (invitedMemberIds != null && !invitedMemberIds.isEmpty()) {
                     Log.d("AllianceService", "📧 Sending invites to " + invitedMemberIds.size() + " members");
                     // 4. Pošalji pozive članovima
                     for (String friendId : invitedMemberIds) {
@@ -107,15 +112,18 @@ public class AllianceService {
                             }
                         });
                     }
-                } else {
-                    Log.d("AllianceService", "ℹ️ No members to invite");
-                }
+                    } else {
+                        Log.d("AllianceService", "ℹ️ No members to invite");
+                    }
+                    
+                    // Complete the alliance creation process
+                    Log.d("AllianceService", "=== ALLIANCE CREATION PROCESS COMPLETED ===");
+                    listener.onComplete(task);
+                }, 1000); // 1 second delay to ensure alliance is committed
             } else {
                 Log.e("AllianceService", "❌ Failed to save alliance to Firestore", task.getException());
+                listener.onComplete(task);
             }
-            
-            Log.d("AllianceService", "=== ALLIANCE CREATION PROCESS COMPLETED ===");
-            listener.onComplete(task);
         });
     }
 //    public void disbandAlliance(@NonNull String allianceId, @NonNull String userId, @NonNull OnCompleteListener<Void> listener) {
@@ -265,16 +273,38 @@ public class AllianceService {
     }
 
     /**
-     * Get users who are eligible for alliance invitation (not in alliance, not already invited)
+     * Get users who are eligible for alliance invitation (leader's friends who are not in alliance, not already invited)
      */
     public void getEligibleUsersForInvitation(String allianceId, String leaderId, OnCompleteListener<List<User>> listener) {
-        // First get all users
-        userRepository.getAllUsers(allUsersTask -> {
-            if (!allUsersTask.isSuccessful() || allUsersTask.getResult() == null) {
+        Log.d("AllianceService", "=== GETTING ELIGIBLE USERS FOR INVITATION ===");
+        Log.d("AllianceService", "Alliance ID: " + allianceId);
+        Log.d("AllianceService", "Leader ID: " + leaderId);
+        
+        // First get the leader's friends (instead of all users)
+        userRepository.getFriends(leaderId, friendsTask -> {
+            if (!friendsTask.isSuccessful()) {
+                Log.e("AllianceService", "❌ Failed to get leader's friends: " + 
+                    (friendsTask.getException() != null ? friendsTask.getException().getMessage() : "Unknown error"));
                 listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
-                    allUsersTask.getException() != null ? allUsersTask.getException() : new Exception("Failed to get users")));
+                    friendsTask.getException() != null ? friendsTask.getException() : new Exception("Failed to get leader's friends")));
                 return;
             }
+
+            List<User> friends = new ArrayList<>();
+            if (friendsTask.getResult() != null) {
+                for (DocumentSnapshot doc : friendsTask.getResult().getDocuments()) {
+                    User user = doc.toObject(User.class);
+                    if (user != null) friends.add(user);
+                }
+            }
+
+            if (friends.isEmpty()) {
+                Log.d("AllianceService", "ℹ️ Leader has no friends to invite");
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(new ArrayList<>()));
+                return;
+            }
+
+            Log.d("AllianceService", "Found " + friends.size() + " friends for leader");
 
             // Get alliance members to exclude them
             getAllianceMembers(allianceId, allianceMembersTask -> {
@@ -290,9 +320,13 @@ public class AllianceService {
                     allianceMemberIds.add(member.getId());
                 }
 
+                Log.d("AllianceService", "Alliance has " + allianceMemberIds.size() + " members");
+
                 // Get pending invites to exclude already invited users
                 inviteRepository.getInvitesForAlliance(allianceId, invitesTask -> {
                     if (!invitesTask.isSuccessful()) {
+                        Log.e("AllianceService", "❌ Failed to get invites: " + 
+                            (invitesTask.getException() != null ? invitesTask.getException().getMessage() : "Unknown error"));
                         listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
                             invitesTask.getException() != null ? invitesTask.getException() : new Exception("Failed to get invites")));
                         return;
@@ -306,16 +340,28 @@ public class AllianceService {
                         }
                     }
 
-                    // Filter eligible users
+                    Log.d("AllianceService", "Found " + invitedUserIds.size() + " pending invites");
+
+                    // Filter eligible users from friends list
                     List<User> eligibleUsers = new ArrayList<>();
-                    for (DocumentSnapshot doc : allUsersTask.getResult()) {
-                        User user = doc.toObject(User.class);
-                        if (user != null 
-                            && !user.getId().equals(leaderId) // Not the leader
-                            && !allianceMemberIds.contains(user.getId()) // Not already a member
-                            && !invitedUserIds.contains(user.getId())) { // Not already invited
-                            eligibleUsers.add(user);
+                    for (User friend : friends) {
+                        if (!friend.getId().equals(leaderId) // Not the leader
+                            && !allianceMemberIds.contains(friend.getId()) // Not already a member
+                            && !invitedUserIds.contains(friend.getId())) { // Not already invited
+                            eligibleUsers.add(friend);
+                            Log.d("AllianceService", "✅ Friend eligible for invitation: " + friend.getUsername());
+                        } else {
+                            Log.d("AllianceService", "❌ Friend not eligible: " + friend.getUsername() + 
+                                " (leader: " + friend.getId().equals(leaderId) + 
+                                ", member: " + allianceMemberIds.contains(friend.getId()) + 
+                                ", invited: " + invitedUserIds.contains(friend.getId()) + ")");
                         }
+                    }
+
+                    Log.d("AllianceService", "=== ELIGIBLE USERS RESULT ===");
+                    Log.d("AllianceService", "Total eligible friends: " + eligibleUsers.size());
+                    for (User user : eligibleUsers) {
+                        Log.d("AllianceService", "- " + user.getUsername() + " (" + user.getId() + ")");
                     }
 
                     listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(eligibleUsers));

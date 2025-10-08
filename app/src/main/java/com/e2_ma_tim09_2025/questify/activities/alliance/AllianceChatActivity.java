@@ -1,7 +1,6 @@
 package com.e2_ma_tim09_2025.questify.activities.alliance;
 
 import android.os.Bundle;
-import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
@@ -42,8 +41,6 @@ public class AllianceChatActivity extends AppCompatActivity {
     
     private String allianceId;
     private String allianceName;
-    private Handler refreshHandler;
-    private Runnable refreshRunnable;
     
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,7 +61,6 @@ public class AllianceChatActivity extends AppCompatActivity {
         setupViewModel();
         setupRecyclerView();
         setupClickListeners();
-        setupRefreshHandler();
         
         // Initialize chat
         viewModel.initializeChat(allianceId);
@@ -188,37 +184,24 @@ public class AllianceChatActivity extends AppCompatActivity {
         });
     }
     
-    private void setupRefreshHandler() {
-        refreshHandler = new Handler();
-        refreshRunnable = new Runnable() {
-            @Override
-            public void run() {
-                viewModel.checkForNewMessages();
-                // Check for new messages every 5 seconds
-                refreshHandler.postDelayed(this, 5000);
-            }
-        };
-    }
-    
     @Override
     protected void onResume() {
         super.onResume();
-        // Start checking for new messages
-        refreshHandler.post(refreshRunnable);
+        // Real-time listening is handled automatically by the ViewModel
     }
     
     @Override
     protected void onPause() {
         super.onPause();
-        // Stop checking for new messages
-        refreshHandler.removeCallbacks(refreshRunnable);
+        // Real-time listening continues in background
     }
     
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (refreshHandler != null) {
-            refreshHandler.removeCallbacks(refreshRunnable);
+        // Stop real-time listening when activity is destroyed
+        if (viewModel != null) {
+            viewModel.stopRealTimeListening();
         }
     }
 }

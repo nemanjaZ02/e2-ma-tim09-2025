@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.util.Log;
 
+import com.e2_ma_tim09_2025.questify.activities.alliance.AllianceInviteDialogActivity;
 import com.e2_ma_tim09_2025.questify.models.AllianceConflictResult;
 import com.e2_ma_tim09_2025.questify.services.AllianceInviteService;
 import com.e2_ma_tim09_2025.questify.services.NotificationService;
@@ -62,7 +63,7 @@ public class AllianceInviteActionReceiver extends BroadcastReceiver {
         
         switch (action) {
             case "ACCEPT_INVITE":
-                handleAcceptInvite(context, userId, inviteId, allianceId, fromUserId);
+                handleAcceptInvite(context, userId, inviteId, allianceId, fromUserId, fromUsername, allianceName);
                 break;
             case "DECLINE_INVITE":
                 handleDeclineInvite(context, userId, inviteId, allianceId, fromUserId);
@@ -72,42 +73,24 @@ public class AllianceInviteActionReceiver extends BroadcastReceiver {
         }
     }
     
-    private void handleAcceptInvite(Context context, String userId, String inviteId, String allianceId, String fromUserId) {
-        Log.d(TAG, "Handling accept invite with conflict resolution");
+    private void handleAcceptInvite(Context context, String userId, String inviteId, String allianceId, String fromUserId, String fromUsername, String allianceName) {
+        Log.d(TAG, "Opening alliance invite dialog for user confirmation");
         
-        // Use conflict resolution logic
-        allianceInviteService.acceptInviteWithConflictResolution(inviteId, userId, new OnCompleteListener<AllianceConflictResult>() {
-            @Override
-            public void onComplete(com.google.android.gms.tasks.Task<AllianceConflictResult> task) {
-                if (task.isSuccessful()) {
-                    AllianceConflictResult result = task.getResult();
-                    if (result != null) {
-                        if (result.isCanAccept()) {
-                            if (result.isNeedsConfirmation()) {
-                                // User needs to confirm leaving current alliance
-                                Log.w(TAG, "⚠️ User needs to confirm leaving current alliance");
-                                // For now, we'll show a simple message - in a real app you'd show a dialog
-                                Log.w(TAG, "Cannot accept invitation: " + result.getReason());
-                                // TODO: Show confirmation dialog to user
-                            } else {
-                                // Direct acceptance successful
-                                Log.d(TAG, "✅ Alliance invite accepted successfully");
-                                cancelNotification(context, inviteId);
-                            }
-                        } else {
-                            // Cannot accept due to mission or other constraints
-                            Log.w(TAG, "❌ Cannot accept invitation: " + result.getReason());
-                            // TODO: Show error message to user
-                        }
-                    } else {
-                        Log.e(TAG, "❌ Null result from conflict resolution");
-                    }
-                } else {
-                    Log.e(TAG, "❌ Failed to process alliance invite: " + 
-                        (task.getException() != null ? task.getException().getMessage() : "Unknown error"));
-                }
-            }
-        });
+        // Instead of automatically accepting, open the dialog for user confirmation
+        Intent dialogIntent = new Intent(context, AllianceInviteDialogActivity.class);
+        dialogIntent.putExtra("inviteId", inviteId);
+        dialogIntent.putExtra("allianceId", allianceId);
+        dialogIntent.putExtra("fromUserId", fromUserId);
+        dialogIntent.putExtra("fromUsername", fromUsername);
+        dialogIntent.putExtra("allianceName", allianceName);
+        dialogIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        
+        Log.d(TAG, "Starting AllianceInviteDialogActivity with invite ID: " + inviteId);
+        Log.d(TAG, "Alliance: " + allianceName + ", From: " + fromUsername);
+        context.startActivity(dialogIntent);
+        
+        // Cancel the notification since user is now in the dialog
+        cancelNotification(context, inviteId);
     }
     
     private void handleDeclineInvite(Context context, String userId, String inviteId, String allianceId, String fromUserId) {

@@ -35,7 +35,10 @@ public class FriendsActivity extends AppCompatActivity {
         adapter = new FriendsAdapter(new ArrayList<>(), new FriendsAdapter.OnFriendClickListener() {
             @Override
             public void onFriendClick(User friend) {
-                // handle friend click
+                // Navigate to other user's profile
+                Intent intent = new Intent(FriendsActivity.this, OtherProfileActivity.class);
+                intent.putExtra("userId", friend.getId());
+                startActivity(intent);
             }
 
             @Override

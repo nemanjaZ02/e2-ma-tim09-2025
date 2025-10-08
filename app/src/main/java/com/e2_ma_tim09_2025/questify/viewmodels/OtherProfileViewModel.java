@@ -35,7 +35,12 @@ public class OtherProfileViewModel extends ViewModel {
             }
         });
     }
+    public void addFriend(String userId, String friendId, OnCompleteListener<Boolean> listener) {
+        userService.addFriend(friendId, listener);
+    }
+    
+    // Keep the old method for backward compatibility
     public void addFriend(String userId, String friendId) {
-        userService.addFriend( friendId);
+        addFriend(userId, friendId, null);
     }
 }

@@ -35,14 +35,35 @@ public class AllUsersViewModel extends ViewModel {
 
 
     private final MutableLiveData<String> friendAddedLiveData = new MutableLiveData<>();
+    private final MutableLiveData<String> friendAddMessageLiveData = new MutableLiveData<>();
 
     public LiveData<String> getFriendAddedLiveData() {
         return friendAddedLiveData;
     }
+    
+    public LiveData<String> getFriendAddMessageLiveData() {
+        return friendAddMessageLiveData;
+    }
 
     public void addFriend(String friendId) {
-        service.addFriend(friendId); // calls the service method
-        friendAddedLiveData.setValue(friendId); // immediately notify the UI
+        service.addFriend(friendId, task -> {
+            if (task.isSuccessful()) {
+                Boolean result = task.getResult();
+                if (result != null && result) {
+                    // Friend was successfully added
+                    friendAddedLiveData.setValue(friendId);
+                    friendAddMessageLiveData.setValue("Friend added successfully!");
+                } else {
+                    // User is already a friend
+                    friendAddMessageLiveData.setValue("This user is already your friend!");
+                }
+            } else {
+                // Handle error
+                String errorMessage = "Failed to add friend: " + 
+                    (task.getException() != null ? task.getException().getMessage() : "Unknown error");
+                friendAddMessageLiveData.setValue(errorMessage);
+            }
+        });
     }
     public interface FriendAddCallback {
         void onSuccess();

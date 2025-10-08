@@ -8,7 +8,10 @@ import com.e2_ma_tim09_2025.questify.models.AllianceMessage;
 import com.e2_ma_tim09_2025.questify.services.AllianceChatService;
 import com.e2_ma_tim09_2025.questify.services.UserService;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.firestore.EventListener;
+import com.google.firebase.firestore.FirebaseFirestoreException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -68,7 +71,9 @@ public class AllianceChatViewModel extends ViewModel {
     public void initializeChat(String allianceId) {
         currentAllianceId.setValue(allianceId);
         currentUserId.setValue(userService.getCurrentUserId());
-        loadMessages();
+        
+        // Start real-time listening instead of just loading messages once
+        startRealTimeListening();
     }
 
     /**
@@ -126,7 +131,7 @@ public class AllianceChatViewModel extends ViewModel {
                 if (task.isSuccessful() && task.getResult() != null && task.getResult()) {
                     messageSent.postValue(true);
                     isLoading.postValue(false);
-                    // Reload messages to show the new one
+                    // Force a refresh to show the new message immediately
                     loadMessages();
                 } else {
                     String error = "Failed to send message";
@@ -154,11 +159,16 @@ public class AllianceChatViewModel extends ViewModel {
             lastTimestamp = currentMessages.get(currentMessages.size() - 1).getTimestamp();
         }
 
+        // Check for new messages - if no existing messages, lastTimestamp will be 0
+        // and the query will get all messages (which is what we want for initial load)
         allianceChatService.checkForNewMessages(allianceId, lastTimestamp, task -> {
             if (task.isSuccessful() && task.getResult() != null && !task.getResult().isEmpty()) {
-                // Add new messages to existing list
-                List<AllianceMessage> updatedMessages = messages.getValue();
-                if (updatedMessages != null) {
+                if (currentMessages == null || currentMessages.isEmpty()) {
+                    // First time loading messages - replace the list
+                    messages.postValue(task.getResult());
+                } else {
+                    // Add new messages to existing list
+                    List<AllianceMessage> updatedMessages = new ArrayList<>(currentMessages);
                     updatedMessages.addAll(task.getResult());
                     messages.postValue(updatedMessages);
                 }
@@ -185,5 +195,47 @@ public class AllianceChatViewModel extends ViewModel {
      */
     public void resetMessageSent() {
         messageSent.setValue(false);
+    }
+    
+    /**
+     * Start real-time listening to messages
+     */
+    private void startRealTimeListening() {
+        String allianceId = currentAllianceId.getValue();
+        if (allianceId == null) {
+            errorMessage.setValue("No alliance selected");
+            return;
+        }
+
+        isLoading.setValue(true);
+        errorMessage.setValue(null);
+
+        executor.execute(() -> {
+            allianceChatService.startListeningToMessages(allianceId, new EventListener<List<AllianceMessage>>() {
+                @Override
+                public void onEvent(List<AllianceMessage> newMessages, FirebaseFirestoreException e) {
+                    if (e != null) {
+                        String error = "Failed to listen to messages: " + e.getMessage();
+                        errorMessage.postValue(error);
+                        isLoading.postValue(false);
+                        return;
+                    }
+                    
+                    if (newMessages != null) {
+                        messages.postValue(newMessages);
+                        isLoading.postValue(false);
+                    }
+                }
+            });
+        });
+    }
+    
+    /**
+     * Stop real-time listening to messages
+     */
+    public void stopRealTimeListening() {
+        executor.execute(() -> {
+            allianceChatService.stopListeningToMessages();
+        });
     }
 }

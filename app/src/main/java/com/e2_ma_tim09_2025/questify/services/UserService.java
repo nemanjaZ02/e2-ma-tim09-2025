@@ -334,20 +334,63 @@ public class UserService {
                     }
                 });
     }
-    public void addFriend(String friendId) {
-        String currentUserId = getCurrentUserId(); // your method to get current user
-        if (currentUserId != null) {
-            usersRef.document(currentUserId)
-                    .update("friends", FieldValue.arrayUnion(friendId))
-                    .addOnCompleteListener(task -> {
-                        if (task.isSuccessful()) {
-                            Log.d("UserService", "Friend added successfully");
-                            // Optional: trigger LiveData or UI update here
-                        } else {
-                            Log.e("UserService", "Failed to add friend", task.getException());
-                        }
-                    });
+    public void addFriend(String friendId, OnCompleteListener<Boolean> listener) {
+        String currentUserId = getCurrentUserId();
+        if (currentUserId == null) {
+            if (listener != null) {
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                    new Exception("User not logged in")));
+            }
+            return;
         }
+
+        // First check if the user is already a friend
+        usersRef.document(currentUserId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful() && task.getResult() != null && task.getResult().exists()) {
+                        User currentUser = task.getResult().toObject(User.class);
+                        if (currentUser != null && currentUser.getFriends() != null) {
+                            // Check if friend is already in the list
+                            if (currentUser.getFriends().contains(friendId)) {
+                                Log.d("UserService", "User is already a friend");
+                                if (listener != null) {
+                                    listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(false)); // false = already friend
+                                }
+                                return;
+                            }
+                        }
+
+                        // User is not a friend, add them
+                        usersRef.document(currentUserId)
+                                .update("friends", FieldValue.arrayUnion(friendId))
+                                .addOnCompleteListener(updateTask -> {
+                                    if (updateTask.isSuccessful()) {
+                                        Log.d("UserService", "Friend added successfully");
+                                        if (listener != null) {
+                                            listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(true)); // true = friend added
+                                        }
+                                    } else {
+                                        Log.e("UserService", "Failed to add friend", updateTask.getException());
+                                        if (listener != null) {
+                                            listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                                                updateTask.getException() != null ? updateTask.getException() : new Exception("Failed to add friend")));
+                                        }
+                                    }
+                                });
+                    } else {
+                        Log.e("UserService", "Failed to fetch current user", task.getException());
+                        if (listener != null) {
+                            listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                                task.getException() != null ? task.getException() : new Exception("Failed to fetch user data")));
+                        }
+                    }
+                });
+    }
+
+    // Keep the old method for backward compatibility
+    public void addFriend(String friendId) {
+        addFriend(friendId, null);
     }
 
 
