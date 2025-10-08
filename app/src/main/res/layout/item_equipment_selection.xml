@@ -48,14 +48,14 @@
                 android:fontFamily="serif"
                 android:layout_marginBottom="4dp" />
 
-            <TextView
-                android:id="@+id/tvEquipmentDetails"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Equipment details"
-                android:textSize="14sp"
-                android:textColor="#8B4513"
-                android:fontFamily="serif" />
+<!--            <TextView-->
+<!--                android:id="@+id/tvEquipmentDetails"-->
+<!--                android:layout_width="match_parent"-->
+<!--                android:layout_height="wrap_content"-->
+<!--                android:text="Equipment details"-->
+<!--                android:textSize="14sp"-->
+<!--                android:textColor="#8B4513"-->
+<!--                android:fontFamily="serif" />-->
 
         </LinearLayout>
 

@@ -262,6 +262,14 @@ public class TasksMainActivity extends AppCompatActivity {
             Intent intent = new Intent(TasksMainActivity.this, StatisticsActivity.class);
             startActivity(intent);
         });
+
+        // Shop menu item click listener
+        View shopMenuItem = findViewById(R.id.shopMenuItem);
+        shopMenuItem.setOnClickListener(v -> {
+            closeMenu(); // Close the side menu
+            Intent intent = new Intent(TasksMainActivity.this, com.e2_ma_tim09_2025.questify.activities.ShopActivity.class);
+            startActivity(intent);
+        });
     }
 
     private void openMenu() {

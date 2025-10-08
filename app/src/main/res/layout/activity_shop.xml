@@ -11,7 +11,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="🏪 Questify Shop"
+        android:text="Questify Shop"
         android:textSize="24sp"
         android:textStyle="bold"
         android:gravity="center"
@@ -21,7 +21,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Purchase equipment and potions"
+        android:text=""
         android:textSize="14sp"
         android:gravity="center"
         android:layout_marginBottom="8dp"
@@ -41,7 +41,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="💰 Your Coins: "
+            android:text="Your Coins: "
             android:textSize="16sp"
             android:textStyle="bold"
             android:textColor="#5C4033" />
@@ -175,13 +175,16 @@
                         android:textSize="12sp"
                         android:textColor="#5C4033" />
 
-                    <Button
-                        android:id="@+id/btnBuyHealthPotion"
-                        android:layout_width="80dp"
-                        android:layout_height="36dp"
-                        android:text="BUY"
-                        android:textSize="10sp"
-                        android:layout_marginTop="4dp" />
+                     <Button
+                         android:id="@+id/btnBuyHealthPotion"
+                         android:layout_width="80dp"
+                         android:layout_height="36dp"
+                         android:text="BUY"
+                         android:textSize="10sp"
+                         android:layout_marginTop="4dp"
+                         android:backgroundTint="#5C4033"
+                         android:textColor="@color/white"
+                         app:cornerRadius="8dp" />
 
                 </LinearLayout>
             </LinearLayout>
@@ -251,13 +254,16 @@ android:elevation="4dp">
                         android:textSize="12sp"
                         android:textColor="#5C4033" />
 
-                    <Button
-                        android:id="@+id/btnBuyStrengthElixir"
-                        android:layout_width="80dp"
-                        android:layout_height="36dp"
-                        android:text="BUY"
-                        android:textSize="10sp"
-                        android:layout_marginTop="4dp" />
+                     <Button
+                         android:id="@+id/btnBuyStrengthElixir"
+                         android:layout_width="80dp"
+                         android:layout_height="36dp"
+                         android:text="BUY"
+                         android:textSize="10sp"
+                         android:layout_marginTop="4dp"
+                         android:backgroundTint="#5C4033"
+                         android:textColor="@color/white"
+                         app:cornerRadius="8dp" />
 
                 </LinearLayout>
             </LinearLayout>
@@ -328,13 +334,16 @@ android:elevation="4dp">
                         android:textSize="12sp"
                         android:textColor="#5C4033" />
 
-                    <Button
-                        android:id="@+id/btnBuyXPBooster"
-                        android:layout_width="80dp"
-                        android:layout_height="36dp"
-                        android:text="BUY"
-                        android:textSize="10sp"
-                        android:layout_marginTop="4dp" />
+                     <Button
+                         android:id="@+id/btnBuyXPBooster"
+                         android:layout_width="80dp"
+                         android:layout_height="36dp"
+                         android:text="BUY"
+                         android:textSize="10sp"
+                         android:layout_marginTop="4dp"
+                         android:backgroundTint="#5C4033"
+                         android:textColor="@color/white"
+                         app:cornerRadius="8dp" />
 
                 </LinearLayout>
             </LinearLayout>
@@ -404,13 +413,16 @@ android:elevation="4dp">
                         android:textSize="12sp"
                         android:textColor="#5C4033" />
 
-                    <Button
-                        android:id="@+id/btnBuyMysticPotion"
-                        android:layout_width="80dp"
-                        android:layout_height="36dp"
-                        android:text="BUY"
-                        android:textSize="10sp"
-                        android:layout_marginTop="4dp" />
+                     <Button
+                         android:id="@+id/btnBuyMysticPotion"
+                         android:layout_width="80dp"
+                         android:layout_height="36dp"
+                         android:text="BUY"
+                         android:textSize="10sp"
+                         android:layout_marginTop="4dp"
+                         android:backgroundTint="#5C4033"
+                         android:textColor="@color/white"
+                         app:cornerRadius="8dp" />
 
                 </LinearLayout>
             </LinearLayout>
@@ -491,13 +503,16 @@ android:elevation="4dp">
                         android:textSize="12sp"
                         android:textColor="#5C4033" />
 
-                    <Button
-                        android:id="@+id/btnBuyMagicGloves"
-                        android:layout_width="80dp"
-                        android:layout_height="36dp"
-                        android:text="BUY"
-                        android:textSize="10sp"
-                        android:layout_marginTop="4dp" />
+                     <Button
+                         android:id="@+id/btnBuyMagicGloves"
+                         android:layout_width="80dp"
+                         android:layout_height="36dp"
+                         android:text="BUY"
+                         android:textSize="10sp"
+                         android:layout_marginTop="4dp"
+                         android:backgroundTint="#5C4033"
+                         android:textColor="@color/white"
+                         app:cornerRadius="8dp" />
 
                 </LinearLayout>
             </LinearLayout>
@@ -568,13 +583,16 @@ android:elevation="4dp">
                         android:textSize="12sp"
                         android:textColor="#5C4033" />
 
-                    <Button
-                        android:id="@+id/btnBuyIronShield"
-                        android:layout_width="80dp"
-                        android:layout_height="36dp"
-                        android:text="BUY"
-                        android:textSize="10sp"
-                        android:layout_marginTop="4dp" />
+                     <Button
+                         android:id="@+id/btnBuyIronShield"
+                         android:layout_width="80dp"
+                         android:layout_height="36dp"
+                         android:text="BUY"
+                         android:textSize="10sp"
+                         android:layout_marginTop="4dp"
+                         android:backgroundTint="#5C4033"
+                         android:textColor="@color/white"
+                         app:cornerRadius="8dp" />
 
                 </LinearLayout>
             </LinearLayout>
@@ -645,13 +663,16 @@ android:elevation="4dp">
                         android:textSize="12sp"
                         android:textColor="#5C4033" />
 
-                    <Button
-                        android:id="@+id/btnBuyLeatherBoots"
-                        android:layout_width="80dp"
-                        android:layout_height="36dp"
-                        android:text="BUY"
-                        android:textSize="10sp"
-                        android:layout_marginTop="4dp" />
+                     <Button
+                         android:id="@+id/btnBuyLeatherBoots"
+                         android:layout_width="80dp"
+                         android:layout_height="36dp"
+                         android:text="BUY"
+                         android:textSize="10sp"
+                         android:layout_marginTop="4dp"
+                         android:backgroundTint="#5C4033"
+                         android:textColor="@color/white"
+                         app:cornerRadius="8dp" />
 
                 </LinearLayout>
             </LinearLayout>
@@ -670,14 +691,17 @@ android:elevation="4dp">
         android:layout_marginTop="8dp"
         android:gravity="center">
 
-        <Button
-            android:id="@+id/btnCloseShop"
-            android:layout_width="wrap_content"
-            android:layout_height="40dp"
-            android:text="EXIT SHOP"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            android:minWidth="120dp" />
+         <Button
+             android:id="@+id/btnCloseShop"
+             android:layout_width="wrap_content"
+             android:layout_height="40dp"
+             android:text="EXIT SHOP"
+             android:textSize="14sp"
+             android:textStyle="bold"
+             android:minWidth="120dp"
+             android:backgroundTint="#5C4033"
+             android:textColor="@color/white"
+             app:cornerRadius="8dp" />
 
     </LinearLayout>
 
