@@ -161,10 +161,11 @@ public class UserService {
 
         double xp = baseXp;
         for (int level = 1; level <= userLevel; level++) {
-            xp *= 1.5; // increase by 50% per level
+            xp = xp + xp / 2.0; // increase by 50% per level
+             xp = Math.round(xp);
         }
 
-        return (int) Math.round(xp);
+        return (int) xp;
     }
     public int calculateXpForDifficulty(TaskDifficulty difficulty, int userLevel) {
         int baseXp;
@@ -187,10 +188,11 @@ public class UserService {
 
         double xp = baseXp;
         for (int level = 1; level <= userLevel; level++) {
-            xp *= 1.5; // increase by 50% per level
+            xp = xp + xp / 2.0; // increase by 50% per level
+            xp = Math.round(xp);
         }
 
-        return (int) Math.round(xp);
+        return (int) xp;
     }
 
     private int getPowerPointsForLevel(int level) {
