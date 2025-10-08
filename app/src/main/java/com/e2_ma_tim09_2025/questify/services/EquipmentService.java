@@ -324,12 +324,163 @@ public class EquipmentService {
             });
         });
     }
+
+    public void getWeaponUpgradePrice(String userId, String equipmentId, OnCompleteListener<Double> listener) {
+        // Step 1: Get user to determine current level
+        userService.getUser(userId, userTask -> {
+            if (!userTask.isSuccessful()) {
+                listener.onComplete(Tasks.forException(userTask.getException()));
+                return;
+            }
+
+            User user = userTask.getResult().toObject(User.class);
+            if (user == null) {
+                listener.onComplete(Tasks.forException(new Exception("User not found")));
+                return;
+            }
+
+            // Step 2: Get equipment by ID
+            equipmentRepository.getEquipment(equipmentId, equipmentTask -> {
+                if (!equipmentTask.isSuccessful()) {
+                    listener.onComplete(Tasks.forException(equipmentTask.getException()));
+                    return;
+                }
+
+                Equipment equipment = equipmentTask.getResult();
+
+                // Step 3: Get boss data asynchronously
+                bossService.getBossByUser(userId, bossTask -> {
+                    if (!bossTask.isSuccessful()) {
+                        listener.onComplete(Tasks.forException(bossTask.getException()));
+                        return;
+                    }
+
+                    Boss userBoss = bossTask.getResult();
+                    if (userBoss == null) {
+                        // If no boss found for this user, cannot purchase
+                        listener.onComplete(Tasks.forException(new Exception("No boss found for user - cannot purchase equipment")));
+                        return;
+                    }
+
+                    // Step 4: Calculate price
+                    double price = calculateWeaponUpgradePrice(user, equipment, userBoss);
+                    listener.onComplete(Tasks.forResult(price));
+                });
+            });
+        });
+    }
+
+    /**
+     * Upgrade weapon for user
+     * Business logic: Reduce user's coins, increment timesUpgraded for specific weapon
+     */
+    public void upgradeWeapon(String userId, String equipmentId, OnCompleteListener<Boolean> listener) {
+        // First get the equipment master data and user data sequentially
+        equipmentRepository.getEquipment(equipmentId, equipmentTask -> {
+            if (!equipmentTask.isSuccessful()) {
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                        equipmentTask.getException() != null ? equipmentTask.getException() : new Exception("Failed to fetch equipment")));
+                return;
+            }
+
+            Equipment equipment = equipmentTask.getResult();
+            if (equipment == null) {
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                        new Exception("Equipment not found")));
+                return;
+            }
+
+            // Check if equipment is upgradable
+            if (!equipment.isUpgradable()) {
+                listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                        new Exception("This equipment cannot be upgraded")));
+                return;
+            }
+
+            // Now get user data
+            userService.getUser(userId, userTask -> {
+                if (!userTask.isSuccessful()) {
+                    listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                            userTask.getException() != null ? userTask.getException() : new Exception("Failed to fetch user")));
+                    return;
+                }
+
+                User user = userTask.getResult().toObject(User.class);
+                if (user == null) {
+                    listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                            new Exception("User not found")));
+                    return;
+                }
+
+                // Get calculated upgrade price for this user
+                getWeaponUpgradePrice(userId, equipmentId, priceTask -> {
+                    if (!priceTask.isSuccessful()) {
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                                priceTask.getException() != null ? priceTask.getException() : new Exception("Failed to calculate upgrade price")));
+                        return;
+                    }
+
+                    double calculatedPrice = priceTask.getResult();
+                    int userCoins = user.getCoins();
+                    int priceToPay = (int) calculatedPrice;
+
+                    // Check if user has enough coins using calculated price
+                    if (userCoins < priceToPay) {
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                                new Exception("Insufficient Coins. Required: " + priceToPay + ", Available: " + userCoins)));
+                        return;
+                    }
+
+                    // Find the specific MyEquipment instance to upgrade
+                    MyEquipment weaponToUpgrade = null;
+                    if (user.getEquipment() != null) {
+                        for (MyEquipment myEquipment : user.getEquipment()) {
+                            if (myEquipment.getEquipmentId().equals(equipmentId)) {
+                                weaponToUpgrade = myEquipment;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (weaponToUpgrade == null) {
+                        listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                                new Exception("Weapon not found in your inventory")));
+                        return;
+                    }
+
+                    // Update weapon: increment timesUpgraded and reduce user coins
+                    weaponToUpgrade.setTimesUpgraded(weaponToUpgrade.getTimesUpgraded() + 1);
+                    user.setCoins(userCoins - priceToPay);
+
+                    // Save updated user
+                    userService.updateUser(user, updateTask -> {
+                        if (updateTask.isSuccessful()) {
+                            listener.onComplete(com.google.android.gms.tasks.Tasks.forResult(true));
+                        } else {
+                            listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
+                                    updateTask.getException() != null ? updateTask.getException() : new Exception("Failed to save user after upgrade")));
+                        }
+                    });
+                });
+            });
+        });
+    }
     private double calculateEquipmentPrice(User user, Equipment equipment, Boss boss) {
         // Calculate previous level boss coins (keeping your original logic)
         double previousLevelBossCoins = boss.getStatus().equals(BossStatus.DEFEATED) ? boss.getCoinsDrop() / 1.2 : boss.getCoinsDrop();
 
         // Calculate equipment price
         double price = equipment.getPrice() * previousLevelBossCoins;
+
+        return price;
+    }
+
+    private double calculateWeaponUpgradePrice(User user, Equipment equipment, Boss boss) {
+        // Calculate previous level boss coins (keeping your original logic)
+        double previousLevelBossCoins = boss.getStatus().equals(BossStatus.DEFEATED) ? boss.getCoinsDrop() / 1.2 : boss.getCoinsDrop();
+
+        // Calculate equipment price
+        double price = 0.6 * previousLevelBossCoins;
 
         return price;
     }
@@ -409,7 +560,7 @@ public class EquipmentService {
             for (MyEquipment myEquipment : activatedEquipment) {
                 equipmentRepository.getEquipmentCallback(myEquipment.getEquipmentId(), eq -> {
                         if (eq != null && eq.getRefersTo() != null) {
-                            double amount = eq.getReferingAmount(); // assuming this returns double
+                            double amount = eq.getReferingAmount() + 0.01 * myEquipment.getTimesUpgraded(); // assuming this returns double
                             switch (eq.getRefersTo()) {
                                 case "PP":
                                     totalPPBonus.updateAndGet(v -> v + amount);

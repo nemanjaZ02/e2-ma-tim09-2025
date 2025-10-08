@@ -12,6 +12,7 @@ import com.e2_ma_tim09_2025.questify.models.MyEquipment;
 import com.e2_ma_tim09_2025.questify.services.UserService;
 import com.e2_ma_tim09_2025.questify.services.EquipmentService;
 import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
 import com.google.firebase.auth.FirebaseAuthUserCollisionException;
@@ -46,6 +47,11 @@ public class UserViewModel extends ViewModel {
     private final MutableLiveData<List<EquipmentWithQuantity>> userEquipmentWithQuantities = new MutableLiveData<>();
     private final MutableLiveData<Integer> equipmentCount = new MutableLiveData<>();
 
+    // Add these fields to UserViewModel class
+    private final MutableLiveData<Boolean> upgradeResult = new MutableLiveData<>();
+    private final MutableLiveData<String> upgradeMessage = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> isUpgrading = new MutableLiveData<>();
+
 
     @Inject
     public UserViewModel(UserService userService, EquipmentService equipmentService) {
@@ -59,7 +65,17 @@ public class UserViewModel extends ViewModel {
     public LiveData<User> getUserLiveData() {
         return userLiveData;
     }
+    public LiveData<Boolean> getUpgradeResult() {
+        return upgradeResult;
+    }
 
+    public LiveData<String> getUpgradeMessage() {
+        return upgradeMessage;
+    }
+
+    public LiveData<Boolean> getIsUpgrading() {
+        return isUpgrading;
+    }
     public LiveData<Boolean> getRegistrationStatus() {
         return registrationStatus;
     }
@@ -252,12 +268,34 @@ public class UserViewModel extends ViewModel {
             }
         });
     }
+    public void upgradeWeapon(String userId, String equipmentId) {
+        isUpgrading.setValue(true);
+        upgradeMessage.setValue(null);
 
-//    public void deleteUser(String user) {
-//        userService.deleteUser(user, task -> {
-//            if (task.isSuccessful()) {
-//                userLiveData.postValue(user);
-//            }
-//        });
-//    }
+        equipmentService.upgradeWeapon(userId, equipmentId, new OnCompleteListener<Boolean>() {
+            @Override
+            public void onComplete(Task<Boolean> task) {
+                isUpgrading.setValue(false);
+
+                if (task.isSuccessful() && task.getResult() != null) {
+                    if (task.getResult()) {
+                        upgradeResult.setValue(true);
+                        upgradeMessage.setValue("Weapon upgraded successfully!");
+                        // Refresh user data to reflect changes
+                        refreshCurrentUser();
+                    } else {
+                        upgradeResult.setValue(false);
+                        upgradeMessage.setValue("Upgrade failed. Please try again.");
+                    }
+                } else {
+                    upgradeResult.setValue(false);
+                    String errorMessage = "Upgrade failed";
+                    if (task.getException() != null) {
+                        errorMessage = task.getException().getMessage();
+                    }
+                    upgradeMessage.setValue(errorMessage);
+                }
+            }
+        });
+    }
 }
