@@ -23,6 +23,7 @@ import com.e2_ma_tim09_2025.questify.activities.StatisticsActivity;
 import com.e2_ma_tim09_2025.questify.activities.bosses.BossMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.specialTasks.SpecialTasksMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.taskCategories.TaskCategoriesMainActivity;
+import com.e2_ma_tim09_2025.questify.activities.users.LoginActivity;
 import com.e2_ma_tim09_2025.questify.activities.users.ProfileActivity;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksCalendarFragment;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksListFragment;
@@ -164,7 +165,7 @@ public class TasksMainActivity extends AppCompatActivity {
         logoutButton.setOnClickListener(v -> {
             userViewModel.logout();
 
-            Intent intent = new Intent(TasksMainActivity.this, MainActivity.class);
+            Intent intent = new Intent(TasksMainActivity.this, LoginActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // prevent back navigation
             startActivity(intent);
             finish();

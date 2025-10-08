@@ -151,8 +151,25 @@ private void loginUser() {
                     if (task.isSuccessful()) {
                         DocumentSnapshot document = task.getResult();
                         if (document.exists()) {
+                            // Check if created_at field exists and is not null
+                            com.google.firebase.Timestamp createdTimestamp = document.getTimestamp("created_at");
+                            
+                            if (createdTimestamp == null) {
+                                // User document exists but created_at is missing (incomplete registration)
+                                Toast.makeText(this, "Please complete your registration by verifying your email first.", Toast.LENGTH_LONG).show();
+                                user.delete()
+                                        .addOnCompleteListener(deleteTask -> {
+                                            if (deleteTask.isSuccessful()) {
+                                                // Delete the incomplete user document from Firestore
+                                                db.collection("users").document(user.getUid()).delete();
+                                                Toast.makeText(this, "Incomplete account has been removed. Please register again.", Toast.LENGTH_SHORT).show();
+                                            }
+                                        });
+                                return;
+                            }
+                            
                             // Retrieve the timestamp from the document
-                            long creationTimestamp = document.getTimestamp("created_at").toDate().getTime();
+                            long creationTimestamp = createdTimestamp.toDate().getTime();
                             long currentTime = System.currentTimeMillis();
                             long timeElapsed = currentTime - creationTimestamp;
 
