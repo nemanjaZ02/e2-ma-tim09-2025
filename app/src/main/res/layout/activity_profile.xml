@@ -116,6 +116,35 @@
                     android:textColor="#3E2723"
                     android:fontFamily="serif"/>
 
+                <!-- XP Progress Bar -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="8dp">
+
+                    <TextView
+                        android:id="@+id/xpProgressText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="XP Progress: 0 / 200"
+                        android:textSize="14sp"
+                        android:textColor="#5C4033"
+                        android:fontFamily="serif"
+                        android:layout_marginBottom="4dp"/>
+
+                    <ProgressBar
+                        android:id="@+id/xpProgressBar"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="20dp"
+                        android:progress="0"
+                        android:max="100"
+                        android:progressTint="#4CAF50"
+                        android:progressBackgroundTint="#E0E0E0"/>
+
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/profileCoins"
                     android:layout_width="wrap_content"

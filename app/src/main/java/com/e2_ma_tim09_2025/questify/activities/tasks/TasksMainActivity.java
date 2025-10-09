@@ -23,6 +23,7 @@ import com.e2_ma_tim09_2025.questify.activities.StatisticsActivity;
 import com.e2_ma_tim09_2025.questify.activities.bosses.BossMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.specialTasks.SpecialTasksMainActivity;
 import com.e2_ma_tim09_2025.questify.activities.taskCategories.TaskCategoriesMainActivity;
+import com.e2_ma_tim09_2025.questify.activities.users.LoginActivity;
 import com.e2_ma_tim09_2025.questify.activities.users.ProfileActivity;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksCalendarFragment;
 import com.e2_ma_tim09_2025.questify.fragments.tasks.TasksListFragment;
@@ -46,6 +47,7 @@ public class TasksMainActivity extends AppCompatActivity {
     private MaterialButton viewChangeButton;
     private MaterialButton filterButton;
     private MaterialButton logoutButton;
+    private MaterialButton profileButton;
     MaterialButton bossButton;
     private TextView tasksTitle;
     private boolean showingCalendar = false;
@@ -88,6 +90,7 @@ public class TasksMainActivity extends AppCompatActivity {
         viewChangeButton = findViewById(R.id.toggle_view_button);
         filterButton = findViewById(R.id.filter_button);
         logoutButton = findViewById(R.id.logout_button);
+        profileButton = findViewById(R.id.profile_button);
         bossButton = findViewById(R.id.boss_button);
 
         replaceFragment(new TasksListFragment());
@@ -164,10 +167,15 @@ public class TasksMainActivity extends AppCompatActivity {
         logoutButton.setOnClickListener(v -> {
             userViewModel.logout();
 
-            Intent intent = new Intent(TasksMainActivity.this, MainActivity.class);
+            Intent intent = new Intent(TasksMainActivity.this, LoginActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK); // prevent back navigation
             startActivity(intent);
             finish();
+        });
+
+        profileButton.setOnClickListener(v -> {
+            Intent intent = new Intent(TasksMainActivity.this, com.e2_ma_tim09_2025.questify.activities.users.ProfileActivity.class);
+            startActivity(intent);
         });
 
         taskViewModel.isBossActive().observe(this, isActive -> {
@@ -259,6 +267,54 @@ public class TasksMainActivity extends AppCompatActivity {
         statisticsMenuItem.setOnClickListener(v -> {
             closeMenu(); // Close the side menu
             Intent intent = new Intent(TasksMainActivity.this, StatisticsActivity.class);
+            startActivity(intent);
+        });
+
+        // Shop menu item click listener
+        View shopMenuItem = findViewById(R.id.shopMenuItem);
+        shopMenuItem.setOnClickListener(v -> {
+            closeMenu(); // Close the side menu
+            Intent intent = new Intent(TasksMainActivity.this, com.e2_ma_tim09_2025.questify.activities.ShopActivity.class);
+            startActivity(intent);
+        });
+
+        // Friends menu item click listener
+        View friendsMenuItem = findViewById(R.id.friendsMenuItem);
+        friendsMenuItem.setOnClickListener(v -> {
+            closeMenu(); // Close the side menu
+            Intent intent = new Intent(TasksMainActivity.this, com.e2_ma_tim09_2025.questify.activities.users.FriendsActivity.class);
+            startActivity(intent);
+        });
+
+        // All Users menu item click listener
+        View allUsersMenuItem = findViewById(R.id.allUsersMenuItem);
+        allUsersMenuItem.setOnClickListener(v -> {
+            closeMenu(); // Close the side menu
+            Intent intent = new Intent(TasksMainActivity.this, com.e2_ma_tim09_2025.questify.activities.users.AllUsersActivity.class);
+            startActivity(intent);
+        });
+
+        // Create Alliance menu item click listener
+        View createAllianceMenuItem = findViewById(R.id.createAllianceMenuItem);
+        createAllianceMenuItem.setOnClickListener(v -> {
+            closeMenu(); // Close the side menu
+            Intent intent = new Intent(TasksMainActivity.this, com.e2_ma_tim09_2025.questify.activities.alliance.CreateAllianceActivity.class);
+            startActivity(intent);
+        });
+
+        // My Alliance menu item click listener
+        View myAllianceMenuItem = findViewById(R.id.myAllianceMenuItem);
+        myAllianceMenuItem.setOnClickListener(v -> {
+            closeMenu(); // Close the side menu
+            Intent intent = new Intent(TasksMainActivity.this, com.e2_ma_tim09_2025.questify.activities.alliance.MyAllianceActivity.class);
+            startActivity(intent);
+        });
+
+        // Member Alliance menu item click listener
+        View memberAllianceMenuItem = findViewById(R.id.memberAllianceMenuItem);
+        memberAllianceMenuItem.setOnClickListener(v -> {
+            closeMenu(); // Close the side menu
+            Intent intent = new Intent(TasksMainActivity.this, com.e2_ma_tim09_2025.questify.activities.alliance.MemberAllianceActivity.class);
             startActivity(intent);
         });
     }

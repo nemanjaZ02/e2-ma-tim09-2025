@@ -77,27 +77,27 @@ public class EquipmentSelectionAdapter extends RecyclerView.Adapter<EquipmentSel
     class EquipmentViewHolder extends RecyclerView.ViewHolder {
         private ImageView ivEquipmentIcon;
         private TextView tvEquipmentName;
-        private TextView tvEquipmentDetails;
+        //private TextView tvEquipmentDetails;
         private CheckBox checkboxSelection;
 
         public EquipmentViewHolder(@NonNull View itemView) {
             super(itemView);
             ivEquipmentIcon = itemView.findViewById(R.id.ivEquipmentIcon);
             tvEquipmentName = itemView.findViewById(R.id.tvEquipmentName);
-            tvEquipmentDetails = itemView.findViewById(R.id.tvEquipmentDetails);
+            //tvEquipmentDetails = itemView.findViewById(R.id.tvEquipmentDetails);
             checkboxSelection = itemView.findViewById(R.id.checkboxSelection);
         }
 
         public void bind(MyEquipment equipment, boolean isSelected, boolean selectionMode) {
             // Set equipment name
-            tvEquipmentName.setText("Equipment " + equipment.getEquipmentId());
+            tvEquipmentName.setText( equipment.getEquipmentId());
             
             // Set equipment details
             String details = "Amount: " + equipment.getLeftAmount();
             if (equipment.isActivated()) {
                 details += " | ACTIVE";
             }
-            tvEquipmentDetails.setText(details);
+            //tvEquipmentDetails.setText(details);
             
             // Set equipment icon
             setEquipmentIcon(equipment.getEquipmentId());

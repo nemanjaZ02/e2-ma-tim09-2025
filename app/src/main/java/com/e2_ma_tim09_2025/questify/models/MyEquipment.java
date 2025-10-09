@@ -7,14 +7,16 @@ public class MyEquipment {
     private int leftAmount;//pratim za koliko bitki mi je ostalo
     private int timesUpgraded;
     private boolean isActivated = false;
+    private int timesGottenAgain; // ovo mi je za ono da ispratim ako sam dobila vise puta isto oruzje
 
     public MyEquipment() {}
 
-    public MyEquipment(String id, String equipmentId, int timesUpgraded, int leftAmount) {
+    public MyEquipment(String id, String equipmentId, int timesUpgraded, int leftAmount, int timesGottenAgain) {
         this.id = id;
         this.timesUpgraded = timesUpgraded;
         this.leftAmount = leftAmount;
         this.equipmentId = equipmentId;
+        this.timesGottenAgain = timesGottenAgain;
     }
 
     public String getId() {
@@ -55,5 +57,13 @@ public class MyEquipment {
 
     public void setActivated(boolean activated) {
         isActivated = activated;
+    }
+
+    public int getTimesGottenAgain() {
+        return timesGottenAgain;
+    }
+
+    public void setTimesGottenAgain(int timesGottenAgain) {
+        this.timesGottenAgain = timesGottenAgain;
     }
 }

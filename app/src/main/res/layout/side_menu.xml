@@ -107,6 +107,192 @@
 
         </LinearLayout>
 
+        <!-- Shop Menu Item -->
+        <LinearLayout
+            android:id="@+id/shopMenuItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="🛒 Shop"
+                android:textSize="18sp"
+                android:textColor="#5C4033"
+                android:fontFamily="serif"
+                android:gravity="center_vertical" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→"
+                android:textSize="16sp"
+                android:textColor="#8B4513"
+                android:fontFamily="serif" />
+
+        </LinearLayout>
+
+        <!-- Friends Menu Item -->
+        <LinearLayout
+            android:id="@+id/friendsMenuItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="👥 Friends"
+                android:textSize="18sp"
+                android:textColor="#5C4033"
+                android:fontFamily="serif"
+                android:gravity="center_vertical" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→"
+                android:textSize="16sp"
+                android:textColor="#8B4513"
+                android:fontFamily="serif" />
+
+        </LinearLayout>
+
+        <!-- All Users Menu Item -->
+        <LinearLayout
+            android:id="@+id/allUsersMenuItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="👥 All Users"
+                android:textSize="18sp"
+                android:textColor="#5C4033"
+                android:fontFamily="serif"
+                android:gravity="center_vertical" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→"
+                android:textSize="16sp"
+                android:textColor="#8B4513"
+                android:fontFamily="serif" />
+
+        </LinearLayout>
+
+        <!-- Create Alliance Menu Item -->
+        <LinearLayout
+            android:id="@+id/createAllianceMenuItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="🏰 Create Alliance"
+                android:textSize="18sp"
+                android:textColor="#5C4033"
+                android:fontFamily="serif"
+                android:gravity="center_vertical" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→"
+                android:textSize="16sp"
+                android:textColor="#8B4513"
+                android:fontFamily="serif" />
+
+        </LinearLayout>
+
+        <!-- My Alliance Menu Item -->
+        <LinearLayout
+            android:id="@+id/myAllianceMenuItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="👑 My Alliance"
+                android:textSize="18sp"
+                android:textColor="#5C4033"
+                android:fontFamily="serif"
+                android:gravity="center_vertical" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→"
+                android:textSize="16sp"
+                android:textColor="#8B4513"
+                android:fontFamily="serif" />
+
+        </LinearLayout>
+
+        <!-- Member Alliance Menu Item -->
+        <LinearLayout
+            android:id="@+id/memberAllianceMenuItem"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="16dp"
+            android:background="?android:attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="⚔️ Member Alliance"
+                android:textSize="18sp"
+                android:textColor="#5C4033"
+                android:fontFamily="serif"
+                android:gravity="center_vertical" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="→"
+                android:textSize="16sp"
+                android:textColor="#8B4513"
+                android:fontFamily="serif" />
+
+        </LinearLayout>
+
         <!-- Add more menu items here as needed -->
         <View
             android:layout_width="match_parent"

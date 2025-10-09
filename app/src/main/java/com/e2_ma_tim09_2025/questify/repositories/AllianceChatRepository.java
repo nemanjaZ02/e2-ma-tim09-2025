@@ -5,6 +5,7 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 import com.google.firebase.firestore.Query;
 import com.google.firebase.firestore.QuerySnapshot;
 
@@ -17,6 +18,7 @@ import javax.inject.Singleton;
 public class AllianceChatRepository {
     private final FirebaseFirestore db;
     private final CollectionReference messagesRef;
+    private ListenerRegistration messageListener;
 
     @Inject
     public AllianceChatRepository(FirebaseFirestore firestore) {
@@ -58,10 +60,39 @@ public class AllianceChatRepository {
      * Listen to new messages in real-time
      */
     public void listenToNewMessages(String allianceId, long lastMessageTimestamp, OnCompleteListener<QuerySnapshot> listener) {
-        // Use a simpler query to avoid composite index requirement
-        messagesRef.whereEqualTo("allianceId", allianceId)
-                .get()
-                .addOnCompleteListener(listener);
+        // If lastMessageTimestamp is 0, get all messages (initial load)
+        // Otherwise, get messages newer than the last timestamp to avoid duplicates
+        if (lastMessageTimestamp <= 0) {
+            messagesRef.whereEqualTo("allianceId", allianceId)
+                    .get()
+                    .addOnCompleteListener(listener);
+        } else {
+            messagesRef.whereEqualTo("allianceId", allianceId)
+                    .whereGreaterThan("timestamp", lastMessageTimestamp)
+                    .get()
+                    .addOnCompleteListener(listener);
+        }
+    }
+
+    /**
+     * Start listening to messages in real-time
+     */
+    public void startListeningToMessages(String allianceId, com.google.firebase.firestore.EventListener<QuerySnapshot> listener) {
+        // Stop any existing listener first
+        stopListeningToMessages();
+        
+        messageListener = messagesRef.whereEqualTo("allianceId", allianceId)
+                .addSnapshotListener(listener);
+    }
+    
+    /**
+     * Stop listening to messages
+     */
+    public void stopListeningToMessages() {
+        if (messageListener != null) {
+            messageListener.remove();
+            messageListener = null;
+        }
     }
 
     /**
@@ -71,5 +102,33 @@ public class AllianceChatRepository {
         messagesRef.document(messageId)
                 .delete()
                 .addOnCompleteListener(listener);
+    }
+
+    public void hasUserSentMessageToday(String userId, OnCompleteListener<Boolean> listener) {
+        messagesRef.whereEqualTo("senderId", userId)
+                .get()
+                .addOnCompleteListener(task -> {
+                    boolean hasSentToday = false;
+                    if (task.isSuccessful() && task.getResult() != null) {
+                        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyyMMdd");
+                        String today = sdf.format(new java.util.Date());
+
+                        for (DocumentSnapshot doc : task.getResult().getDocuments()) {
+                            Long timestamp = doc.getLong("timestamp");
+                            if (timestamp != null) {
+                                String messageDate = sdf.format(new java.util.Date(timestamp));
+                                if (messageDate.equals(today)) {
+                                    hasSentToday = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    com.google.android.gms.tasks.TaskCompletionSource<Boolean> source =
+                            new com.google.android.gms.tasks.TaskCompletionSource<>();
+                    source.setResult(hasSentToday);
+                    listener.onComplete(source.getTask());
+                });
     }
 }

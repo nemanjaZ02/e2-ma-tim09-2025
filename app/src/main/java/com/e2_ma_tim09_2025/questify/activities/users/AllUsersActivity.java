@@ -44,9 +44,7 @@ public class AllUsersActivity extends AppCompatActivity {
             @Override
             public void onAddFriendClick(User user) {
                 viewModel.addFriend(user.getId());
-                Toast.makeText(AllUsersActivity.this,
-                        user.getUsername() + " added as friend!",
-                        Toast.LENGTH_SHORT).show();
+                // Toast message will be handled by the ViewModel callback
             }
         });
         recyclerView.setAdapter(adapter);
@@ -64,6 +62,13 @@ public class AllUsersActivity extends AppCompatActivity {
         // Observe friend added LiveData to remove user instantly
         viewModel.getFriendAddedLiveData().observe(this, friendId -> {
             adapter.removeUserById(friendId);
+        });
+        
+        // Observe friend add messages to show Toast
+        viewModel.getFriendAddMessageLiveData().observe(this, message -> {
+            if (message != null && !message.isEmpty()) {
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+            }
         });
         viewModel.fetchUsers();
         SearchView searchView = findViewById(R.id.searchUsers);
