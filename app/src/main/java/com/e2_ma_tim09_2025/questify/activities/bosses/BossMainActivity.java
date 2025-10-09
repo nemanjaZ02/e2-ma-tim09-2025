@@ -75,6 +75,7 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
     private boolean isChestActive = false;
     private boolean isChestOpen = false;
     private String rewardType = "";
+    private boolean rewardsGiven = false;
     
     // Equipment selection
     private boolean hasShownEquipmentSelection = false;
@@ -379,7 +380,7 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
             isPlayingAction = false;
             if (isDeathAnimation) {
                 // Boss died - call rewardUser and show chest
-                bossViewModel.rewardUser();
+                giveRewards();
                 showChest();
                 return;
             }
@@ -532,7 +533,7 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
         hitChanceText.setVisibility(View.GONE);
         
         // Call rewardUser
-        bossViewModel.rewardUser();
+        giveRewards();
         
         // Check health to decide what to do
         Integer currentHealth = bossViewModel.getCurrentHealth().getValue();
@@ -758,5 +759,15 @@ public class BossMainActivity extends AppCompatActivity implements SensorEventLi
             // Fallback to default icon
             imageView.setImageResource(R.drawable.ic_equipment_default);
         }
+    }
+    
+    private void giveRewards() {
+        if (rewardsGiven) {
+            Log.d("BossMainActivity", "Rewards already given, skipping duplicate call");
+            return;
+        }
+        rewardsGiven = true;
+        bossViewModel.rewardUser();
+        Log.d("BossMainActivity", "Rewards given successfully");
     }
 }

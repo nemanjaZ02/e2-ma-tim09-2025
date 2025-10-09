@@ -118,18 +118,21 @@ public class EquipmentService {
                                 });
                             } else {
                                 // Rollback activation on failure
+                                Log.e("MAJKU TI JEBEM", "MAJKU TI JEBEM EQS 121");
                                 myEquipment.setActivated(false);
                                 listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
                                         new Exception("Equipment not found in user inventory")));
                             }
                         } else {
                             // Rollback activation on failure
+                            Log.e("MAJKU TI JEBEM", "MAJKU TI JEBEM EQS 128");
                             myEquipment.setActivated(false);
                             listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
                                     new Exception("Failed to parse user data")));
                         }
                     } else {
                         // Rollback activation on failure
+                        Log.e("MAJKU TI JEBEM", "MAJKU TI JEBEM EQS 135");
                         myEquipment.setActivated(false);
                         listener.onComplete(com.google.android.gms.tasks.Tasks.forException(
                                 userTask.getException() != null ? userTask.getException() : new Exception("User not found")));
@@ -264,6 +267,7 @@ public class EquipmentService {
                             equipment.getLasting(),
                             0// leftAmount = equipment lasting
                     );
+                    Log.e("MAJKU TI JEBEM", "MAJKU TI JEBEM EQS 270");
                     newMyEquipment.setActivated(false); // Initially not activated
 
                     // Update user: reduce coins and add equipment using calculated price
@@ -738,6 +742,7 @@ public class EquipmentService {
                 myEquipment.setEquipmentId(equipmentId);
                 myEquipment.setLeftAmount(equipment.getLasting());
                 myEquipment.setTimesUpgraded(0);
+                Log.e("MAJKU TI JEBEM", "MAJKU TI JEBEM EQS 745");
                 myEquipment.setActivated(false);
 
                 // Update user: add equipment and reduce coins

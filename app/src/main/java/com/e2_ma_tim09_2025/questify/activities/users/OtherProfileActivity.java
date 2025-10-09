@@ -144,38 +144,82 @@ public class OtherProfileActivity extends AppCompatActivity {
             }
         }
 
-        // Load equipment using same mapping as ProfileActivity
+        // Load equipment using vertical layout like ProfileActivity
         equipmentContainer.removeAllViews();
-        if (user.getEquipment() != null) {
+        if (user.getEquipment() != null && !user.getEquipment().isEmpty()) {
             System.out.println("DEBUG: Loading " + user.getEquipment().size() + " equipment items");
             for (MyEquipment item : user.getEquipment()) {
+                if (!item.isActivated())
+                    continue;
                 System.out.println("DEBUG: Loading equipment - ID: " + item.getEquipmentId() + ", Amount: " + item.getLeftAmount());
-                
-                ImageView itemView = new ImageView(this);
-                
-                // Use the same equipment mapping logic as ProfileActivity
-                int equipmentImageResId = getDrawableIdForEquipment(item.getEquipmentId());
-                if (equipmentImageResId != 0) {
-                    itemView.setImageResource(equipmentImageResId);
-                    System.out.println("DEBUG: Loaded equipment image for: " + item.getEquipmentId());
-                } else {
-                    // Fallback to default equipment icon
-                    itemView.setImageResource(R.drawable.ic_equipment_default);
-                    System.out.println("DEBUG: Using default equipment icon for: " + item.getEquipmentId());
-                }
-                
-                // Set tooltip with equipment info
-                String tooltip = item.getEquipmentId() + "\nUses left: " + item.getLeftAmount();
-                itemView.setContentDescription(tooltip);
-                
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(80, 80);
-                params.setMargins(8, 0, 8, 0);
-                itemView.setLayoutParams(params);
-                equipmentContainer.addView(itemView);
+                addEquipmentItemToView(item);
             }
         } else {
             System.out.println("DEBUG: User has no equipment");
+            // Show "No equipment" message
+            TextView noEquipmentView = new TextView(this);
+            noEquipmentView.setText("No equipment owned");
+            noEquipmentView.setTextColor(getResources().getColor(R.color.black));
+            noEquipmentView.setTextSize(16);
+            noEquipmentView.setPadding(16, 16, 16, 16);
+            noEquipmentView.setGravity(android.view.Gravity.CENTER);
+            equipmentContainer.addView(noEquipmentView);
         }
+    }
+    
+    /**
+     * Add equipment item to the display with full details (similar to ProfileActivity)
+     */
+    private void addEquipmentItemToView(MyEquipment equipment) {
+        LinearLayout itemLayout = new LinearLayout(this);
+        itemLayout.setOrientation(LinearLayout.HORIZONTAL);
+        itemLayout.setPadding(8, 8, 8, 8);
+        
+        // Equipment image
+        ImageView itemImage = new ImageView(this);
+        itemImage.setLayoutParams(new LinearLayout.LayoutParams(60, 60));
+        int drawableId = getDrawableIdForEquipment(equipment.getEquipmentId());
+        if (drawableId != 0) {
+            itemImage.setImageResource(drawableId);
+            System.out.println("DEBUG: Loaded equipment image for: " + equipment.getEquipmentId());
+        } else {
+            itemImage.setImageResource(android.R.drawable.ic_menu_help);
+            System.out.println("DEBUG: Using default equipment icon for: " + equipment.getEquipmentId());
+        }
+        itemImage.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        
+        // Equipment details
+        LinearLayout detailsLayout = new LinearLayout(this);
+        detailsLayout.setOrientation(LinearLayout.VERTICAL);
+        detailsLayout.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+        detailsLayout.setPadding(12, 0, 0, 0);
+        
+        TextView nameView = new TextView(this);
+        nameView.setText(equipment.getEquipmentId());
+        nameView.setTextSize(16);
+        nameView.setTextColor(getResources().getColor(R.color.black));
+        nameView.setTypeface(null, android.graphics.Typeface.BOLD);
+        
+        TextView amountView = new TextView(this);
+        amountView.setText("Uses left: " + equipment.getLeftAmount());
+        amountView.setTextSize(12);
+        amountView.setTextColor(getResources().getColor(R.color.text_secondary));
+        
+        TextView activatedView = new TextView(this);
+        activatedView.setText("Status: " + (equipment.isActivated() ? "Active" : "Inactive"));
+        activatedView.setTextSize(10);
+        activatedView.setTextColor(equipment.isActivated() ? 
+            getResources().getColor(android.R.color.holo_green_dark) : 
+            getResources().getColor(android.R.color.holo_red_dark));
+        
+        detailsLayout.addView(nameView);
+        detailsLayout.addView(amountView);
+        detailsLayout.addView(activatedView);
+        
+        itemLayout.addView(itemImage);
+        itemLayout.addView(detailsLayout);
+        
+        equipmentContainer.addView(itemLayout);
     }
     
     /**

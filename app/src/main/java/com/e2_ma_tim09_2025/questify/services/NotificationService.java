@@ -22,7 +22,7 @@ import okhttp3.Response;
 @Singleton
 public class NotificationService {
     private static final String TAG = "NotificationService";
-    private static final String SERVER_URL = "http://192.168.1.57:5007"; // Your computer's IP address
+    private static final String SERVER_URL = "http://192.168.8.74:5007"; // Your computer's IP address
     private static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     
     private final OkHttpClient httpClient;

@@ -161,17 +161,17 @@ public class BossViewModel extends ViewModel {
                 System.out.println("DEBUG: CoinsDrop is null, cannot update");
             }
 
-            Integer attacksLefts = attacksLeft.getValue();
-            System.out.println("DEBUG: Before attacks left update - Current: " + attacksLefts + ", Bonus: " + bonuses.get(2));
-            if (attacksLefts != null && attacksLefts > 0) {
-                int newAttacksLeft = (int) (attacksLefts + attacksLefts * bonuses.get(2));
-                System.out.println("DEBUG: Setting attacksLeft to: " + newAttacksLeft + " (was: " + attacksLefts + ")");
-                attacksLeft.setValue(newAttacksLeft);
-                equipmentBonusesApplied = true; // Mark that equipment bonuses have been applied
-                System.out.println("DEBUG: After attacks left update - New: " + newAttacksLeft);
-            } else {
-                System.out.println("DEBUG: Attacks left is null or 0, cannot update");
-            }
+//            Integer attacksLefts = attacksLeft.getValue();
+//            System.out.println("DEBUG: Before attacks left update - Current: " + attacksLefts + ", Bonus: " + bonuses.get(2));
+//            if (attacksLefts != null && attacksLefts > 0) {
+//                int newAttacksLeft = (int) (attacksLefts + attacksLefts * bonuses.get(2));
+//                System.out.println("DEBUG: Setting attacksLeft to: " + newAttacksLeft + " (was: " + attacksLefts + ")");
+//                attacksLeft.setValue(newAttacksLeft);
+//                equipmentBonusesApplied = true; // Mark that equipment bonuses have been applied
+//                System.out.println("DEBUG: After attacks left update - New: " + newAttacksLeft);
+//            } else {
+//                System.out.println("DEBUG: Attacks left is null or 0, cannot update");
+//            }
         });
     }
 
@@ -417,6 +417,7 @@ public class BossViewModel extends ViewModel {
             // Give clothes
             equipmentService.getRandomEquipmentByType(EquipmentType.CLOTHES, task -> {
                 if (task.isSuccessful() && task.getResult() != null) {
+                    // OVO JE DOBIJENI EQUIPMENT
                     Equipment equipment = task.getResult();
                     userService.addEquipmentToUser(userId, equipment, addTask -> {
                         if (addTask.isSuccessful()) {
@@ -430,6 +431,7 @@ public class BossViewModel extends ViewModel {
             // Give weapon
             equipmentService.getRandomEquipmentByType(EquipmentType.WEAPON, task -> {
                 if (task.isSuccessful() && task.getResult() != null) {
+                    // OVO JE DOBIJENI EQUIPMENT
                     Equipment equipment = task.getResult();
                     userService.addEquipmentToUser(userId, equipment, addTask -> {
                         if (addTask.isSuccessful()) {
